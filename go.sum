@@ -1,2 +1,4 @@
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/qedus/osmpbf v1.1.0 h1:1ewnhb7cX0VAp24M+ViDvLI9RKKgZOXFBLM5xGlB5TA=
+github.com/qedus/osmpbf v1.1.0/go.mod h1:37EgzlwZC2inPP5/rY1MZIxE6kgDof7MIljJuELs0c0=

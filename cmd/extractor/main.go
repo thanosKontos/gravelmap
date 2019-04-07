@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"runtime"
+
+	"github.com/qedus/osmpbf"
 
 	//"github.com/golang/protobuf/proto"
 )
@@ -21,7 +25,53 @@ func main() {
 	}
 	defer f.Close()
 
-	fmt.Print(f.Stat())
+	d := osmpbf.NewDecoder(f)
+
+	fmt.Println(d)
+	d.SetBufferSize(osmpbf.MaxBlobSize)
+
+	// start decoding with several goroutines, it is faster
+	err = d.Start(runtime.GOMAXPROCS(-1))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error reading file\n", err)
+		os.Exit(1)
+	}
+
+	var nc, wc, rc uint64
+	for {
+		if v, err := d.Decode(); err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Fprintf(os.Stderr, "error decoding file\n", err)
+			os.Exit(1)
+		} else {
+			switch v := v.(type) {
+			case *osmpbf.Node:
+				//if v.ID == 21487272 || v.ID == 26952503 || v.ID == 4606122609 || v.ID == 2959861566 || v.ID == 270654946 || v.ID == 3949514556 || v.ID == 1312948344 || v.ID == 2959897160 || v.ID == 5955191732 || v.ID == 5955191727 || v.ID == 26952504 {
+				//	fmt.Println("Node!", v)
+				//}
+				//
+				//fmt.Println("Node!", v)
+				nc++
+			case *osmpbf.Way:
+				//if v.ID == 4475559 {
+				//	fmt.Println("Way!", v)
+				//}
+				if val, ok := v.Tags["surface"]; ok && val != "asphalt" && val != "cobblestone" {
+					fmt.Println("Way!", v)
+				}
+				//fmt.Println("Way!", v)
+				wc++
+			case *osmpbf.Relation:
+				//fmt.Println("Relation!", v)
+				rc++
+			default:
+				fmt.Fprintf(os.Stderr, "unknown type %T\n", v)
+			}
+		}
+	}
+
+	fmt.Printf("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
 
 	//elliot := &Person{
 	//	Name: "Elliot",
