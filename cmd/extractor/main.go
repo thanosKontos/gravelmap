@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/thanosKontos/gravelmap/profiles"
 	"io"
 	"os"
 	"runtime"
 
 	"github.com/qedus/osmpbf"
-
-	//"github.com/golang/protobuf/proto"
 )
 
 func main() {
@@ -30,7 +29,14 @@ func main() {
 	fmt.Println(d)
 	d.SetBufferSize(osmpbf.MaxBlobSize)
 
-	// start decoding with several goroutines, it is faster
+	prof := profiles.NewOffroadProfile()
+	includedWayTags := prof.GetIncludedWayTags()
+	excludedWayTagVals := prof.GetExcludedWayTagVals()
+
+
+
+
+	// start decoding with several goroutines
 	err = d.Start(runtime.GOMAXPROCS(-1))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error reading file\n", err)
@@ -38,6 +44,8 @@ func main() {
 	}
 
 	var nc, wc, rc uint64
+
+	//nextLine:
 	for {
 		if v, err := d.Decode(); err == io.EOF {
 			break
@@ -51,16 +59,31 @@ func main() {
 				//	fmt.Println("Node!", v)
 				//}
 				//
-				//fmt.Println("Node!", v)
+				fmt.Println("Node!", v)
 				nc++
 			case *osmpbf.Way:
-				//if v.ID == 4475559 {
-				//	fmt.Println("Way!", v)
-				//}
-				if val, ok := v.Tags["surface"]; ok && val != "asphalt" && val != "cobblestone" {
-					fmt.Println("Way!", v)
+				if len(v.Tags) == 0 {
+					//continue nextLine
 				}
+
+				for _, tag := range includedWayTags {
+					if _, exists := v.Tags[tag]; !exists {
+						//continue nextLine
+					}
+				}
+
+				for tagKey, excludeVals := range excludedWayTagVals {
+					if val, exists := v.Tags[tagKey]; exists {
+						for _, tag := range excludeVals {
+							if tag == val {
+								//continue nextLine
+							}
+						}
+					}
+				}
+
 				//fmt.Println("Way!", v)
+
 				wc++
 			case *osmpbf.Relation:
 				//fmt.Println("Relation!", v)
