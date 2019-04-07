@@ -45,7 +45,7 @@ func main() {
 
 	var nc, wc, rc uint64
 
-	//nextLine:
+	nextLine:
 	for {
 		if v, err := d.Decode(); err == io.EOF {
 			break
@@ -59,16 +59,16 @@ func main() {
 				//	fmt.Println("Node!", v)
 				//}
 				//
-				fmt.Println("Node!", v)
+				//fmt.Println("Node!", v)
 				nc++
 			case *osmpbf.Way:
 				if len(v.Tags) == 0 {
-					//continue nextLine
+					continue nextLine
 				}
 
 				for _, tag := range includedWayTags {
 					if _, exists := v.Tags[tag]; !exists {
-						//continue nextLine
+						continue nextLine
 					}
 				}
 
@@ -76,7 +76,7 @@ func main() {
 					if val, exists := v.Tags[tagKey]; exists {
 						for _, tag := range excludeVals {
 							if tag == val {
-								//continue nextLine
+								continue nextLine
 							}
 						}
 					}
