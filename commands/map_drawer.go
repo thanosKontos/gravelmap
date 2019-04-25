@@ -1,10 +1,9 @@
 package commands
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/spf13/cobra"
-
-	"database/sql"
 	"strings"
 
 	_ "github.com/lib/pq"
