@@ -4,13 +4,22 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )
 
 // Execute entry point for commands.
 func Execute() {
-	rootCommand := setUpCommand()
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error loading .env file")
+		os.Exit(1)
+	}
+
+	rootCommand := rootCommand()
 	rootCommand.AddCommand(versionCommand())
+	rootCommand.AddCommand(createRoutingDataCommand())
+	rootCommand.AddCommand(applyElevationCostCommand())
 	rootCommand.AddCommand(mapDrawerCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -19,7 +28,7 @@ func Execute() {
 }
 
 // setUpCommand initializes and returns a new command object.
-func setUpCommand() *cobra.Command {
+func rootCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "gravelmap",
 		Short: "gravelmap is a routing engine made as a composite of other sevices (osmium, postgis and pgrouting)",

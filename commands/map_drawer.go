@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/spf13/cobra"
+	"math"
+	"os"
 	"strings"
 
 	_ "github.com/lib/pq"
@@ -27,7 +29,7 @@ var html = `<html><body>
     map = new OpenLayers.Map("mapdiv");
     map.addLayer(new OpenLayers.Layer.OSM());
 
-    var centerLonLat = new OpenLayers.LonLat(-0.1279688, 51.5077286)
+    var centerLonLat = new OpenLayers.LonLat(%s, %s)
           .transform(
             new OpenLayers.Projection("EPSG:4326"),
             map.getProjectionObject()
@@ -55,72 +57,86 @@ var html = `<html><body>
 
 // mapDrawerCommand is a util to create a test HTML page in order to help with the tedious task of manual testing the router.
 func mapDrawerCommand() *cobra.Command {
-	return &cobra.Command{
+	var (
+		pointFrom string
+		pointTo   string
+	)
+
+	mapDrawerCmd := &cobra.Command{
 		Use:   "map-drawer",
 		Short: "Draw a route on a map",
 		Long:  "Draw a route on a map and spit out the html",
-		Run: func(cmd *cobra.Command, args []string) {
-			connStr := "user=tkontos dbname=routing password=1234 port=5434"
-			db, err := sql.Open("postgres", connStr)
-			if err != nil {
-				fmt.Println("errore")
-			}
+	}
 
-			var source string
-			findSourceQuery := `SELECT
+	mapDrawerCmd.Flags().StringVar(&pointFrom, "from", "", "Lat,lng to route from.")
+	mapDrawerCmd.Flags().StringVar(&pointTo, "to", "", "Lat,lng to route to.")
+
+	mapDrawerCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return mapDrawerCmdRun(pointFrom, pointTo)
+	}
+
+	return mapDrawerCmd
+}
+
+// mapDrawerCmdRun defines the command run actions.
+func mapDrawerCmdRun(pointFrom, pointTo string) error {
+	from := strings.Split(pointFrom, ",")
+	to := strings.Split(pointTo, ",")
+
+	connStr := fmt.Sprintf(
+		"user=%s dbname=%s password=%s port=%s",
+		os.Getenv("DBUSER"),
+		os.Getenv("DBNAME"),
+		os.Getenv("DBPASS"),
+		os.Getenv("DBPORT"),
+	)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	findSrcSql := `SELECT
+		  source,
+		  ST_Distance(ST_GeogFromText(CONCAT('SRID=4326;POINT(', x1, ' ', y1,')')), ST_GeogFromText('SRID=4326;POINT(%s %s)')) as distance
+		FROM ways
+		ORDER BY distance
+		LIMIT 1;`
+	rows, err := db.Query(fmt.Sprintf(findSrcSql, from[0], from[1]))
+
+	var source string
+	for rows.Next() {
+		var row Way
+		if err := rows.Scan(&row.node, &row.distance); err != nil {
+			fmt.Println(err)
+		} else {
+			source = row.node
+		}
+	}
+
+
+
+
+	findDstnSql := `SELECT
 	  source,
-	  ST_Distance(ST_GeogFromText(CONCAT('SRID=4326;POINT(', x1, ' ', y1,')')), ST_GeogFromText('SRID=4326;POINT(23.8110783 38.0030367)')) as distance
+	  ST_Distance(ST_GeogFromText(CONCAT('SRID=4326;POINT(', x2, ' ', y2,')')), ST_GeogFromText('SRID=4326;POINT(%s %s)')) as distance
 	FROM ways
 	ORDER BY distance
 	LIMIT 1;`
+	rows, err = db.Query(fmt.Sprintf(findDstnSql, to[0], to[1]))
 
-			rows, err := db.Query(findSourceQuery)
-			for rows.Next() {
-				var row Way
-				if err := rows.Scan(&row.node, &row.distance); err != nil {
-					fmt.Println(err)
-				} else {
-					source = row.node
-				}
-			}
-
-
-
-
-
-			var destination string
-			findDestinationQuery := `SELECT
-	  source,
-	  ST_Distance(ST_GeogFromText(CONCAT('SRID=4326;POINT(', x2, ' ', y2,')')), ST_GeogFromText('SRID=4326;POINT(23.8312455 37.9495728)')) as distance
-	FROM ways
-	ORDER BY distance
-	LIMIT 1;`
-
-			rows, err = db.Query(findDestinationQuery)
-			for rows.Next() {
-				var row Way
-				if err := rows.Scan(&row.node, &row.distance); err != nil {
-					fmt.Println(err)
-				} else {
-					destination = row.node
-				}
-			}
+	var destination string
+	for rows.Next() {
+		var row Way
+		if err := rows.Scan(&row.node, &row.distance); err != nil {
+			fmt.Println(err)
+		} else {
+			destination = row.node
+		}
+	}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-			query := `SELECT
+	query := `SELECT
 		CONCAT(y1,',', x1) as point_from,
 		CONCAT(y2, ',', x2) as point_to,
 		ST_AsText(the_geom) as points
@@ -130,29 +146,49 @@ func mapDrawerCommand() *cobra.Command {
 		%s,
 		FALSE
 	) d INNER JOIN ways w ON d.edge = w.gid;`
+	query = fmt.Sprintf(query, source, destination)
 
-			query = fmt.Sprintf(query, source, destination)
+	pointsJSArray := ""
+	rows, err = db.Query(query)
+	for rows.Next() {
+		var row Row
+		if err := rows.Scan(&row.pointFrom, &row.pointTo, &row.points); err != nil {
+			fmt.Println(err)
+		} else {
+			s := strings.TrimPrefix(row.points, "LINESTRING(")
+			s = strings.TrimSuffix(s, ")")
+			points := strings.Split(s, ",")
+			rdPointsCnt := len(points)
+			count := 0
+			for _, point := range points {
+				printPoint := false
 
-
-			pointsArray := ""
-			rows, err = db.Query(query)
-
-			for rows.Next() {
-				var row Row
-				if err := rows.Scan(&row.pointFrom, &row.pointTo, &row.points); err != nil {
-					fmt.Println(err)
-				} else {
-					s := strings.TrimPrefix(row.points, "LINESTRING(")
-					s = strings.TrimSuffix(s, ")")
-					sa := strings.Split(s, ",")
-
-					for _, point := range sa {
-						pointsArray += "[" + strings.Replace(point, " ", ", ", 1) + "],\n"
+				if rdPointsCnt >= 30 {
+					if math.Mod(float64(count), 8) == 0 {
+						printPoint = true
 					}
+				} else if rdPointsCnt >= 20 {
+					if math.Mod(float64(count), 5) == 0 {
+						printPoint = true
+					}
+				} else if rdPointsCnt >= 10 {
+					if math.Mod(float64(count), 3) == 0 {
+						printPoint = true
+					}
+				} else {
+					printPoint = true
 				}
-			}
 
-			fmt.Println(fmt.Sprintf(html, pointsArray))
-		},
+				if printPoint {
+					pointsJSArray += "[" + strings.Replace(point, " ", ", ", 1) + "],\n"
+				}
+				count++
+			}
+		}
 	}
+
+	fmt.Println(fmt.Sprintf(html, from[0], from[1], pointsJSArray))
+
+	return nil
 }
+
