@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/spf13/cobra"
+	"log"
 	"os"
 	"os/exec"
 )
@@ -36,21 +37,17 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 	// Filter useless osm tags
 	cmd := exec.Command("osmium", "tags-filter", inputFilename, "w/highway", "-o", "/tmp/filtered_tmp.osm", "--overwrite")
 	_, err := cmd.CombinedOutput()
-
 	if err != nil {
-		fmt.Println(err)
-		return err
+		log.Fatal(err)
 	}
 
 	cmd = exec.Command("osmium", "tags-filter", "-i", "/tmp/filtered_tmp.osm", "w/highway=motorway,trunk,motorway_link,trunk_link", "w/access=private", "-o", "/tmp/filtered.osm", "--overwrite")
 	_, err = cmd.CombinedOutput()
-
 	if err != nil {
-		fmt.Println(err)
-		return err
+		log.Fatal(err)
 	}
 
-	fmt.Println("OSM data filtered successfully.")
+	log.Println("OSM data filtered successfully.")
 
 	connStr := fmt.Sprintf(
 		"user=%s dbname=%s password=%s port=%s",
@@ -61,20 +58,20 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 	)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	_, err = db.Exec("DROP DATABASE IF EXISTS " + os.Getenv("DBNAME"))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	_, err = db.Exec("CREATE DATABASE " + os.Getenv("DBNAME"))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
-	fmt.Println("Database created.")
+	log.Println("Database created.")
 	db.Close()
 
 	connStr = fmt.Sprintf(
@@ -86,29 +83,28 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 	)
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	_, err = db.Exec("CREATE EXTENSION postGIS")
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	_, err = db.Exec("CREATE EXTENSION pgRouting")
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
-	fmt.Println("Database extensions created.")
+	log.Println("Database extensions created.")
 
 	cmd = exec.Command("osm2pgrouting", "-c", tagCostConf, "-p", os.Getenv("DBPORT"), "-d", os.Getenv("DBNAME"), "-f", "/tmp/filtered.osm", "-U", os.Getenv("DBUSER"), "-W", os.Getenv("DBPASS"))
 	_, err = cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(err)
-		return err
+		log.Fatal(err)
 	}
 
-	fmt.Println("Database filled.")
+	log.Println("Database filled.")
 
 	return nil
 }
