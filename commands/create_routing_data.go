@@ -12,7 +12,7 @@ import (
 func createRoutingDataCommand() *cobra.Command {
 	var (
 		inputFilename string
-		tagCostConf string
+		tagCostConf   string
 	)
 
 	createRoutingDataCmd := &cobra.Command{
@@ -42,7 +42,7 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 		return err
 	}
 
-	cmd = exec.Command("osmium", "tags-filter", "-i", "/tmp/filtered_tmp.osm", "w/highway=motorway,trunk,motorway_link,trunk_link", "-o", "/tmp/filtered.osm", "--overwrite")
+	cmd = exec.Command("osmium", "tags-filter", "-i", "/tmp/filtered_tmp.osm", "w/highway=motorway,trunk,motorway_link,trunk_link", "w/access=private", "-o", "/tmp/filtered.osm", "--overwrite")
 	_, err = cmd.CombinedOutput()
 
 	if err != nil {
@@ -64,12 +64,12 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 		fmt.Println(err)
 	}
 
-	_, err = db.Exec("DROP DATABASE IF EXISTS "+os.Getenv("DBNAME"))
+	_, err = db.Exec("DROP DATABASE IF EXISTS " + os.Getenv("DBNAME"))
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	_, err = db.Exec("CREATE DATABASE "+os.Getenv("DBNAME"))
+	_, err = db.Exec("CREATE DATABASE " + os.Getenv("DBNAME"))
 	if err != nil {
 		fmt.Println(err)
 	}

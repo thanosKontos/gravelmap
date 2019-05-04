@@ -22,11 +22,11 @@ func NewSRTM() *SRTM {
 
 type fileInfo struct {
 	headerCnt int
-	rowsCnt int
-	colsCnt int
-	latMin float64
-	lngMin float64
-	step float64
+	rowsCnt   int
+	colsCnt   int
+	latMin    float64
+	lngMin    float64
+	step      float64
 	noDataVal string
 }
 
@@ -35,8 +35,8 @@ func (SRTM) Find(lat, lng float64) (int64, error) {
 	filename := findFileToQuery(lat, lng)
 	fInfo, err := extractInfoFromFile(filename)
 
-	rowΝο := fInfo.headerCnt + fInfo.rowsCnt - int(math.Round((lat - fInfo.latMin)/fInfo.step))
-	colNo := int(math.Round((lng - fInfo.lngMin)/fInfo.step))
+	rowΝο := fInfo.headerCnt + fInfo.rowsCnt - int(math.Round((lat-fInfo.latMin)/fInfo.step))
+	colNo := int(math.Round((lng - fInfo.lngMin) / fInfo.step))
 
 	cmd := exec.Command("awk", fmt.Sprintf("NR == %d {print $%d}", rowΝο, colNo), filename)
 	out, err := cmd.CombinedOutput()
@@ -105,11 +105,11 @@ func extractInfoFromFile(filename string) (*fileInfo, error) {
 
 	fi := fileInfo{
 		headerCnt: len(info),
-		rowsCnt: fDataRowCount,
-		colsCnt: fDataColCount,
-		latMin: fLatMin,
-		lngMin: fLngMin,
-		step: fstep,
+		rowsCnt:   fDataRowCount,
+		colsCnt:   fDataColCount,
+		latMin:    fLatMin,
+		lngMin:    fLngMin,
+		step:      fstep,
 		noDataVal: info["NODATA_value"],
 	}
 

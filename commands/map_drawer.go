@@ -1,26 +1,17 @@
 package commands
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/spf13/cobra"
-	"math"
+	"github.com/thanosKontos/gravelmap"
+	"github.com/thanosKontos/gravelmap/routing/pgrouting"
+	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	_ "github.com/lib/pq"
 )
-
-type Row struct {
-	pointFrom string
-	pointTo string
-	points string
-}
-
-type Way struct {
-	node string
-	distance string
-}
 
 var html = `<html><body>
   <div id="mapdiv"></div>
@@ -83,107 +74,43 @@ func mapDrawerCmdRun(pointFrom, pointTo string) error {
 	from := strings.Split(pointFrom, ",")
 	to := strings.Split(pointTo, ",")
 
-	connStr := fmt.Sprintf(
-		"user=%s dbname=%s password=%s port=%s",
-		os.Getenv("DBUSER"),
-		os.Getenv("DBNAME"),
-		os.Getenv("DBPASS"),
-		os.Getenv("DBPORT"),
-	)
-	db, err := sql.Open("postgres", connStr)
+	pgRouting, err := pgrouting.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
-	findSrcSql := `SELECT
-		  source,
-		  ST_Distance(ST_GeogFromText(CONCAT('SRID=4326;POINT(', x1, ' ', y1,')')), ST_GeogFromText('SRID=4326;POINT(%s %s)')) as distance
-		FROM ways
-		ORDER BY distance
-		LIMIT 1;`
-	rows, err := db.Query(fmt.Sprintf(findSrcSql, from[0], from[1]))
-
-	var source string
-	for rows.Next() {
-		var row Way
-		if err := rows.Scan(&row.node, &row.distance); err != nil {
-			fmt.Println(err)
-		} else {
-			source = row.node
-		}
+	latFrom, err := strconv.ParseFloat(from[0], 64)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-
-
-
-	findDstnSql := `SELECT
-	  source,
-	  ST_Distance(ST_GeogFromText(CONCAT('SRID=4326;POINT(', x2, ' ', y2,')')), ST_GeogFromText('SRID=4326;POINT(%s %s)')) as distance
-	FROM ways
-	ORDER BY distance
-	LIMIT 1;`
-	rows, err = db.Query(fmt.Sprintf(findDstnSql, to[0], to[1]))
-
-	var destination string
-	for rows.Next() {
-		var row Way
-		if err := rows.Scan(&row.node, &row.distance); err != nil {
-			fmt.Println(err)
-		} else {
-			destination = row.node
-		}
+	lngFrom, err := strconv.ParseFloat(from[1], 64)
+	if err != nil {
+		log.Fatal(err)
 	}
 
+	latTo, err := strconv.ParseFloat(to[0], 64)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	lngTo, err := strconv.ParseFloat(to[1], 64)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	query := `SELECT
-		CONCAT(y1,',', x1) as point_from,
-		CONCAT(y2, ',', x2) as point_to,
-		ST_AsText(the_geom) as points
-	FROM pgr_dijkstra(
-		'SELECT gid as id, source, target, cost, reverse_cost FROM ways',
-		%s,
-		%s,
-		FALSE
-	) d INNER JOIN ways w ON d.edge = w.gid;`
-	query = fmt.Sprintf(query, source, destination)
+	tripLegs, err := pgRouting.Route(
+		gravelmap.Point{Lat: latFrom, Lng: lngFrom},
+		gravelmap.Point{Lat: latTo, Lng: lngTo},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	pointsJSArray := ""
-	rows, err = db.Query(query)
-	for rows.Next() {
-		var row Row
-		if err := rows.Scan(&row.pointFrom, &row.pointTo, &row.points); err != nil {
-			fmt.Println(err)
-		} else {
-			s := strings.TrimPrefix(row.points, "LINESTRING(")
-			s = strings.TrimSuffix(s, ")")
-			points := strings.Split(s, ",")
-			rdPointsCnt := len(points)
-			count := 0
-			for _, point := range points {
-				printPoint := false
-
-				if rdPointsCnt >= 30 {
-					if math.Mod(float64(count), 8) == 0 {
-						printPoint = true
-					}
-				} else if rdPointsCnt >= 20 {
-					if math.Mod(float64(count), 5) == 0 {
-						printPoint = true
-					}
-				} else if rdPointsCnt >= 10 {
-					if math.Mod(float64(count), 3) == 0 {
-						printPoint = true
-					}
-				} else {
-					printPoint = true
-				}
-
-				if printPoint {
-					pointsJSArray += "[" + strings.Replace(point, " ", ", ", 1) + "],\n"
-				}
-				count++
-			}
+	for _, leg := range tripLegs {
+		for _, point := range leg {
+			pointsJSArray += fmt.Sprintf("[%f,%f],\n", point.Lng, point.Lat)
 		}
 	}
 
@@ -191,4 +118,3 @@ func mapDrawerCmdRun(pointFrom, pointTo string) error {
 
 	return nil
 }
-
