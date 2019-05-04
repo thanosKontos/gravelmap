@@ -30,6 +30,14 @@ Example of building and running in Ubuntu x64
 env GOOS=linux GOARCH=amd64 go build -o ~/gravelmap/gravelmap cmd/main.go && ~/gravelmap/gravelmap add-data --input /path/to/some/osm/attiki.osm --database routing --tag-cost-config profiles/pgrouting/mt_bike.xml
 ```
 
+## Use server
+
+```bash
+env GOOS=linux GOARCH=amd64 go build -o ~/gravelmap/gravelmap cmd/main.go && ~/gravelmap/gravelmap create-server
+```
+
+Go to http://localhost:8000/route?from=37.9386497,23.8370413&to=37.8984114,23.8986341
+
 ## Drawer util
 
 The util is used in order to create a test HTML page in order to help with manual testing the router. Database and data should be prepared for the following to work. - TBD - 
