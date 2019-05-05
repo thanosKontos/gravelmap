@@ -1,11 +1,15 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
+	"github.com/thanosKontos/gravelmap/routing/pgrouting"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -28,6 +32,7 @@ func createServerCommand() *cobra.Command {
 // createRoutingDataCmdRun defines the command run actions.
 func createServerCmdRun() error {
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		pointFrom, err := getPointFromParams("from", r)
 		pointTo, err2 := getPointFromParams("to", r)
 		if err != nil || err2 != nil {
@@ -37,9 +42,37 @@ func createServerCmdRun() error {
 			return
 		}
 
-		fmt.Println(pointFrom)
-		fmt.Println(pointTo)
+		pgRouting, err := pgrouting.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tripLegs, err := pgRouting.Route(
+			*pointFrom,
+			*pointTo,
+		)
+		if err != nil {
+			w.WriteHeader(500)
+			fmt.Fprintf(w, `{"message": "%s"}`, err)
+
+			return
+		}
+
+		points := make([]string, 0)
+		for _, leg := range tripLegs {
+			for _, point := range leg {
+				points = append(points, fmt.Sprintf("%f,%f", point.Lng, point.Lat))
+			}
+		}
+
+		json, _ := json.Marshal(points)
+		fmt.Fprintf(w, string(json))
 	})
+
+	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `frufrejfrureji`)
+	})
+
 	http.ListenAndServe(":8000", nil)
 
 	return nil
@@ -48,16 +81,16 @@ func createServerCmdRun() error {
 func getPointFromParams(param string, r *http.Request) (*gravelmap.Point, error) {
 	fromKeys, ok := r.URL.Query()[param]
 	if !ok || len(fromKeys[0]) < 1 {
-		return nil, errors.New("Non existing param")
+		return nil, errors.New("non existing param")
 	}
 	latLng := strings.Split(fromKeys[0], ",")
 
-	lat, err := strconv.ParseFloat(latLng[0], 64)
+	lat, err := strconv.ParseFloat(latLng[1], 64)
 	if err != nil {
 		return nil, err
 	}
 
-	lng, err := strconv.ParseFloat(latLng[1], 64)
+	lng, err := strconv.ParseFloat(latLng[0], 64)
 	if err != nil {
 		return nil, err
 	}

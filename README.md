@@ -36,12 +36,5 @@ env GOOS=linux GOARCH=amd64 go build -o ~/gravelmap/gravelmap cmd/main.go && ~/g
 env GOOS=linux GOARCH=amd64 go build -o ~/gravelmap/gravelmap cmd/main.go && ~/gravelmap/gravelmap create-server
 ```
 
-Go to http://localhost:8000/route?from=37.9386497,23.8370413&to=37.8984114,23.8986341
+Open example_webasite.html to test routing
 
-## Drawer util
-
-The util is used in order to create a test HTML page in order to help with manual testing the router. Database and data should be prepared for the following to work. - TBD - 
-
-```bash
-/path/to/project/cmd/map_drawer$ env GOOS=linux GOARCH=amd64 go build -o ~/gravelmap/map-drawer main.go && ~/gravelmap/map-drawer 38.0030367,23.8110783 37.9495728,23.8312455 > ~/test.html
-```

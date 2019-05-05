@@ -7,6 +7,8 @@ import (
 	"github.com/thanosKontos/gravelmap"
 	"strconv"
 	"strings"
+
+	_ "github.com/lib/pq"
 )
 
 type routeRow struct {

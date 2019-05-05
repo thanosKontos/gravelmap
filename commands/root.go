@@ -19,7 +19,6 @@ func Execute() {
 	rootCommand := rootCommand()
 	rootCommand.AddCommand(versionCommand())
 	rootCommand.AddCommand(createRoutingDataCommand())
-	rootCommand.AddCommand(mapDrawerCommand())
 	rootCommand.AddCommand(createServerCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

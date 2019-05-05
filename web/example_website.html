@@ -1,0 +1,84 @@
+<html>
+    <body>
+        <div id="mapdiv" style="height: 80%"></div>
+        <button id="clear-btn">Clear map</button>
+
+        <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous">
+        </script>
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+        <script>
+            map = new OpenLayers.Map("mapdiv");
+            map.addLayer(new OpenLayers.Layer.OSM());
+
+            let centerLonLat = new OpenLayers.LonLat(23.8110831, 38.002617)
+                .transform(
+                    new OpenLayers.Projection("EPSG:4326"),
+                    map.getProjectionObject()
+                );
+
+            let routeFrom = null;
+            let routeTo = null;
+            let routeMarkers = new OpenLayers.Layer.Markers("route-markers");
+            let startEndMarkers = new OpenLayers.Layer.Markers("start-end-markers");
+
+            map.addLayer(routeMarkers);
+            map.addLayer(startEndMarkers);
+            map.setCenter(centerLonLat, 16);
+
+            // ## EVENTS ##
+            $("#clear-btn").on("click", function(e) {
+                e.preventDefault();
+
+                routeMarkers.destroy();
+                startEndMarkers.destroy();
+
+                routeFrom = null;
+                routeTo = null;
+                routeMarkers = new OpenLayers.Layer.Markers("route-markers");
+                startEndMarkers = new OpenLayers.Layer.Markers("start-end-markers");
+
+                map.addLayer(routeMarkers);
+                map.addLayer(startEndMarkers);
+            });
+
+            map.events.register('click', map, function(e) {
+                let toProjection = new OpenLayers.Projection("EPSG:4326");
+                let event_point = map.getLonLatFromPixel(e.xy);
+                let lonlat = map.getLonLatFromPixel(e.xy).transform(map.getProjectionObject(), toProjection);
+
+                if (routeFrom === null) {
+                    routeFrom = lonlat.lat + "," + lonlat.lon;
+                    startEndMarkers.addMarker(new OpenLayers.Marker(event_point));
+                } else {
+                    routeTo = lonlat.lat + "," + lonlat.lon;
+                    startEndMarkers.addMarker(new OpenLayers.Marker(event_point));
+                }
+
+                if (routeFrom === null || routeTo === null) {
+                    return;
+                }
+
+                $.ajax({
+                    url: "http://localhost:8000/route?from="+routeFrom+"&to="+routeTo,
+                    success: function( result ) {
+                        $("#debug").html(result);
+
+                        let routePoints = JSON.parse(result);
+                        routePoints.forEach(function(routePoint) {
+                            let pnt = routePoint.split(',');
+                            let lonLat = new OpenLayers.LonLat(pnt[0], pnt[1])
+                                .transform(
+                                    new OpenLayers.Projection("EPSG:4326"),
+                                    map.getProjectionObject()
+                                );
+                            routeMarkers.addMarker(new OpenLayers.Marker(lonLat));
+                        });
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
