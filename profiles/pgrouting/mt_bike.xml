@@ -1,21 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <tag_name name="mtb:scale" id="1">
-        <tag_value name="0" priority="1.0" id="101" />
-        <tag_value name="0+" priority="1.0" id="102" />
-        <tag_value name="1" priority="1.1" id="103" />
-        <tag_value name="1+" priority="1.1" id="104" />
-        <tag_value name="2" priority="3.0" id="105" />
-        <tag_value name="2+" priority="3.0" id="106" />
-        <tag_value name="3" priority="4.0" id="107" />
-        <tag_value name="3+" priority="4.0" id="108" />
-        <tag_value name="4" priority="5.0" id="109" />
-        <tag_value name="4+" priority="5.0" id="110" />
-        <tag_value name="5" priority="7.0" id="111" />
-        <tag_value name="5+" priority="7.0" id="112" />
-        <tag_value name="6" priority="9.0" id="113" />
-        <tag_value name="6+" priority="9.0" id="114" />
+    <tag_name name="highway" id="1">
+        <tag_value name="track" priority="1" id="101" />
+        <tag_value name="unclassified" priority="2" id="102" />
+        <tag_value name="residential" priority="5" id="103" />
+        <tag_value name="tertiary" priority="5" id="104" />
+        <tag_value name="secondary" priority="5" id="105" />
+        <tag_value name="primary" priority="5" id="106" />
     </tag_name>
+
     <tag_name name="surface" id="2">
         <tag_value name="unpaved" priority="1.5" id="201" />
         <tag_value name="compacted" priority="1.0" id="202" />
@@ -34,8 +27,8 @@
         <tag_value name="snow" priority="3.0" id="215" />
         <tag_value name="ice" priority="4.0" id="216" />
         <tag_value name="salt" priority="5.0" id="217" />
-        <tag_value name="paved" priority="10.0" id="218" />
-        <tag_value name="asphalt" priority="10.0" id="219" />
+        <tag_value name="paved" priority="5.0" id="218" />
+        <tag_value name="asphalt" priority="5.0" id="219" />
         <tag_value name="concrete" priority="5.0" id="220" />
         <tag_value name="concrete:lanes" priority="5.0" id="221" />
         <tag_value name="concrete:plates" priority="5.0" id="222" />
@@ -46,17 +39,5 @@
         <tag_value name="cobblestone:flattened" priority="2.0" id="227" />
         <tag_value name="metal" priority="2.0" id="228" />
         <tag_value name="wood" priority="2.0" id="229" />
-    </tag_name>
-    <tag_name name="highway" id="3">
-        <tag_value name="track" priority="1" id="201" />
-        <tag_value name="motorway" priority="100" id="201" />
-        <tag_value name="trunk" priority="50" id="201" />
-        <tag_value name="primary" priority="10" id="201" />
-        <tag_value name="secondary" priority="10" id="201" />
-        <tag_value name="tertiary" priority="10" id="201" />
-        <tag_value name="unclassified" priority="10" id="201" />
-    </tag_name>
-    <tag_name name="junction" id="4">
-        <tag_value name="roundabout" priority="2.5" id="401" />
     </tag_name>
 </configuration>

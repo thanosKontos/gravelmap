@@ -61,6 +61,7 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 		log.Fatal(err)
 	}
 
+	_, err = db.Exec(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity  WHERE datname = 'routing'`)
 	_, err = db.Exec("DROP DATABASE IF EXISTS " + os.Getenv("DBNAME"))
 	if err != nil {
 		log.Println(err)
@@ -88,20 +89,20 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 
 	_, err = db.Exec("CREATE EXTENSION postGIS")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	_, err = db.Exec("CREATE EXTENSION pgRouting")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	log.Println("Database extensions created.")
 
 	cmd = exec.Command("osm2pgrouting", "-c", tagCostConf, "-p", os.Getenv("DBPORT"), "-d", os.Getenv("DBNAME"), "-f", "/tmp/filtered.osm", "-U", os.Getenv("DBUSER"), "-W", os.Getenv("DBPASS"))
-	_, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, out)
 	}
 
 	log.Println("Database filled.")
