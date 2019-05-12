@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"database/sql"
-	"fmt"
 	"github.com/spf13/cobra"
+	osmium "github.com/thanosKontos/gravelmap/osmfilter"
+	"github.com/thanosKontos/gravelmap/routing/osm2pgrouting/import"
+	"github.com/thanosKontos/gravelmap/routing/pgrouting/prepare"
 	"log"
 	"os"
-	"os/exec"
 )
 
 // createRoutingDataCommand defines the create routing command.
@@ -35,74 +35,29 @@ func createRoutingDataCommand() *cobra.Command {
 // createRoutingDataCmdRun defines the command run actions.
 func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 	// Filter useless osm tags
-	cmd := exec.Command("osmium", "tags-filter", inputFilename, "w/highway", "-o", "/tmp/filtered_tmp.osm", "--overwrite")
-	_, err := cmd.CombinedOutput()
+	osmiumFilter := osmium.NewOsmium(inputFilename, "/tmp/filtered.osm")
+	err := osmiumFilter.Filter()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	cmd = exec.Command("osmium", "tags-filter", "-i", "/tmp/filtered_tmp.osm", "w/highway=motorway,trunk,motorway_link,trunk_link", "w/access=private", "-o", "/tmp/filtered.osm", "--overwrite")
-	_, err = cmd.CombinedOutput()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	log.Println("OSM data filtered successfully.")
 
-	connStr := fmt.Sprintf(
-		"user=%s dbname=%s password=%s port=%s",
-		os.Getenv("DBUSER"),
-		os.Getenv("DBDEFAULTDBNAME"),
-		os.Getenv("DBPASS"),
-		os.Getenv("DBPORT"),
-	)
-	db, err := sql.Open("postgres", connStr)
+	pgPreparator, err := pgrouting.NewPgRoutingPrep(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), os.Getenv("DBDEFAULTDBNAME"))
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer pgPreparator.Close()
 
-	_, err = db.Exec(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity  WHERE datname = 'routing'`)
-	_, err = db.Exec("DROP DATABASE IF EXISTS " + os.Getenv("DBNAME"))
-	if err != nil {
-		log.Println(err)
-	}
-
-	_, err = db.Exec("CREATE DATABASE " + os.Getenv("DBNAME"))
-	if err != nil {
-		log.Println(err)
-	}
-
-	log.Println("Database created.")
-	db.Close()
-
-	connStr = fmt.Sprintf(
-		"user=%s dbname=%s password=%s port=%s",
-		os.Getenv("DBUSER"),
-		os.Getenv("DBNAME"),
-		os.Getenv("DBPASS"),
-		os.Getenv("DBPORT"),
-	)
-	db, err = sql.Open("postgres", connStr)
+	err = pgPreparator.Prepare()
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Database prepared.")
 
-	_, err = db.Exec("CREATE EXTENSION postGIS")
+	pgImporter := osm2pgrouting.NewOsm2PgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), "/tmp/filtered.osm", tagCostConf)
+	err = pgImporter.Import()
 	if err != nil {
-		log.Println(err)
-	}
-
-	_, err = db.Exec("CREATE EXTENSION pgRouting")
-	if err != nil {
-		log.Println(err)
-	}
-
-	log.Println("Database extensions created.")
-
-	cmd = exec.Command("osm2pgrouting", "-c", tagCostConf, "-p", os.Getenv("DBPORT"), "-d", os.Getenv("DBNAME"), "-f", "/tmp/filtered.osm", "-U", os.Getenv("DBUSER"), "-W", os.Getenv("DBPASS"))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Fatal(err, out)
+		log.Fatal(err)
 	}
 
 	log.Println("Database filled.")

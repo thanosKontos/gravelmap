@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/routing/pgrouting"
+	"github.com/thanosKontos/gravelmap/routing/pgrouting/route"
 	"log"
 	"net/http"
 	"os"

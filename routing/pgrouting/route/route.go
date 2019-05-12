@@ -21,20 +21,24 @@ type wayRow struct {
 }
 
 type PgRouting struct {
-	client *sql.DB
+	routingClient *sql.DB
 }
 
 // NewRouting initialize and return an new PgRouting object.
 func NewPgRouting(DBUser, DBPass, DBName, DBPort string) (*PgRouting, error) {
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", DBUser, DBPass, DBName, DBPort)
-	db, err := sql.Open("postgres", connStr)
+	DB, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PgRouting{
-		client: db,
+		routingClient: DB,
 	}, nil
+}
+
+func (r *PgRouting) Close() error {
+	return r.routingClient.Close()
 }
 
 // Route calculates the routing between 2 points and gives a slice of route legs which is a slice of points.
@@ -62,7 +66,7 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([][]gravelmap.Poi
 	route := make([][]gravelmap.Point, 0)
 	leg := make([]gravelmap.Point, 0)
 
-	rows, err := r.client.Query(query)
+	rows, err := r.routingClient.Query(query)
 	for rows.Next() {
 		var row routeRow
 		if err := rows.Scan(&row.points); err != nil {
@@ -104,7 +108,7 @@ func (r *PgRouting) findClosestWaySourceId(point gravelmap.Point) (string, error
 			ORDER BY distance
 			LIMIT 1;`
 
-	row := r.client.QueryRow(fmt.Sprintf(findSrcSql, point.Lat, point.Lng))
+	row := r.routingClient.QueryRow(fmt.Sprintf(findSrcSql, point.Lat, point.Lng))
 
 	var way wayRow
 	if err := row.Scan(&way.node, &way.distance); err != nil {

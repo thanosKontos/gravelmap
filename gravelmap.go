@@ -14,4 +14,18 @@ type Elevation interface {
 
 type Router interface {
 	Route(pointFrom, pointTo Point) ([][]Point, error)
+	Close() error
+}
+
+type RouterPreparer interface {
+	Prepare() error
+	Close() error
+}
+
+type RouterImporter interface {
+	Import() error
+}
+
+type OsmFilter interface {
+	Filter() error
 }
