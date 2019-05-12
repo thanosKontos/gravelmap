@@ -1,4 +1,4 @@
-package pgrouting
+package routing
 
 import (
 	"database/sql"

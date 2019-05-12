@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/routing/pgrouting/route"
+	routing "github.com/thanosKontos/gravelmap/routing/pgrouting/route"
 	"log"
 	"net/http"
 	"os"
@@ -42,7 +42,7 @@ func createServerCmdRun() error {
 			return
 		}
 
-		pgRouting, err := pgrouting.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
+		pgRouting, err := routing.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
 		if err != nil {
 			log.Fatal(err)
 		}

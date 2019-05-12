@@ -1,4 +1,4 @@
-package osm2pgrouting
+package routing
 
 import (
 	"errors"

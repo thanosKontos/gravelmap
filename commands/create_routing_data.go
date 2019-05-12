@@ -3,8 +3,8 @@ package commands
 import (
 	"github.com/spf13/cobra"
 	osmium "github.com/thanosKontos/gravelmap/osmfilter"
-	"github.com/thanosKontos/gravelmap/routing/osm2pgrouting/import"
-	"github.com/thanosKontos/gravelmap/routing/pgrouting/prepare"
+	routing_import "github.com/thanosKontos/gravelmap/routing/osm2pgrouting/import"
+	routing_prepare "github.com/thanosKontos/gravelmap/routing/pgrouting/prepare"
 	"log"
 	"os"
 )
@@ -42,7 +42,7 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 	}
 	log.Println("OSM data filtered successfully.")
 
-	pgPreparator, err := pgrouting.NewPgRoutingPrep(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), os.Getenv("DBDEFAULTDBNAME"))
+	pgPreparator, err := routing_prepare.NewPgRoutingPrep(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), os.Getenv("DBDEFAULTDBNAME"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 	}
 	log.Println("Database prepared.")
 
-	pgImporter := osm2pgrouting.NewOsm2PgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), "/tmp/filtered.osm", tagCostConf)
+	pgImporter := routing_import.NewOsm2PgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), "/tmp/filtered.osm", tagCostConf)
 	err = pgImporter.Import()
 	if err != nil {
 		log.Fatal(err)
