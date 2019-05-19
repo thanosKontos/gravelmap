@@ -2,22 +2,18 @@ package srtm_ascii
 
 import (
 	"bufio"
-	"errors"
+	"database/sql"
 	"fmt"
-	"math"
+	"github.com/thanosKontos/gravelmap"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 )
 
-// SRTM struct handles SRTM elevation.
-type SRTM struct {
-}
-
-// NewSRTM initialize and return an new SRTM object.
-func NewSRTM() *SRTM {
-	return &SRTM{}
+type ascData struct {
+	lng       float64
+	lat       float64
+	elevation int
 }
 
 type fileInfo struct {
@@ -25,42 +21,112 @@ type fileInfo struct {
 	rowsCnt   int
 	colsCnt   int
 	latMin    float64
+	latMax    float64
 	lngMin    float64
+	lngMax    float64
 	step      float64
 	noDataVal string
 }
 
-// Find finds the elevation for a specific coordinate in meters
-func (SRTM) Find(lat, lng float64) (int64, error) {
-	filename := findFileToQuery(lat, lng)
-	fInfo, err := extractInfoFromFile(filename)
-
-	rowΝο := fInfo.headerCnt + fInfo.rowsCnt - int(math.Round((lat-fInfo.latMin)/fInfo.step))
-	colNo := int(math.Round((lng - fInfo.lngMin) / fInfo.step))
-
-	cmd := exec.Command("awk", fmt.Sprintf("NR == %d {print $%d}", rowΝο, colNo), filename)
-	out, err := cmd.CombinedOutput()
-
-	if err != nil {
-		return 0, err
-	}
-
-	eleStr := strings.Trim(string(out), "\n")
-
-	if eleStr == fInfo.noDataVal {
-		return 0, errors.New("no data available for this point")
-	}
-
-	ele, err := strconv.ParseInt(eleStr, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return ele, nil
+// SRTM struct handles SRTM elevation.
+type SRTM struct {
+	filename string
+	client   *sql.DB
+	logger   gravelmap.Logger
 }
 
-func extractInfoFromFile(filename string) (*fileInfo, error) {
-	file, err := os.Open(filename)
+// NewSRTM initialize and return an new SRTM object.
+func NewSRTM(filename, DBUser, DBPass, DBName, DBPort string, logger gravelmap.Logger) (*SRTM, error) {
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", DBUser, DBPass, DBName, DBPort)
+	DB, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SRTM{
+		filename: filename,
+		client:   DB,
+		logger:   logger,
+	}, nil
+}
+
+func (s *SRTM) Import() error {
+	err := s.createElevationTable()
+	if err != nil {
+		return nil
+	}
+
+	return s.processFile()
+}
+
+func (s *SRTM) processFile() error {
+	info, err := s.extractHeaderInfo()
+	if err != nil {
+		return err
+	}
+
+	err = s.importToDB(info)
+
+	return err
+}
+
+func (s *SRTM) importToDB(info *fileInfo) error {
+	file, err := os.Open(s.filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	lineCnt := 0
+	lat := info.latMax
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		eleData := make([]ascData, 0)
+		lng := info.lngMin
+		lineCnt++
+		if lineCnt <= info.headerCnt {
+			continue
+		}
+
+		lineTxt := scanner.Text()
+		lngElevations := strings.Fields(lineTxt)
+
+		for _, eleStr := range lngElevations {
+			lng += info.step
+			ele, _ := strconv.Atoi(eleStr)
+			eleData = append(eleData, ascData{lng: lng, lat: lat, elevation: ele})
+		}
+
+		lat -= info.step
+
+		s.insertElevations(eleData)
+	}
+
+	return nil
+}
+
+func (s *SRTM) insertElevations(eleData []ascData) error {
+	values := make([]string, 0)
+	for _, e := range eleData {
+		values = append(values, fmt.Sprintf(`('%f', '%f', '%d')`, e.lng, e.lat, e.elevation))
+	}
+
+	insertSQL := fmt.Sprintf(`INSERT INTO elevation ("lng", "lat", "elevation_m") VALUES %s`, strings.Join(values, ", "))
+
+	rst, err := s.client.Exec(insertSQL)
+	if err != nil {
+		s.logger.Error(err)
+		return err
+	}
+
+	r, _ := rst.RowsAffected()
+	s.logger.Info(fmt.Sprintf("%d rows affected", r))
+
+	return nil
+}
+
+func (s *SRTM) extractHeaderInfo() (*fileInfo, error) {
+	file, err := os.Open(s.filename)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +174,9 @@ func extractInfoFromFile(filename string) (*fileInfo, error) {
 		rowsCnt:   fDataRowCount,
 		colsCnt:   fDataColCount,
 		latMin:    fLatMin,
+		latMax:    fLatMin + float64(fDataRowCount)*fstep,
 		lngMin:    fLngMin,
+		lngMax:    fLngMin + float64(fDataColCount)*fstep,
 		step:      fstep,
 		noDataVal: info["NODATA_value"],
 	}
@@ -116,6 +184,14 @@ func extractInfoFromFile(filename string) (*fileInfo, error) {
 	return &fi, nil
 }
 
-func findFileToQuery(lat, lng float64) string {
-	return "/home/tkontos/Downloads/lower_greece_elevation_data/ascii/srtm_41_05.asc"
+func (s *SRTM) createElevationTable() error {
+	_, err := s.client.Exec(`CREATE TABLE IF NOT EXISTS public.elevation
+	(
+		lng double precision,
+		lat double precision,
+		elevation_m integer,
+		PRIMARY KEY(lat, lng)
+	)`)
+
+	return err
 }

@@ -9,7 +9,7 @@ type Point struct {
 }
 
 type Elevation interface {
-	Find(lat, lng float64) (int64, error)
+	Import() error
 }
 
 type Router interface {
@@ -28,4 +28,11 @@ type RouterImporter interface {
 
 type OsmFilter interface {
 	Filter() error
+}
+
+type Logger interface {
+	Info(log interface{})
+	Debug(log interface{})
+	Warning(log interface{})
+	Error(log interface{})
 }
