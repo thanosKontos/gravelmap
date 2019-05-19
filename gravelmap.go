@@ -8,8 +8,16 @@ type Point struct {
 	Lng float64
 }
 
-type Elevation interface {
+type Importer interface {
 	Import() error
+}
+
+type ElevationFinder interface {
+	FindElevation(Point) (float64, error)
+}
+
+type ElevationGrader interface {
+	Grade([]Point) error
 }
 
 type Router interface {
@@ -20,10 +28,6 @@ type Router interface {
 type RouterPreparer interface {
 	Prepare() error
 	Close() error
-}
-
-type RouterImporter interface {
-	Import() error
 }
 
 type OsmFilter interface {
