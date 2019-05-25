@@ -28,7 +28,10 @@ func (g *ElevationGrader) Grade(points []gravelmap.Point) (float64, error) {
 	overallDistance := 0.0
 	elevDiff := 0.0
 	for _, point := range points {
-		elev, _ := g.elevationFinder.FindElevation(point)
+		elev, err := g.elevationFinder.FindElevation(point)
+		if err != nil {
+			return 0.0, errors.New("could not grade because of missing point elevation")
+		}
 
 		if point != prevPoint {
 			distance, _ := g.distanceFinder.Distance(prevPoint, point)

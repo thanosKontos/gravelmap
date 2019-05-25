@@ -8,6 +8,12 @@ type Point struct {
 	Lng float64
 }
 
+type RoutingFeature struct {
+	Type string
+	Coordinates []Point
+	Options struct{ElevationCost float64}
+}
+
 type Importer interface {
 	Import() error
 }
@@ -25,7 +31,7 @@ type ElevationGrader interface {
 }
 
 type Router interface {
-	Route(pointFrom, pointTo Point) ([][]Point, error)
+	Route(pointFrom, pointTo Point) ([]RoutingFeature, error)
 	Close() error
 }
 

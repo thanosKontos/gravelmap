@@ -2,6 +2,7 @@ package srtm_ascii
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/thanosKontos/gravelmap"
 )
@@ -64,7 +65,9 @@ func (s *SRTMElevationFinder) FindElevation(point gravelmap.Point) (float64, err
 
 	var nearbyElevations []nearbyElevation
 	var overallNearbyDistance float64
+	count := 0
 	for rows.Next() {
+		count++
 		var row elevationRow
 		if err := rows.Scan(&row.lng, &row.lat, &row.elevation, &row.distance); err != nil {
 			return 0.0, err
@@ -76,6 +79,10 @@ func (s *SRTMElevationFinder) FindElevation(point gravelmap.Point) (float64, err
 			nearbyElevations = append(nearbyElevations, nearbyElevation{elevation: row.elevation, distance: row.distance})
 			overallNearbyDistance += row.distance
 		}
+	}
+
+	if count < 5 {
+		return 0.0, errors.New("not enough rows to calculate elevation")
 	}
 
 	var overallReversedDistance float64

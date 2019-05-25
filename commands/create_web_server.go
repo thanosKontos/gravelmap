@@ -48,7 +48,7 @@ func createServerCmdRun() error {
 			log.Fatal(err)
 		}
 
-		tripLegs, err := pgRouter.Route(
+		features, err := pgRouter.Route(
 			*pointFrom,
 			*pointTo,
 		)
@@ -59,19 +59,8 @@ func createServerCmdRun() error {
 			return
 		}
 
-		points := make([]string, 0)
-		for _, leg := range tripLegs {
-			for _, point := range leg {
-				points = append(points, fmt.Sprintf("%f,%f", point.Lng, point.Lat))
-			}
-		}
-
-		json, _ := json.Marshal(points)
+		json, _ := json.Marshal(features)
 		fmt.Fprintf(w, string(json))
-	})
-
-	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `frufrejfrureji`)
 	})
 
 	http.ListenAndServe(":8000", nil)

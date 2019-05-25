@@ -9,6 +9,7 @@
             crossorigin="anonymous">
         </script>
         <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+        <script type="text/javascript" src="http://maplib.khtml.org/khtml.maplib/khtml_all.js"> </script>
         <script>
             map = new OpenLayers.Map("mapdiv");
             map.addLayer(new OpenLayers.Layer.OSM());
@@ -21,10 +22,11 @@
 
             let routeFrom = null;
             let routeTo = null;
-            let routeMarkers = new OpenLayers.Layer.Markers("route-markers");
             let startEndMarkers = new OpenLayers.Layer.Markers("start-end-markers");
+            let epsg4326 =  new OpenLayers.Projection("EPSG:4326");
+            let projectTo = map.getProjectionObject();
+            let vectorLayer = new OpenLayers.Layer.Vector("Overlay");
 
-            map.addLayer(routeMarkers);
             map.addLayer(startEndMarkers);
             map.setCenter(centerLonLat, 16);
 
@@ -32,15 +34,14 @@
             $("#clear-btn").on("click", function(e) {
                 e.preventDefault();
 
-                routeMarkers.destroy();
                 startEndMarkers.destroy();
+                vectorLayer.destroy();
 
                 routeFrom = null;
                 routeTo = null;
-                routeMarkers = new OpenLayers.Layer.Markers("route-markers");
                 startEndMarkers = new OpenLayers.Layer.Markers("start-end-markers");
+                vectorLayer = new OpenLayers.Layer.Vector("Overlay");
 
-                map.addLayer(routeMarkers);
                 map.addLayer(startEndMarkers);
             });
 
@@ -63,18 +64,41 @@
 
                 $.ajax({
                     url: "http://localhost:8000/route?from="+routeFrom+"&to="+routeTo,
-                    success: function( result ) {
+                    success: function(result) {
                         $("#debug").html(result);
 
-                        let routePoints = JSON.parse(result);
-                        routePoints.forEach(function(routePoint) {
-                            let pnt = routePoint.split(',');
-                            let lonLat = new OpenLayers.LonLat(pnt[0], pnt[1])
-                                .transform(
-                                    new OpenLayers.Projection("EPSG:4326"),
-                                    map.getProjectionObject()
-                                );
-                            routeMarkers.addMarker(new OpenLayers.Marker(lonLat));
+                        let routeFeatures = JSON.parse(result);
+
+                        routeFeatures.forEach(function(feature) {
+                            let points = [];
+                            feature.Coordinates.forEach(function(point) {
+                                points.push(new OpenLayers.Geometry.Point(point.Lng, point.Lat).transform(epsg4326, projectTo));
+                            });
+
+                            let vector = new OpenLayers.Feature.Vector(
+                                new OpenLayers.Geometry.LineString(points)
+                            );
+
+                            let lineColor = '#000000';
+                            if (feature.Options.ElevationCost < 1) {
+                                lineColor = '#3e874c';
+                            } else if (feature.Options.ElevationCost = 1) {
+                                lineColor = '#000000';
+                            } else if (feature.Options.ElevationCost <= 1.5) {
+                                lineColor = '#42f4a1';
+                            } else if (feature.Options.ElevationCost <= 3) {
+                                lineColor = '#f6ccfc';
+                            } else {
+                                lineColor = '#ff0000';
+                            }
+
+                            vector.style = {
+                                strokeWidth: 3,
+                                strokeColor: lineColor
+                            };
+                            vectorLayer.addFeatures(vector);
+
+                            map.addLayer(vectorLayer);
                         });
                     }
                 });

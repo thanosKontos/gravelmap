@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+const batchSize = 100
+
 type geomRow struct {
 	id   int64
 	geom string
@@ -41,30 +43,30 @@ func createGradeWaysCmdRun() error {
 
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
 	DB, _ := sql.Open("postgres", connStr)
-	SQL := `SELECT gid, st_astext( ST_Transform( the_geom, 4326))
-    FROM ways
-    WHERE 
-	LIMIT 5;`
 
-	SQL = `SELECT
-			gid, ST_AsText(the_geom) as points
-	FROM pgr_dijkstra(
-			'SELECT gid as id, source, target, cost, reverse_cost FROM ways',
-			41808,
-			17338,
-			FALSE
-	) d INNER JOIN ways w ON d.edge = w.gid;`
+	countSQL := `SELECT COUNT(gid) FROM ways WHERE elevation_cost = 1 OR reverse_elevation_cost = 1`
+	row := DB.QueryRow(countSQL)
+	wayCount := 0
+	row.Scan(&wayCount)
 
-	rows, _ := DB.Query(SQL)
-	for rows.Next() {
-		var row geomRow
-		if err := rows.Scan(&row.id, &row.geom); err != nil {
-			return err
-		} else {
-			points, _ := geomToPoints(row.geom)
-			grade, err := eleGrader.Grade(points)
-			if err == nil {
-				fmt.Println(grade)
+	for offset := 0; offset < wayCount; offset = offset+batchSize {
+		SQL := `SELECT gid, st_astext( ST_Transform( the_geom, 4326))
+		FROM ways
+		WHERE elevation_cost = 1 OR reverse_elevation_cost = 1
+		LIMIT %d OFFSET %d;`
+
+		rows, _ := DB.Query(fmt.Sprintf(SQL, batchSize, offset))
+		for rows.Next() {
+			var row geomRow
+			if err := rows.Scan(&row.id, &row.geom); err != nil {
+				return err
+			} else {
+				points, _ := geomToPoints(row.geom)
+				grade, err := eleGrader.Grade(points)
+				if err == nil {
+					updateElevationSQL := fmt.Sprintf(`UPDATE ways SET elevation_cost = %f, reverse_elevation_cost = %f WHERE gid = %d;`, gradeToCost(grade), gradeToCost(-1*grade), row.id)
+					DB.Exec(updateElevationSQL)
+				}
 			}
 		}
 	}
@@ -97,4 +99,24 @@ func geomToPoints(geom string) ([]gravelmap.Point, error) {
 	}
 
 	return points, nil
+}
+
+func gradeToCost(grade float64) float64 {
+	if grade <= 0 {
+		return 0.7
+	}
+
+	if grade <= 5 {
+		return 0.9
+	}
+
+	if grade <= 10 {
+		return 1.5
+	}
+
+	if grade <= 20 {
+		return 3
+	}
+
+	return 5
 }

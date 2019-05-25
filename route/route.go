@@ -12,6 +12,7 @@ import (
 )
 
 type routeRow struct {
+	elevationCost float64
 	points string
 }
 
@@ -43,8 +44,8 @@ func (r *PgRouting) Close() error {
 	return r.routingClient.Close()
 }
 
-// Route calculates the route between 2 points and gives a slice of route legs which is a slice of points.
-func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([][]gravelmap.Point, error) {
+// Route calculates the route between 2 points and gives a slice of trip legs as features.
+func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.RoutingFeature, error) {
 	source, err := r.findClosestWaySourceId(pointFrom)
 	if err != nil {
 		return nil, err
@@ -56,27 +57,29 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([][]gravelmap.Poi
 	}
 
 	query := `SELECT
-			ST_AsText(the_geom) as points
+			elevation_cost, ST_AsText(the_geom) as points
 		FROM pgr_dijkstra(
 			'SELECT gid as id, source, target, cost, reverse_cost FROM ways',
 			%s,
 			%s,
-			FALSE
+			TRUE
 		) d INNER JOIN ways w ON d.edge = w.gid;`
 	query = fmt.Sprintf(query, source, destination)
 
 	r.logger.Debug(query)
 
-	route := make([][]gravelmap.Point, 0)
-	leg := make([]gravelmap.Point, 0)
+	features := make([]gravelmap.RoutingFeature, 0)
 
 	rows, err := r.routingClient.Query(query)
 	for rows.Next() {
+		coordinates := make([]gravelmap.Point, 0)
+		feature := gravelmap.RoutingFeature{}
+
 		var row routeRow
-		if err := rows.Scan(&row.points); err != nil {
+		if err := rows.Scan(&row.elevationCost, &row.points); err != nil {
 			return nil, err
 		} else {
-			leg = make([]gravelmap.Point, 0)
+			coordinates = make([]gravelmap.Point, 0)
 			s := strings.TrimPrefix(row.points, "LINESTRING(")
 			s = strings.TrimSuffix(s, ")")
 			points := strings.Split(s, ",")
@@ -94,14 +97,20 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([][]gravelmap.Poi
 				}
 
 				p := gravelmap.Point{Lat: lat, Lng: lng}
-				leg = append(leg, p)
+				coordinates = append(coordinates, p)
 			}
 		}
 
-		route = append(route, leg)
+		feature = gravelmap.RoutingFeature{
+			Type: "LINESTRING",
+			Coordinates: coordinates,
+			Options: struct{ElevationCost float64}{row.elevationCost},
+		}
+
+		features = append(features, feature)
 	}
 
-	return route, nil
+	return features, nil
 }
 
 func (r *PgRouting) findClosestWaySourceId(point gravelmap.Point) (string, error) {
