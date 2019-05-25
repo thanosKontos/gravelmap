@@ -65,8 +65,6 @@
                 $.ajax({
                     url: "http://localhost:8000/route?from="+routeFrom+"&to="+routeTo,
                     success: function(result) {
-                        $("#debug").html(result);
-
                         let routeFeatures = JSON.parse(result);
 
                         routeFeatures.forEach(function(feature) {
@@ -82,12 +80,12 @@
                             let lineColor = '#000000';
                             if (feature.Options.ElevationCost < 1) {
                                 lineColor = '#3e874c';
-                            } else if (feature.Options.ElevationCost = 1) {
+                            } else if (feature.Options.ElevationCost == 1) {
                                 lineColor = '#000000';
                             } else if (feature.Options.ElevationCost <= 1.5) {
                                 lineColor = '#42f4a1';
                             } else if (feature.Options.ElevationCost <= 3) {
-                                lineColor = '#f6ccfc';
+                                lineColor = '#aa5a5f';
                             } else {
                                 lineColor = '#ff0000';
                             }
