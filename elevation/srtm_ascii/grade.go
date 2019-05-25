@@ -1,22 +1,43 @@
 package srtm_ascii
 
 import (
+	"errors"
 	"github.com/thanosKontos/gravelmap"
 )
 
 type ElevationGrader struct {
 	elevationFinder gravelmap.ElevationFinder
+	distanceFinder  gravelmap.DistanceFinder
 }
 
-// NewSRTM initialize and return an new SRTM object.
-func NewElevationGrader(elevationFinder gravelmap.ElevationFinder) (*ElevationGrader, error) {
+// NewElevationGrader initialize and return an new Elevation Grader object.
+func NewElevationGrader(elevationFinder gravelmap.ElevationFinder, distanceFinder gravelmap.DistanceFinder) (*ElevationGrader, error) {
 	return &ElevationGrader{
 		elevationFinder: elevationFinder,
+		distanceFinder:  distanceFinder,
 	}, nil
 }
 
-func (s *SRTM) Grade(points []gravelmap.Point) error {
+func (g *ElevationGrader) Grade(points []gravelmap.Point) (float64, error) {
+	if len(points) < 2 {
+		return 0.0, errors.New("cannot grade way of one or less points")
+	}
 
+	prevPoint := points[0]
+	prevElev := 0.0
+	overallDistance := 0.0
+	elevDiff := 0.0
+	for _, point := range points {
+		elev, _ := g.elevationFinder.FindElevation(point)
 
-	return nil
+		if point != prevPoint {
+			distance, _ := g.distanceFinder.Distance(prevPoint, point)
+			overallDistance += distance
+			elevDiff += elev - prevElev
+		}
+
+		prevElev = elev
+	}
+
+	return 100 * elevDiff / overallDistance, nil
 }

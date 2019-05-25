@@ -2,14 +2,15 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
-	osmium "github.com/thanosKontos/gravelmap/osmfilter"
-	routing_import "github.com/thanosKontos/gravelmap/routing/osm2pgrouting/import"
-	routing_prepare "github.com/thanosKontos/gravelmap/routing/pgrouting/prepare"
+	"github.com/thanosKontos/gravelmap/cli"
+	"github.com/thanosKontos/gravelmap/osmfilter"
+	"github.com/thanosKontos/gravelmap/routing_import"
+	"github.com/thanosKontos/gravelmap/routing_prepare"
 	"log"
 	"os"
 )
 
-// createRoutingDataCommand defines the create routing command.
+// createRoutingDataCommand defines the create route command.
 func createRoutingDataCommand() *cobra.Command {
 	var (
 		inputFilename string
@@ -18,8 +19,8 @@ func createRoutingDataCommand() *cobra.Command {
 
 	createRoutingDataCmd := &cobra.Command{
 		Use:   "add-data",
-		Short: "add data to routing database",
-		Long:  "manipulate osm data, extract tags and insert to routing database",
+		Short: "add data to route database",
+		Long:  "manipulate osm data, extract tags and insert to route database",
 	}
 
 	createRoutingDataCmd.Flags().StringVar(&inputFilename, "input", "", "The osm input file.")
@@ -35,26 +36,40 @@ func createRoutingDataCommand() *cobra.Command {
 // createRoutingDataCmdRun defines the command run actions.
 func createRoutingDataCmdRun(inputFilename, tagCostConf string) error {
 	// Filter useless osm tags
-	osmiumFilter := osmium.NewOsmium(inputFilename, "/tmp/filtered.osm")
+	osmiumFilter := osmfitler.NewOsmium(inputFilename, "/tmp/filtered.osm")
 	err := osmiumFilter.Filter()
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("OSM data filtered successfully.")
 
-	pgPreparator, err := routing_prepare.NewPgRoutingPrep(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), os.Getenv("DBDEFAULTDBNAME"))
+	gmPreparer, err := routing_prepare.NewGravelmapPreparer(
+		os.Getenv("DBUSER"),
+		os.Getenv("DBPASS"),
+		os.Getenv("DBNAME"),
+		os.Getenv("DBPORT"),
+		os.Getenv("DBDEFAULTDBNAME"),
+		cli.NewCLI(),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer pgPreparator.Close()
+	defer gmPreparer.Close()
 
-	err = pgPreparator.Prepare()
+	err = gmPreparer.Prepare()
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Database prepared.")
 
-	pgImporter := routing_import.NewOsm2PgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), "/tmp/filtered.osm", tagCostConf)
+	pgImporter := routing_import.NewOsm2PgRouting(
+		os.Getenv("DBUSER"),
+		os.Getenv("DBPASS"),
+		os.Getenv("DBNAME"),
+		os.Getenv("DBPORT"),
+		"/tmp/filtered.osm",
+		tagCostConf,
+	)
 	err = pgImporter.Import()
 	if err != nil {
 		log.Fatal(err)

@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-// createRoutingDataCommand defines the create routing command.
+// createRoutingDataCommand defines the create route command.
 func importElevationCommand() *cobra.Command {
 	var (
 		inputFilename string
@@ -16,8 +16,8 @@ func importElevationCommand() *cobra.Command {
 
 	createRoutingDataCmd := &cobra.Command{
 		Use:   "import-elevation",
-		Short: "import elevation data to routing DB",
-		Long:  "import elevation data to routing DB",
+		Short: "import elevation data to route DB",
+		Long:  "import elevation data to route DB",
 	}
 
 	createRoutingDataCmd.Flags().StringVar(&inputFilename, "input", "", "The asc input file.")

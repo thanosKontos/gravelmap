@@ -1,6 +1,6 @@
 package gravelmap
 
-// MinRoutingDistance defines the minimum distance from our start/end points to some point in our routing engine
+// MinRoutingDistance defines the minimum distance from our start/end points to some point in our route engine
 const MinRoutingDistance = 2000
 
 type Point struct {
@@ -16,8 +16,12 @@ type ElevationFinder interface {
 	FindElevation(Point) (float64, error)
 }
 
+type DistanceFinder interface {
+	Distance(pointFrom, pointTo Point) (float64, error)
+}
+
 type ElevationGrader interface {
-	Grade([]Point) error
+	Grade([]Point) (float64, error)
 }
 
 type Router interface {

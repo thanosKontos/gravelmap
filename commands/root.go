@@ -21,6 +21,7 @@ func Execute() {
 	rootCommand.AddCommand(createRoutingDataCommand())
 	rootCommand.AddCommand(createServerCommand())
 	rootCommand.AddCommand(importElevationCommand())
+	rootCommand.AddCommand(createGradeWaysCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -31,7 +32,7 @@ func Execute() {
 func rootCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "gravelmap",
-		Short: "gravelmap is a routing engine made as a composite of other sevices (osmium, postgis and pgrouting)",
-		Long:  "gravelmap is a routing engine made as a composite of other sevices (osmium, postgis and pgrouting)",
+		Short: "gravelmap is a route engine made as a composite of other sevices (osmium, postgis and pgrouting)",
+		Long:  "gravelmap is a route engine made as a composite of other sevices (osmium, postgis and pgrouting)",
 	}
 }

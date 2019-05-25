@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
-	routing "github.com/thanosKontos/gravelmap/routing/pgrouting/route"
+	"github.com/thanosKontos/gravelmap/cli"
+	"github.com/thanosKontos/gravelmap/route"
 	"log"
 	"net/http"
 	"os"
@@ -14,12 +15,12 @@ import (
 	"strings"
 )
 
-// createRoutingDataCommand defines the create routing command.
+// createRoutingDataCommand defines the create route command.
 func createServerCommand() *cobra.Command {
 	createServerCmd := &cobra.Command{
 		Use:   "create-server",
-		Short: "create a simple server to host a test routing website",
-		Long:  "create a simple server to host a test routing website",
+		Short: "create a simple server to host a test route website",
+		Long:  "create a simple server to host a test route website",
 	}
 
 	createServerCmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -42,12 +43,12 @@ func createServerCmdRun() error {
 			return
 		}
 
-		pgRouting, err := routing.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
+		pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), cli.NewCLI())
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		tripLegs, err := pgRouting.Route(
+		tripLegs, err := pgRouter.Route(
 			*pointFrom,
 			*pointTo,
 		)

@@ -1,4 +1,4 @@
-package osmium
+package osmfitler
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package routing
+package route
 
 import (
 	"database/sql"
@@ -22,10 +22,11 @@ type wayRow struct {
 
 type PgRouting struct {
 	routingClient *sql.DB
+	logger        gravelmap.Logger
 }
 
 // NewRouting initialize and return an new PgRouting object.
-func NewPgRouting(DBUser, DBPass, DBName, DBPort string) (*PgRouting, error) {
+func NewPgRouting(DBUser, DBPass, DBName, DBPort string, logger gravelmap.Logger) (*PgRouting, error) {
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", DBUser, DBPass, DBName, DBPort)
 	DB, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -34,6 +35,7 @@ func NewPgRouting(DBUser, DBPass, DBName, DBPort string) (*PgRouting, error) {
 
 	return &PgRouting{
 		routingClient: DB,
+		logger:        logger,
 	}, nil
 }
 
@@ -41,7 +43,7 @@ func (r *PgRouting) Close() error {
 	return r.routingClient.Close()
 }
 
-// Route calculates the routing between 2 points and gives a slice of route legs which is a slice of points.
+// Route calculates the route between 2 points and gives a slice of route legs which is a slice of points.
 func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([][]gravelmap.Point, error) {
 	source, err := r.findClosestWaySourceId(pointFrom)
 	if err != nil {
@@ -62,6 +64,8 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([][]gravelmap.Poi
 			FALSE
 		) d INNER JOIN ways w ON d.edge = w.gid;`
 	query = fmt.Sprintf(query, source, destination)
+
+	r.logger.Debug(query)
 
 	route := make([][]gravelmap.Point, 0)
 	leg := make([]gravelmap.Point, 0)
