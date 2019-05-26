@@ -42,7 +42,12 @@ func (g *Gravelmap) Prepare() error {
 		return err
 	}
 
-	_, err = g.auxClient.Exec("CREATE DATABASE IF NOT EXISTS " + os.Getenv("DBNAME"))
+	_, err = g.auxClient.Exec("DROP DATABASE " + os.Getenv("DBNAME"))
+	if err != nil {
+		g.logger.Info(fmt.Sprintf("database not dropped: %s", err))
+	}
+
+	_, err = g.auxClient.Exec("CREATE DATABASE " + os.Getenv("DBNAME"))
 	if err != nil {
 		g.logger.Info(fmt.Sprintf("database not created: %s", err))
 	}

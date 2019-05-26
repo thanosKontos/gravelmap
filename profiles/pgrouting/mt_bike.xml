@@ -1,43 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <tag_name name="highway" id="1">
-        <tag_value name="track" priority="1" id="101" />
-        <tag_value name="unclassified" priority="2" id="102" />
-        <tag_value name="residential" priority="5" id="103" />
-        <tag_value name="tertiary" priority="5" id="104" />
-        <tag_value name="secondary" priority="5" id="105" />
-        <tag_value name="primary" priority="5" id="106" />
+        <tag_value name="track" priority="1.0" id="101" maxspeed="20" />
+        <tag_value name="unclassified" priority="2.0" id="102" maxspeed="20" />
+        <tag_value name="residential" priority="5.0" id="103" maxspeed="20" />
+        <tag_value name="tertiary" priority="5.0" id="104" maxspeed="20" />
+        <tag_value name="secondary" priority="5.0" id="105" maxspeed="20" />
+        <tag_value name="primary" priority="5.0" id="106" maxspeed="20" />
     </tag_name>
 
-    <tag_name name="surface" id="2">
-        <tag_value name="unpaved" priority="1.5" id="201" />
-        <tag_value name="compacted" priority="1.0" id="202" />
-        <tag_value name="fine_gravel" priority="1.0" id="203" />
-        <tag_value name="gravel" priority="1.0" id="204" />
-        <tag_value name="pebblestone" priority="1.0" id="205" />
-        <tag_value name="dirt" priority="1.0" id="206" />
-        <tag_value name="earth" priority="1.5" id="207" />
-        <tag_value name="grass" priority="1.0" id="208" />
-        <tag_value name="grass_paver" priority="2.0" id="209" />
-        <tag_value name="gravel_turf" priority="2.0" id="210" />
-        <tag_value name="ground" priority="1.0" id="211" />
-        <tag_value name="mud" priority="1.5" id="212" />
-        <tag_value name="sand" priority="1.0" id="213" />
-        <tag_value name="woodchips" priority="1.0" id="214" />
-        <tag_value name="snow" priority="3.0" id="215" />
-        <tag_value name="ice" priority="4.0" id="216" />
-        <tag_value name="salt" priority="5.0" id="217" />
-        <tag_value name="paved" priority="5.0" id="218" />
-        <tag_value name="asphalt" priority="5.0" id="219" />
-        <tag_value name="concrete" priority="5.0" id="220" />
-        <tag_value name="concrete:lanes" priority="5.0" id="221" />
-        <tag_value name="concrete:plates" priority="5.0" id="222" />
-        <tag_value name="paving_stones" priority="3" id="223" />
-        <tag_value name="sett" priority="2.0" id="224" />
-        <tag_value name="unhewn_cobblestone" priority="2.0" id="225" />
-        <tag_value name="cobblestone" priority="2.0" id="226" />
-        <tag_value name="cobblestone:flattened" priority="2.0" id="227" />
-        <tag_value name="metal" priority="2.0" id="228" />
-        <tag_value name="wood" priority="2.0" id="229" />
+    <tag_name name="mtb:scale" id="2">
+        <tag_value name="0" priority="1.0" id="201" maxspeed="20" />
+        <tag_value name="1" priority="1.0" id="202" maxspeed="20" />
+        <tag_value name="2" priority="3.0" id="203" maxspeed="20" />
     </tag_name>
 </configuration>

@@ -79,20 +79,23 @@
 
                             let lineColor = '#000000';
                             if (feature.Options.ElevationCost < 1) {
-                                lineColor = '#3e874c';
+                                lineColor = '#236b31';
                             } else if (feature.Options.ElevationCost == 1) {
                                 lineColor = '#000000';
-                            } else if (feature.Options.ElevationCost <= 1.5) {
-                                lineColor = '#42f4a1';
+                            } else if (feature.Options.ElevationCost <= 1.3) {
+                                lineColor = '#424a9e';
                             } else if (feature.Options.ElevationCost <= 3) {
-                                lineColor = '#aa5a5f';
+                                lineColor = '#ff0207';
+                            } else if (feature.Options.ElevationCost <= 5) {
+                                lineColor = '#d60c10';
                             } else {
-                                lineColor = '#ff0000';
+                                lineColor = '#a81013';
                             }
 
                             vector.style = {
                                 strokeWidth: 3,
-                                strokeColor: lineColor
+                                strokeColor: lineColor,
+                                label: ''+feature.Options.OSMID
                             };
                             vectorLayer.addFeatures(vector);
 

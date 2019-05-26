@@ -22,21 +22,27 @@ type geomRow struct {
 
 // createRoutingDataCommand defines the create route command.
 func createGradeWaysCommand() *cobra.Command {
+	var (
+		OSMIDs string
+	)
+
 	createGradeWaysCmd := &cobra.Command{
 		Use:   "grade-ways",
 		Short: "grade ways in route database",
 		Long:  "grade ways and fill up elevation cost in route database",
 	}
 
+	createGradeWaysCmd.Flags().StringVar(&OSMIDs, "osm_ids", "", "The osm input file.")
+
 	createGradeWaysCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return createGradeWaysCmdRun()
+		return createGradeWaysCmdRun(OSMIDs)
 	}
 
 	return createGradeWaysCmd
 }
 
 // createGradeWaysCmdRun defines the command run actions.
-func createGradeWaysCmdRun() error {
+func createGradeWaysCmdRun(OSMIDs string) error {
 	eleFinder, _ := srtm_ascii.NewElevationFinder(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
 	distanceFinder := distance.NewHaversine()
 	eleGrader, _ := srtm_ascii.NewElevationGrader(eleFinder, distanceFinder)
@@ -44,18 +50,27 @@ func createGradeWaysCmdRun() error {
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
 	DB, _ := sql.Open("postgres", connStr)
 
-	countSQL := `SELECT COUNT(gid) FROM ways WHERE elevation_cost = 1 OR reverse_elevation_cost = 1`
-	row := DB.QueryRow(countSQL)
-	wayCount := 0
-	row.Scan(&wayCount)
+	DB.Exec(`ALTER TABLE ways ADD COLUMN elevation_cost double precision DEFAULT 1;`)
+	DB.Exec(`ALTER TABLE ways ADD COLUMN reverse_elevation_cost double precision DEFAULT 1;`)
 
-	for offset := 0; offset < wayCount; offset = offset+batchSize {
-		SQL := `SELECT gid, st_astext( ST_Transform( the_geom, 4326))
+	rowsCount := 0
+	countSQL := `SELECT COUNT(gid) FROM ways WHERE elevation_cost = 1 OR reverse_elevation_cost = 1`
+	waysSQL := `SELECT gid, st_astext( ST_Transform( the_geom, 4326))
 		FROM ways
 		WHERE elevation_cost = 1 OR reverse_elevation_cost = 1
+ 		ORDER BY gid
 		LIMIT %d OFFSET %d;`
 
-		rows, _ := DB.Query(fmt.Sprintf(SQL, batchSize, offset))
+	if OSMIDs != "" {
+		countSQL = fmt.Sprintf("SELECT COUNT(gid) FROM ways WHERE osm_id IN (%s)", OSMIDs)
+		waysSQL = fmt.Sprintf("SELECT gid, st_astext( ST_Transform( the_geom, 4326)) FROM ways WHERE osm_id IN (%s) ORDER BY gid", OSMIDs) + " LIMIT %d OFFSET %d;"
+	}
+
+	row := DB.QueryRow(countSQL)
+	row.Scan(&rowsCount)
+
+	for offset := 0; offset < rowsCount; offset = offset+batchSize {
+		rows, _ := DB.Query(fmt.Sprintf(waysSQL, batchSize, offset))
 		for rows.Next() {
 			var row geomRow
 			if err := rows.Scan(&row.id, &row.geom); err != nil {
@@ -102,21 +117,25 @@ func geomToPoints(geom string) ([]gravelmap.Point, error) {
 }
 
 func gradeToCost(grade float64) float64 {
-	if grade <= 0 {
+	if grade <= -1 {
 		return 0.7
 	}
 
-	if grade <= 5 {
+	if grade <= 0 {
 		return 0.9
 	}
 
-	if grade <= 10 {
-		return 1.5
+	if grade <= 1 {
+		return 1.3
 	}
 
-	if grade <= 20 {
+	if grade <= 3 {
 		return 3
 	}
 
-	return 5
+	if grade <= 5 {
+		return 5
+	}
+
+	return 10
 }

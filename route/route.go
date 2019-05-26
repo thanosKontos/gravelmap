@@ -12,7 +12,12 @@ import (
 )
 
 type routeRow struct {
+	OSMID int64
+	node int64
+	source int64
+	target int64
 	elevationCost float64
+	reverseElevationCost float64
 	points string
 }
 
@@ -57,9 +62,22 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.Routi
 	}
 
 	query := `SELECT
-			elevation_cost, ST_AsText(the_geom) as points
+			osm_id, node, source, target, elevation_cost, reverse_elevation_cost, ST_AsText(the_geom) as points
 		FROM pgr_dijkstra(
-			'SELECT gid as id, source, target, cost, reverse_cost FROM ways',
+			'SELECT gid as id,
+			source,
+			target, 
+			((CASE WHEN tag_id IN (101,201,202) THEN 1
+				WHEN tag_id = 102 THEN 2
+				WHEN tag_id = 203 THEN 3
+				WHEN tag_id IN (103,104,105,106) THEN 5
+            END)*elevation_cost*length_m) as cost,
+	    	((CASE WHEN tag_id IN (101,201,202) THEN 1
+				WHEN tag_id = 102 THEN 2
+				WHEN tag_id = 203 THEN 3
+				WHEN tag_id IN (103,104,105,106) THEN 5
+            END)*reverse_elevation_cost*length_m) as reverse_cost
+			FROM ways',
 			%s,
 			%s,
 			TRUE
@@ -76,7 +94,7 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.Routi
 		feature := gravelmap.RoutingFeature{}
 
 		var row routeRow
-		if err := rows.Scan(&row.elevationCost, &row.points); err != nil {
+		if err := rows.Scan(&row.OSMID, &row.node, &row.source, &row.target, &row.elevationCost, &row.reverseElevationCost, &row.points); err != nil {
 			return nil, err
 		} else {
 			coordinates = make([]gravelmap.Point, 0)
@@ -101,10 +119,23 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.Routi
 			}
 		}
 
+		var elevationCost float64
+		if row.node == row.source {
+			elevationCost = row.elevationCost
+		} else {
+			elevationCost = row.reverseElevationCost
+		}
+
 		feature = gravelmap.RoutingFeature{
 			Type: "LINESTRING",
 			Coordinates: coordinates,
-			Options: struct{ElevationCost float64}{row.elevationCost},
+			Options: struct{
+				OSMID int64
+				ElevationCost float64
+			}{
+				row.OSMID,
+				elevationCost,
+			},
 		}
 
 		features = append(features, feature)

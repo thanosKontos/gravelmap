@@ -11,7 +11,10 @@ type Point struct {
 type RoutingFeature struct {
 	Type string
 	Coordinates []Point
-	Options struct{ElevationCost float64}
+	Options struct{
+		OSMID int64
+		ElevationCost float64
+	}
 }
 
 type Importer interface {
