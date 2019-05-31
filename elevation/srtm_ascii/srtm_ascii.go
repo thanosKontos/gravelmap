@@ -15,7 +15,7 @@ type SRTM struct {
 
 // NewSRTM initialize and return an new SRTM object.
 func NewSRTM(filename, DBUser, DBPass, DBName, DBPort string, logger gravelmap.Logger) (*SRTM, error) {
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", DBUser, DBPass, DBName, DBPort)
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", DBUser, DBPass, DBName, DBPort)
 	DB, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err

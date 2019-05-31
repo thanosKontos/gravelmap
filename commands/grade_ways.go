@@ -5,20 +5,23 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/elevation/srtm_ascii"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
-const batchSize = 100
+const batchSize = 80
 
 type geomRow struct {
-	id   int64
-	geom string
+	id     int64
+	length float64
+	geom   string
 }
+
+var wg sync.WaitGroup
 
 // createRoutingDataCommand defines the create route command.
 func createGradeWaysCommand() *cobra.Command {
@@ -44,18 +47,21 @@ func createGradeWaysCommand() *cobra.Command {
 // createGradeWaysCmdRun defines the command run actions.
 func createGradeWaysCmdRun(OSMIDs string) error {
 	eleFinder, _ := srtm_ascii.NewElevationFinder(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
-	distanceFinder := distance.NewHaversine()
-	eleGrader, _ := srtm_ascii.NewElevationGrader(eleFinder, distanceFinder)
+	eleGrader, _ := srtm_ascii.NewElevationGrader(eleFinder)
 
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
-	DB, _ := sql.Open("postgres", connStr)
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"))
+	DB, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	DB.Exec(`ALTER TABLE ways ADD COLUMN elevation_cost double precision DEFAULT 1;`)
 	DB.Exec(`ALTER TABLE ways ADD COLUMN reverse_elevation_cost double precision DEFAULT 1;`)
+	DB.Exec(`ALTER TABLE ways ADD COLUMN grade double precision DEFAULT NULL;`)
 
 	rowsCount := 0
 	countSQL := `SELECT COUNT(gid) FROM ways WHERE elevation_cost = 1 OR reverse_elevation_cost = 1`
-	waysSQL := `SELECT gid, st_astext( ST_Transform( the_geom, 4326))
+	waysSQL := `SELECT gid, length_m, st_astext( ST_Transform( the_geom, 4326))
 		FROM ways
 		WHERE elevation_cost = 1 OR reverse_elevation_cost = 1
  		ORDER BY gid
@@ -63,32 +69,53 @@ func createGradeWaysCmdRun(OSMIDs string) error {
 
 	if OSMIDs != "" {
 		countSQL = fmt.Sprintf("SELECT COUNT(gid) FROM ways WHERE osm_id IN (%s)", OSMIDs)
-		waysSQL = fmt.Sprintf("SELECT gid, st_astext( ST_Transform( the_geom, 4326)) FROM ways WHERE osm_id IN (%s) ORDER BY gid", OSMIDs) + " LIMIT %d OFFSET %d;"
+		waysSQL = fmt.Sprintf("SELECT gid, length_m, st_astext( ST_Transform( the_geom, 4326)) FROM ways WHERE osm_id IN (%s) ORDER BY gid", OSMIDs) + " LIMIT %d OFFSET %d;"
 	}
 
 	row := DB.QueryRow(countSQL)
 	row.Scan(&rowsCount)
 
-	for offset := 0; offset < rowsCount; offset = offset+batchSize {
+	for offset := 0; offset < rowsCount; offset = offset + batchSize {
 		rows, _ := DB.Query(fmt.Sprintf(waysSQL, batchSize, offset))
 		for rows.Next() {
 			var row geomRow
-			if err := rows.Scan(&row.id, &row.geom); err != nil {
+			if err := rows.Scan(&row.id, &row.length, &row.geom); err != nil {
 				return err
 			} else {
-				points, _ := geomToPoints(row.geom)
-				grade, err := eleGrader.Grade(points)
-				if err == nil {
-					updateElevationSQL := fmt.Sprintf(`UPDATE ways SET elevation_cost = %f, reverse_elevation_cost = %f WHERE gid = %d;`, gradeToCost(grade), gradeToCost(-1*grade), row.id)
-					DB.Exec(updateElevationSQL)
-				}
+				wg.Add(1)
+				go gradeBatch(row, eleGrader, DB)
 			}
 		}
+
+		wg.Wait()
+		log.Println("batch finished")
 	}
 
 	log.Println("Roads graded.")
 
 	return nil
+}
+
+func gradeBatch(row geomRow, eleGrader *srtm_ascii.ElevationGrader, DB *sql.DB) {
+	defer wg.Done()
+	points, _ := geomToPoints(row.geom)
+	grade, err := eleGrader.Grade(points, row.length)
+	if err == nil {
+		updateElevationSQL := fmt.Sprintf(
+			`UPDATE ways SET elevation_cost = %f, reverse_elevation_cost = %f, grade = %f WHERE gid = %d;`,
+			gradeToCost(grade),
+			gradeToCost(-1*grade),
+			grade,
+			row.id,
+		)
+		_, err := DB.Exec(updateElevationSQL)
+		log.Println(fmt.Sprintf("Grade: %.2f", grade), "%")
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Println(err)
+	}
 }
 
 func geomToPoints(geom string) ([]gravelmap.Point, error) {

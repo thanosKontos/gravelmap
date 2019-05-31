@@ -12,13 +12,13 @@ import (
 )
 
 type routeRow struct {
-	OSMID int64
-	node int64
-	source int64
-	target int64
-	elevationCost float64
+	OSMID                int64
+	node                 int64
+	source               int64
+	target               int64
+	elevationCost        float64
 	reverseElevationCost float64
-	points string
+	points               string
 }
 
 type wayRow struct {
@@ -33,7 +33,7 @@ type PgRouting struct {
 
 // NewRouting initialize and return an new PgRouting object.
 func NewPgRouting(DBUser, DBPass, DBName, DBPort string, logger gravelmap.Logger) (*PgRouting, error) {
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", DBUser, DBPass, DBName, DBPort)
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", DBUser, DBPass, DBName, DBPort)
 	DB, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
@@ -127,10 +127,10 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.Routi
 		}
 
 		feature = gravelmap.RoutingFeature{
-			Type: "LINESTRING",
+			Type:        "LINESTRING",
 			Coordinates: coordinates,
-			Options: struct{
-				OSMID int64
+			Options: struct {
+				OSMID         int64
 				ElevationCost float64
 			}{
 				row.OSMID,

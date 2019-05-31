@@ -18,10 +18,11 @@ func Execute() {
 
 	rootCommand := rootCommand()
 	rootCommand.AddCommand(versionCommand())
-	rootCommand.AddCommand(createRoutingDataCommand())
+	rootCommand.AddCommand(createRoutingDBCommand())
 	rootCommand.AddCommand(createServerCommand())
 	rootCommand.AddCommand(importElevationCommand())
 	rootCommand.AddCommand(createGradeWaysCommand())
+	rootCommand.AddCommand(importRoutingDataCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

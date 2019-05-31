@@ -87,7 +87,11 @@ func (s *SRTM) insertElevations(eleData []ascData) error {
 		values = append(values, fmt.Sprintf(`('%f', '%f', '%d')`, e.lng, e.lat, e.elevation))
 	}
 
-	insertSQL := fmt.Sprintf(`INSERT INTO elevation ("lng", "lat", "elevation_m") VALUES %s`, strings.Join(values, ", "))
+	insertSQL := fmt.Sprintf(`
+INSERT INTO elevation ("lng", "lat", "elevation_m")
+VALUES %s
+ON CONFLICT (lng,lat) DO NOTHING`,
+		strings.Join(values, ", "))
 
 	rst, err := s.client.Exec(insertSQL)
 	if err != nil {

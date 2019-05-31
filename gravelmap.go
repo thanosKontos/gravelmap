@@ -9,10 +9,10 @@ type Point struct {
 }
 
 type RoutingFeature struct {
-	Type string
+	Type        string
 	Coordinates []Point
-	Options struct{
-		OSMID int64
+	Options     struct {
+		OSMID         int64
 		ElevationCost float64
 	}
 }
@@ -30,7 +30,7 @@ type DistanceFinder interface {
 }
 
 type ElevationGrader interface {
-	Grade([]Point) (float64, error)
+	Grade([]Point, float64) (float64, error)
 }
 
 type Router interface {

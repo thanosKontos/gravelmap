@@ -17,13 +17,13 @@ type Gravelmap struct {
 
 // NewRouting initialize and return an new PgRouting object.
 func NewGravelmapPreparer(DBUser, DBPass, DBName, DBPort, AuxDBName string, logger gravelmap.Logger) (*Gravelmap, error) {
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s", DBUser, DBPass, DBName, DBPort)
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", DBUser, DBPass, DBName, DBPort)
 	DB, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
 
-	connStr = fmt.Sprintf("user=%s password=%s dbname=%s port=%s", DBUser, DBPass, AuxDBName, DBPort)
+	connStr = fmt.Sprintf("user=%s password=%s dbname=%s port=%s sslmode=disable", DBUser, DBPass, AuxDBName, DBPort)
 	auxDB, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
