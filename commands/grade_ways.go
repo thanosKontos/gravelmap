@@ -36,7 +36,6 @@ func createGradeWaysCommand() *cobra.Command {
 	}
 
 	createGradeWaysCmd.Flags().StringVar(&OSMIDs, "osm_ids", "", "The osm input file.")
-
 	createGradeWaysCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return createGradeWaysCmdRun(OSMIDs)
 	}
@@ -58,12 +57,17 @@ func createGradeWaysCmdRun(OSMIDs string) error {
 	DB.Exec(`ALTER TABLE ways ADD COLUMN elevation_cost double precision DEFAULT 1;`)
 	DB.Exec(`ALTER TABLE ways ADD COLUMN reverse_elevation_cost double precision DEFAULT 1;`)
 	DB.Exec(`ALTER TABLE ways ADD COLUMN grade double precision DEFAULT NULL;`)
+	DB.Exec(`ALTER TABLE ways ADD COLUMN start_end_elevation text DEFAULT NULL;`)
+	DB.Exec(`ALTER TABLE ways ADD COLUMN way_graded boolean DEFAULT false;`)
+	DB.Exec(`CREATE INDEX idx_way_graded ON ways(way_graded);`)
+
+	log.Println("Added columns")
 
 	rowsCount := 0
-	countSQL := `SELECT COUNT(gid) FROM ways WHERE elevation_cost = 1 OR reverse_elevation_cost = 1`
+	countSQL := `SELECT COUNT(gid) FROM ways WHERE way_graded = false`
 	waysSQL := `SELECT gid, length_m, st_astext( ST_Transform( the_geom, 4326))
 		FROM ways
-		WHERE elevation_cost = 1 OR reverse_elevation_cost = 1
+		WHERE way_graded = false
  		ORDER BY gid
 		LIMIT %d OFFSET %d;`
 
@@ -83,7 +87,7 @@ func createGradeWaysCmdRun(OSMIDs string) error {
 				return err
 			} else {
 				wg.Add(1)
-				go gradeBatch(row, eleGrader, DB)
+				go gradeWay(row, eleGrader, DB)
 			}
 		}
 
@@ -96,24 +100,39 @@ func createGradeWaysCmdRun(OSMIDs string) error {
 	return nil
 }
 
-func gradeBatch(row geomRow, eleGrader *srtm_ascii.ElevationGrader, DB *sql.DB) {
+func gradeWay(row geomRow, eleGrader *srtm_ascii.ElevationGrader, DB *sql.DB) {
 	defer wg.Done()
 	points, _ := geomToPoints(row.geom)
-	grade, err := eleGrader.Grade(points, row.length)
+	wayElevation, err := eleGrader.Grade(points, row.length)
+	updateElevationSQL := ""
 	if err == nil {
-		updateElevationSQL := fmt.Sprintf(
-			`UPDATE ways SET elevation_cost = %f, reverse_elevation_cost = %f, grade = %f WHERE gid = %d;`,
-			gradeToCost(grade),
-			gradeToCost(-1*grade),
-			grade,
+		updateElevationSQL = fmt.Sprintf(
+			`
+UPDATE ways 
+SET elevation_cost = %f,
+reverse_elevation_cost = %f,
+grade = %f,
+start_end_elevation = '%f,%f',
+way_graded = true 
+WHERE gid = %d;`,
+			gradeToCost(wayElevation.Grade),
+			gradeToCost(-1*wayElevation.Grade),
+			wayElevation.Grade,
+			wayElevation.Start,
+			wayElevation.End,
 			row.id,
 		)
-		_, err := DB.Exec(updateElevationSQL)
-		log.Println(fmt.Sprintf("Grade: %.2f", grade), "%")
-		if err != nil {
-			log.Fatal(err)
-		}
 	} else {
+		log.Println(err)
+
+		updateElevationSQL = fmt.Sprintf(
+			`UPDATE ways SET way_graded = true WHERE gid = %d;`,
+			row.id,
+		)
+	}
+
+	_, err = DB.Exec(updateElevationSQL)
+	if err != nil {
 		log.Println(err)
 	}
 }

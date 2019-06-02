@@ -6,19 +6,19 @@ import (
 	"os/exec"
 )
 
-type Osmium struct {
+type osmium struct {
 	inputFilename  string
 	outputFilename string
 }
 
-func NewOsmium(inputFilename, outputFilename string) *Osmium {
-	return &Osmium{
+func NewOsmium(inputFilename, outputFilename string) *osmium {
+	return &osmium{
 		inputFilename:  inputFilename,
 		outputFilename: outputFilename,
 	}
 }
 
-func (o *Osmium) Filter() error {
+func (o *osmium) Filter() error {
 	cmd := exec.Command("osmium", "tags-filter", o.inputFilename, "w/highway", "-o", "/tmp/filtered_tmp.osm", "--overwrite")
 	out, err := cmd.CombinedOutput()
 	if err != nil {

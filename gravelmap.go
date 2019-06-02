@@ -8,13 +8,24 @@ type Point struct {
 	Lng float64
 }
 
-type RoutingFeature struct {
-	Type        string
+type WayElevation struct {
+	Grade  float64
+	Start  float64
+	End    float64
+	Length float64
+}
+
+type RoutingLegElevation struct {
+	Grade float64
+	Start float64
+	End   float64
+}
+
+type RoutingLeg struct {
 	Coordinates []Point
-	Options     struct {
-		OSMID         int64
-		ElevationCost float64
-	}
+	Length      float64
+	Paved       bool
+	Elevation   *RoutingLegElevation
 }
 
 type Importer interface {
@@ -30,11 +41,11 @@ type DistanceFinder interface {
 }
 
 type ElevationGrader interface {
-	Grade([]Point, float64) (float64, error)
+	Grade([]Point, float64) (*WayElevation, error)
 }
 
 type Router interface {
-	Route(pointFrom, pointTo Point) ([]RoutingFeature, error)
+	Route(pointFrom, pointTo Point) ([]RoutingLeg, error)
 	Close() error
 }
 

@@ -12,13 +12,14 @@ import (
 )
 
 type routeRow struct {
-	OSMID                int64
-	node                 int64
-	source               int64
-	target               int64
-	elevationCost        float64
-	reverseElevationCost float64
-	points               string
+	node              int64
+	tagId             int64
+	source            int64
+	target            int64
+	length            float64
+	grade             sql.NullFloat64
+	startEndElevation sql.NullString
+	points            string
 }
 
 type wayRow struct {
@@ -50,7 +51,7 @@ func (r *PgRouting) Close() error {
 }
 
 // Route calculates the route between 2 points and gives a slice of trip legs as features.
-func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.RoutingFeature, error) {
+func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.RoutingLeg, error) {
 	source, err := r.findClosestWaySourceId(pointFrom)
 	if err != nil {
 		return nil, err
@@ -62,7 +63,7 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.Routi
 	}
 
 	query := `SELECT
-			osm_id, node, source, target, elevation_cost, reverse_elevation_cost, ST_AsText(the_geom) as points
+			node, tag_id, source, target, length_m, start_end_elevation, grade, ST_AsText(the_geom) as points
 		FROM pgr_dijkstra(
 			'SELECT gid as id,
 			source,
@@ -86,56 +87,91 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.Routi
 
 	r.logger.Debug(query)
 
-	features := make([]gravelmap.RoutingFeature, 0)
+	features := make([]gravelmap.RoutingLeg, 0)
 
 	rows, err := r.routingClient.Query(query)
 	for rows.Next() {
 		coordinates := make([]gravelmap.Point, 0)
-		feature := gravelmap.RoutingFeature{}
+		feature := gravelmap.RoutingLeg{}
 
 		var row routeRow
-		if err := rows.Scan(&row.OSMID, &row.node, &row.source, &row.target, &row.elevationCost, &row.reverseElevationCost, &row.points); err != nil {
+		err := rows.Scan(&row.node, &row.tagId, &row.source, &row.target, &row.length, &row.startEndElevation, &row.grade, &row.points)
+
+		if err != nil {
 			return nil, err
+		}
+
+		coordinates = make([]gravelmap.Point, 0)
+		s := strings.TrimPrefix(row.points, "LINESTRING(")
+		s = strings.TrimSuffix(s, ")")
+		points := strings.Split(s, ",")
+
+		for _, point := range points {
+			pointsSl := strings.Split(point, " ")
+			lng, err := strconv.ParseFloat(pointsSl[0], 64)
+			if err != nil {
+				return nil, err
+			}
+
+			lat, err := strconv.ParseFloat(pointsSl[1], 64)
+			if err != nil {
+				return nil, err
+			}
+
+			p := gravelmap.Point{Lat: lat, Lng: lng}
+			coordinates = append(coordinates, p)
+		}
+
+		var elevationGrade float64
+		hasElev := false
+		elevationStart := 0.0
+		elevationEnd := 0.0
+		splittedElev := make([]string, 0)
+
+		if row.node == row.source {
+			if !row.grade.Valid {
+				elevationGrade = 1
+			} else {
+				elevationGrade = row.grade.Float64
+				if row.startEndElevation.Valid {
+					splittedElev = strings.Split(row.startEndElevation.String, ",")
+					elevationStart, _ = strconv.ParseFloat(splittedElev[0], 64)
+					elevationEnd, _ = strconv.ParseFloat(splittedElev[1], 64)
+					hasElev = true
+				}
+			}
 		} else {
-			coordinates = make([]gravelmap.Point, 0)
-			s := strings.TrimPrefix(row.points, "LINESTRING(")
-			s = strings.TrimSuffix(s, ")")
-			points := strings.Split(s, ",")
-
-			for _, point := range points {
-				pointsSl := strings.Split(point, " ")
-				lng, err := strconv.ParseFloat(pointsSl[0], 64)
-				if err != nil {
-					return nil, err
+			if !row.grade.Valid {
+				elevationGrade = 1
+			} else {
+				elevationGrade = -1 * row.grade.Float64
+				if row.startEndElevation.Valid {
+					splittedElev = strings.Split(row.startEndElevation.String, ",")
+					elevationStart, _ = strconv.ParseFloat(splittedElev[1], 64)
+					elevationEnd, _ = strconv.ParseFloat(splittedElev[0], 64)
+					hasElev = true
 				}
-
-				lat, err := strconv.ParseFloat(pointsSl[1], 64)
-				if err != nil {
-					return nil, err
-				}
-
-				p := gravelmap.Point{Lat: lat, Lng: lng}
-				coordinates = append(coordinates, p)
 			}
 		}
 
-		var elevationCost float64
-		if row.node == row.source {
-			elevationCost = row.elevationCost
+		if hasElev {
+			feature = gravelmap.RoutingLeg{
+				Coordinates: coordinates,
+				Length:      row.length,
+				Paved:       isRoadPaved(row.tagId),
+				Elevation: &gravelmap.RoutingLegElevation{
+					Grade: elevationGrade,
+					Start: elevationStart,
+					End:   elevationEnd,
+				},
+			}
 		} else {
-			elevationCost = row.reverseElevationCost
-		}
-
-		feature = gravelmap.RoutingFeature{
-			Type:        "LINESTRING",
-			Coordinates: coordinates,
-			Options: struct {
-				OSMID         int64
-				ElevationCost float64
-			}{
-				row.OSMID,
-				elevationCost,
-			},
+			feature = gravelmap.RoutingLeg{
+				Coordinates: coordinates,
+				Length:      row.length,
+				Paved:       isRoadPaved(row.tagId),
+				Elevation:   nil,
+			}
 		}
 
 		features = append(features, feature)
@@ -169,4 +205,14 @@ func (r *PgRouting) findClosestWaySourceId(point gravelmap.Point) (string, error
 	}
 
 	return way.node, nil
+}
+
+func isRoadPaved(wayTagId int64) bool {
+	pavedTagIds := [4]int64{103, 104, 105, 106}
+	for _, p := range pavedTagIds {
+		if p == wayTagId {
+			return true
+		}
+	}
+	return false
 }

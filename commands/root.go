@@ -23,6 +23,7 @@ func Execute() {
 	rootCommand.AddCommand(importElevationCommand())
 	rootCommand.AddCommand(createGradeWaysCommand())
 	rootCommand.AddCommand(importRoutingDataCommand())
+	rootCommand.AddCommand(createFilterOSMCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
