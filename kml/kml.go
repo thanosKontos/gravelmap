@@ -106,7 +106,6 @@ func (k *kml) CreateFromRoute(routingLegs []gravelmap.RoutingLeg) (string, error
 		}
 
 		placemarkCoords := strings.Join(pointsSl, "\n")
-		//placemark := fmt.Sprintf(placeMarkBase, "green-pvd", placemarkCoords)
 		placemark := fmt.Sprintf(placeMarkBase, getToKmlLineColor(leg.Elevation, leg.Paved), placemarkCoords)
 
 		placemarks += placemark

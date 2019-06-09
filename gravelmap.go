@@ -28,6 +28,16 @@ type RoutingLeg struct {
 	Elevation   *RoutingLegElevation
 }
 
+type RoutingMode int
+
+const (
+	Normal RoutingMode = iota
+	OnlyUnpavedAccountElevation
+	OnlyUnpavedHardcore
+	NoLengthCareNormal
+	NoLengthOnlyUnpavedHardcore
+)
+
 type Importer interface {
 	Import() error
 }
@@ -45,7 +55,7 @@ type ElevationGrader interface {
 }
 
 type Router interface {
-	Route(pointFrom, pointTo Point) ([]RoutingLeg, error)
+	Route(pointFrom, pointTo Point, mode RoutingMode) ([]RoutingLeg, error)
 	Close() error
 }
 

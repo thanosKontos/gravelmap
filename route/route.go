@@ -51,7 +51,7 @@ func (r *PgRouting) Close() error {
 }
 
 // Route calculates the route between 2 points and gives a slice of trip legs as features.
-func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.RoutingLeg, error) {
+func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point, mode gravelmap.RoutingMode) ([]gravelmap.RoutingLeg, error) {
 	source, err := r.findClosestWaySourceId(pointFrom)
 	if err != nil {
 		return nil, err
@@ -68,22 +68,13 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point) ([]gravelmap.Routi
 			'SELECT gid as id,
 			source,
 			target, 
-			((CASE WHEN tag_id IN (101,201,202) THEN 1
-				WHEN tag_id = 102 THEN 2
-				WHEN tag_id = 203 THEN 3
-				WHEN tag_id IN (103,104,105,106) THEN 5
-            END)*elevation_cost*length_m) as cost,
-	    	((CASE WHEN tag_id IN (101,201,202) THEN 1
-				WHEN tag_id = 102 THEN 2
-				WHEN tag_id = 203 THEN 3
-				WHEN tag_id IN (103,104,105,106) THEN 5
-            END)*reverse_elevation_cost*length_m) as reverse_cost
+			%s
 			FROM ways',
 			%s,
 			%s,
 			TRUE
 		) d INNER JOIN ways w ON d.edge = w.gid;`
-	query = fmt.Sprintf(query, source, destination)
+	query = fmt.Sprintf(query, costSelectsFromRoutingMode(mode), source, destination)
 
 	r.logger.Debug(query)
 
@@ -215,4 +206,27 @@ func isRoadPaved(wayTagId int64) bool {
 		}
 	}
 	return false
+}
+
+func costSelectsFromRoutingMode(mode gravelmap.RoutingMode) string {
+	normalSurfaceCostFactor := "CASE WHEN tag_id IN (101,201,202) THEN 1 WHEN tag_id = 102 THEN 2 WHEN tag_id = 203 THEN 3 WHEN tag_id IN (103,104,105,106) THEN 5 END"
+	onlyPavedSurfaceCostFactor := "CASE WHEN tag_id IN (101,201,202) THEN 1 WHEN tag_id = 102 THEN 2 WHEN tag_id = 203 THEN 100 WHEN tag_id IN (103,104,105,106) THEN 200 END"
+
+	if mode == gravelmap.Normal {
+		return fmt.Sprintf("((%s)*elevation_cost*length_m) as cost, ((%s)*reverse_elevation_cost*length_m) as reverse_cost", normalSurfaceCostFactor, normalSurfaceCostFactor)
+	}
+
+	if mode == gravelmap.OnlyUnpavedAccountElevation {
+		return fmt.Sprintf("((%s)*elevation_cost*length_m) as cost, ((%s)*reverse_elevation_cost*length_m) as reverse_cost", onlyPavedSurfaceCostFactor, onlyPavedSurfaceCostFactor)
+	}
+
+	if mode == gravelmap.OnlyUnpavedHardcore {
+		return fmt.Sprintf("((%s)*length_m) as cost, ((%s)*length_m) as reverse_cost", onlyPavedSurfaceCostFactor, onlyPavedSurfaceCostFactor)
+	}
+
+	if mode == gravelmap.NoLengthCareNormal {
+		return fmt.Sprintf("((%s)*elevation_cost*length_m) as cost, ((%s)*reverse_elevation_cost) as reverse_cost", normalSurfaceCostFactor, normalSurfaceCostFactor)
+	}
+
+	return fmt.Sprintf("(%s) as cost, (%s) as reverse_cost", onlyPavedSurfaceCostFactor, onlyPavedSurfaceCostFactor)
 }

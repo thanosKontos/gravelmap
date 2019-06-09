@@ -12,6 +12,13 @@
             <p>Total incline: <strong id="incline"></strong></p>
             <a id="download-kml" href="#">Download KML</a>
         </div>
+        <select id="routing_mode">
+            <option value="normal">Normal routing</option>
+            <option value="only_unpaved_account_elevation">Only unpaved (account elevation)</option>
+            <option value="only_unpaved_hardcore">Only unpaved (hardcode)</option>
+            <option value="no_length_care_normal">I don't care about the length</option>
+            <option value="no_length_care_unpaved_hardcore">I don't care about the length (nor elevation)</option>
+        </select>
 
         <script
             src="https://code.jquery.com/jquery-3.4.1.min.js"
@@ -61,6 +68,7 @@
                 let toProjection = new OpenLayers.Projection("EPSG:4326");
                 let event_point = map.getLonLatFromPixel(e.xy);
                 let lonlat = map.getLonLatFromPixel(e.xy).transform(map.getProjectionObject(), toProjection);
+                let routing_mode = 'normal';
 
                 if (routeFrom === null) {
                     routeFrom = lonlat.lat + "," + lonlat.lon;
@@ -68,6 +76,8 @@
                 } else {
                     routeTo = lonlat.lat + "," + lonlat.lon;
                     startEndMarkers.addMarker(new OpenLayers.Marker(event_point, new OpenLayers.Icon('green-marker.png')));
+
+                    routing_mode = $('#routing_mode').val()
                 }
 
                 if (routeFrom === null || routeTo === null) {
@@ -75,7 +85,7 @@
                 }
 
                 $.ajax({
-                    url: "http://localhost:8000/route?from="+routeFrom+"&to="+routeTo,
+                    url: "http://localhost:8000/route?from="+routeFrom+"&to="+routeTo+'&routing_mode='+routing_mode,
                     success: function(result) {
                         $('#chart-container').show();
                         let chartData = [];

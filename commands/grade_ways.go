@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-const batchSize = 80
+const batchSize = 500
 
 type geomRow struct {
 	id     int64
@@ -65,43 +65,52 @@ func createGradeWaysCmdRun(OSMIDs string) error {
 
 	rowsCount := 0
 	countSQL := `SELECT COUNT(gid) FROM ways WHERE way_graded = false`
-	waysSQL := `SELECT gid, length_m, st_astext( ST_Transform( the_geom, 4326))
+	waysSQL := `SELECT %s
 		FROM ways
 		WHERE way_graded = false
  		ORDER BY gid
-		LIMIT %d OFFSET %d;`
+		LIMIT %d`
 
 	if OSMIDs != "" {
 		countSQL = fmt.Sprintf("SELECT COUNT(gid) FROM ways WHERE osm_id IN (%s)", OSMIDs)
-		waysSQL = fmt.Sprintf("SELECT gid, length_m, st_astext( ST_Transform( the_geom, 4326)) FROM ways WHERE osm_id IN (%s) ORDER BY gid", OSMIDs) + " LIMIT %d OFFSET %d;"
+		waysSQL = fmt.Sprintf("SELECT %s FROM ways WHERE osm_id IN (%s) ORDER BY gid", OSMIDs) + " LIMIT %d"
 	}
 
 	row := DB.QueryRow(countSQL)
 	row.Scan(&rowsCount)
 
 	for offset := 0; offset < rowsCount; offset = offset + batchSize {
-		rows, _ := DB.Query(fmt.Sprintf(waysSQL, batchSize, offset))
-		for rows.Next() {
-			var row geomRow
-			if err := rows.Scan(&row.id, &row.length, &row.geom); err != nil {
-				return err
-			} else {
-				wg.Add(1)
-				go gradeWay(row, eleGrader, DB)
-			}
-		}
+		selectSQL := fmt.Sprintf(waysSQL, "gid, length_m, st_astext( ST_Transform( the_geom, 4326))", batchSize)
+		onlyGidSelectSQL := fmt.Sprintf(waysSQL, "gid", batchSize)
+		rows, _ := DB.Query(selectSQL)
+		_, err = DB.Exec("UPDATE ways SET way_graded = true WHERE gid IN (" + onlyGidSelectSQL + ")")
 
-		wg.Wait()
-		log.Println("batch finished")
+		wg.Add(1)
+		go gradeBatch(rows, eleGrader, DB)
 	}
 
+	wg.Wait()
 	log.Println("Roads graded.")
 
 	return nil
 }
 
-func gradeWay(row geomRow, eleGrader *srtm_ascii.ElevationGrader, DB *sql.DB) {
+func gradeBatch(rows *sql.Rows, eleGrader *srtm_ascii.ElevationGrader, DB *sql.DB) {
 	defer wg.Done()
+
+	for rows.Next() {
+		var row geomRow
+		err := rows.Scan(&row.id, &row.length, &row.geom)
+
+		if err == nil {
+			gradeWay(row, eleGrader, DB)
+		}
+	}
+
+	log.Println("batch finished")
+}
+
+func gradeWay(row geomRow, eleGrader *srtm_ascii.ElevationGrader, DB *sql.DB) {
 	points, _ := geomToPoints(row.geom)
 	wayElevation, err := eleGrader.Grade(points, row.length)
 	updateElevationSQL := ""
@@ -112,8 +121,7 @@ UPDATE ways
 SET elevation_cost = %f,
 reverse_elevation_cost = %f,
 grade = %f,
-start_end_elevation = '%f,%f',
-way_graded = true 
+start_end_elevation = '%f,%f'
 WHERE gid = %d;`,
 			gradeToCost(wayElevation.Grade),
 			gradeToCost(-1*wayElevation.Grade),
@@ -122,17 +130,12 @@ WHERE gid = %d;`,
 			wayElevation.End,
 			row.id,
 		)
+
+		_, err = DB.Exec(updateElevationSQL)
+		if err != nil {
+			log.Println(err)
+		}
 	} else {
-		log.Println(err)
-
-		updateElevationSQL = fmt.Sprintf(
-			`UPDATE ways SET way_graded = true WHERE gid = %d;`,
-			row.id,
-		)
-	}
-
-	_, err = DB.Exec(updateElevationSQL)
-	if err != nil {
 		log.Println(err)
 	}
 }

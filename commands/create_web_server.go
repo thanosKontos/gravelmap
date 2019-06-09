@@ -120,6 +120,25 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var mode gravelmap.RoutingMode
+	modeParam, ok := r.URL.Query()["routing_mode"]
+	if !ok {
+		mode = gravelmap.Normal
+	} else {
+		switch modeParam[0] {
+		case "only_unpaved_account_elevation":
+			mode = gravelmap.OnlyUnpavedAccountElevation
+		case "only_unpaved_hardcore":
+			mode = gravelmap.OnlyUnpavedHardcore
+		case "no_length_care_normal":
+			mode = gravelmap.NoLengthCareNormal
+		case "no_length_care_unpaved_hardcore":
+			mode = gravelmap.NoLengthOnlyUnpavedHardcore
+		default:
+			mode = gravelmap.Normal
+		}
+	}
+
 	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), cli.NewCLI())
 	if err != nil {
 		log.Fatal(err)
@@ -128,6 +147,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 	features, err := pgRouter.Route(
 		*pointFrom,
 		*pointTo,
+		mode,
 	)
 	if err != nil {
 		w.WriteHeader(500)
@@ -152,6 +172,25 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var mode gravelmap.RoutingMode
+	modeParam, ok := r.URL.Query()["routing_mode"]
+	if !ok {
+		mode = gravelmap.Normal
+	} else {
+		switch modeParam[0] {
+		case "only_unpaved_account_elevation":
+			mode = gravelmap.OnlyUnpavedAccountElevation
+		case "only_unpaved_hardcore":
+			mode = gravelmap.OnlyUnpavedHardcore
+		case "no_length_care_normal":
+			mode = gravelmap.NoLengthCareNormal
+		case "no_length_care_unpaved_hardcore":
+			mode = gravelmap.NoLengthOnlyUnpavedHardcore
+		default:
+			mode = gravelmap.Normal
+		}
+	}
+
 	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), cli.NewCLI())
 	if err != nil {
 		log.Fatal(err)
@@ -160,6 +199,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request) {
 	features, err := pgRouter.Route(
 		*pointFrom,
 		*pointTo,
+		mode,
 	)
 	if err != nil {
 		w.WriteHeader(500)

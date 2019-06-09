@@ -38,24 +38,17 @@ func NewElevationFinder(DBUser, DBPass, DBName, DBPort string) (*SRTMElevationFi
 }
 
 func (s *SRTMElevationFinder) FindElevation(point gravelmap.Point) (float64, error) {
-	ptElevationSQL := `SELECT *,
-    ST_Distance(ST_GeogFromText(CONCAT('SRID=4326;POINT(', lng, ' ', lat,')')), ST_GeogFromText('SRID=4326;POINT(%f %f)')) as distance
-	FROM elevation
-	WHERE lat >= %f
-	AND lat <= %f
-	AND lng >= %f
-	AND lng <= %f
-	ORDER BY distance
-	LIMIT 5;`
+	ptElevationSQL := `SELECT lng, lat, elevation_m, ST_Distance('SRID=4326;POINT(%f %f)'::geometry, geom) as distance
+FROM elevation
+ORDER BY geom <-> 'SRID=4326;POINT(%f %f)'::geometry
+LIMIT 5;`
 
 	ptElevationSQL = fmt.Sprintf(
 		ptElevationSQL,
 		point.Lng,
 		point.Lat,
-		point.Lat-0.001,
-		point.Lat+0.001,
-		point.Lng-0.001,
-		point.Lng+0.001,
+		point.Lng,
+		point.Lat,
 	)
 
 	rows, err := s.client.Query(ptElevationSQL)
@@ -71,7 +64,7 @@ func (s *SRTMElevationFinder) FindElevation(point gravelmap.Point) (float64, err
 		if err := rows.Scan(&row.lng, &row.lat, &row.elevation, &row.distance); err != nil {
 			return 0.0, err
 		} else {
-			if row.distance > 30 {
+			if row.distance > 35 {
 				continue
 			}
 
@@ -80,7 +73,7 @@ func (s *SRTMElevationFinder) FindElevation(point gravelmap.Point) (float64, err
 			count++
 		}
 	}
-	if count < 5 {
+	if count < 4 {
 		return 0.0, errors.New("not enough rows to calculate elevation")
 	}
 

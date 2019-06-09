@@ -29,7 +29,7 @@ type fileInfo struct {
 func (s *SRTM) Import() error {
 	err := s.createElevationTable()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return s.processFile()
@@ -84,11 +84,11 @@ func (s *SRTM) importToDB(info *fileInfo) error {
 func (s *SRTM) insertElevations(eleData []ascData) error {
 	values := make([]string, 0)
 	for _, e := range eleData {
-		values = append(values, fmt.Sprintf(`('%f', '%f', '%d')`, e.lng, e.lat, e.elevation))
+		values = append(values, fmt.Sprintf(`('%f', '%f', '%d', ST_SetSRID(ST_MakePoint(%f,%f),4326))`, e.lng, e.lat, e.elevation, e.lng, e.lat))
 	}
 
 	insertSQL := fmt.Sprintf(`
-INSERT INTO elevation ("lng", "lat", "elevation_m")
+INSERT INTO elevation ("lng", "lat", "elevation_m", "geom")
 VALUES %s
 ON CONFLICT (lng,lat) DO NOTHING`,
 		strings.Join(values, ", "))
@@ -170,8 +170,10 @@ func (s *SRTM) createElevationTable() error {
 		lng double precision,
 		lat double precision,
 		elevation_m integer,
+		geom geometry(POINT,4326),
 		PRIMARY KEY(lat, lng)
 	)`)
+	s.client.Exec(`CREATE INDEX idx_elev_geom ON elevation using GIST(geom)`)
 
 	return err
 }
