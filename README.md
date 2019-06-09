@@ -22,19 +22,40 @@ cd gravelmap
 env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap version
 ```
 
-## Import data
+## Import OSM data
 
-Example of building and running in Ubuntu x64
-
-```bash
-env GOOS=linux GOARCH=amd64 go build -o ~/gravelmap/gravelmap cmd/main.go && ~/gravelmap/gravelmap add-data --input /path/to/some/osm/attiki.osm --database routing --tag-cost-config profiles/pgrouting/mt_bike.xml
-```
-
-## Use server
+The command below will use osm2pgrouting in order to add ways to the DB. It reads only extracted OSM XML files at the moment.
 
 ```bash
-env GOOS=linux GOARCH=amd64 go build -o ~/gravelmap/gravelmap cmd/main.go && ~/gravelmap/gravelmap create-server
+env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap import-osm --tag-cost-config profiles/pgrouting_mt_bike.xml --input /path/to/osm/greece_E21N37.osm
 ```
 
-Open example_webasite.html to test routing
+## Import elevation data
 
+The command below will import the elevation file into the database. It reads only ascii SRTM files at the moment.
+
+```bash
+env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap import-elevation --input /path/to/asc/N37E021.asc
+```
+
+## Apply elevation cost to OSM data
+
+If you have ran the import OSM and import elevation for a part of the earth, then you will need to grade the ways in terms of elevation
+
+```bash
+env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap grade-ways
+```
+
+## Create web-server
+
+This is not part of the actual toolkit. It is just an example of how you may use the data from the above commands.
+
+Plus is a nice way for me to debug the result in a nice interface.
+
+```bash
+env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap create-server
+```
+
+Open example_website.html to test routing
+
+![](resources/example_website.png)
