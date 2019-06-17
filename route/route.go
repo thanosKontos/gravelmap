@@ -28,6 +28,11 @@ type wayRow struct {
 	distance string
 }
 
+type routeEdges struct {
+	source      string
+	destination string
+}
+
 type PgRouting struct {
 	routingClient *sql.DB
 	logger        gravelmap.Logger
@@ -55,21 +60,10 @@ func (r *PgRouting) Close() error {
 func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point, mode gravelmap.RoutingMode) ([]gravelmap.RoutingLeg, error) {
 	start := time.Now()
 
-	sourceCh := make(chan string, 1)
-	destCh := make(chan string, 1)
-
-	go func() {
-		source, _ := r.findClosestWaySourceId(pointFrom)
-		sourceCh <- source
-	}()
-
-	go func() {
-		destination, _ := r.findClosestWaySourceId(pointTo)
-		destCh <- destination
-	}()
-
-	source := <-sourceCh
-	destination := <-destCh
+	routeEdges, err := r.findEdgeIdsFromPoints(pointFrom, pointTo)
+	if err != nil {
+		return nil, err
+	}
 
 	query := `SELECT
 			node, tag_id, source, target, length_m, start_end_elevation, grade, ST_AsText(the_geom) as points
@@ -83,7 +77,7 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point, mode gravelmap.Rou
 			%s,
 			TRUE
 		) d INNER JOIN ways w ON d.edge = w.gid;`
-	query = fmt.Sprintf(query, costSelectsFromRoutingMode(mode), source, destination)
+	query = fmt.Sprintf(query, costSelectsFromRoutingMode(mode), routeEdges.source, routeEdges.destination)
 
 	r.logger.Debug(query)
 
@@ -183,6 +177,48 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point, mode gravelmap.Rou
 	r.logger.Debug(fmt.Sprintf("Took %s", time.Since(start)))
 
 	return features, nil
+}
+
+func (r *PgRouting) findEdgeIdsFromPoints(pointFrom, pointTo gravelmap.Point) (*routeEdges, error) {
+	sourceCh := make(chan string, 1)
+	sourceErrCh := make(chan error, 1)
+	destCh := make(chan string, 1)
+	destErrCh := make(chan error, 1)
+
+	go func() {
+		source, err := r.findClosestWaySourceId(pointFrom)
+		if err != nil {
+			sourceErrCh <- err
+		} else {
+			sourceCh <- source
+		}
+		close(sourceErrCh)
+		close(sourceCh)
+	}()
+
+	go func() {
+		destination, err := r.findClosestWaySourceId(pointTo)
+		if err != nil {
+			destErrCh <- err
+		} else {
+			destCh <- destination
+		}
+		close(destErrCh)
+		close(destCh)
+	}()
+
+	source := <-sourceCh
+	destination := <-destCh
+	sourceErr := <-sourceErrCh
+	destErr := <-destErrCh
+	if sourceErr != nil {
+		return nil, sourceErr
+	}
+	if destErr != nil {
+		return nil, destErr
+	}
+
+	return &routeEdges{source:source, destination:destination}, nil
 }
 
 func (r *PgRouting) findClosestWaySourceId(point gravelmap.Point) (string, error) {
