@@ -5,30 +5,30 @@ import (
 	"time"
 )
 
-type CLI struct {
+type debugCLI struct {
 }
 
-// NewCLI initialize and return an new CLI object.
-func NewCLI() *CLI {
-	return &CLI{}
+// NewDebugCLI initialize and return an new DebugCLI object.
+func NewDebugCLI() *debugCLI {
+	return &debugCLI{}
 }
 
-func (CLI) Debug(log interface{}) {
+func (debugCLI) Debug(log interface{}) {
 	t := time.Now().Format("2006/01/02 15:04:05")
 	fmt.Println(t, log)
 }
 
-func (CLI) Info(log interface{}) {
+func (debugCLI) Info(log interface{}) {
 	t := time.Now().Format("2006/01/02 15:04:05")
 	fmt.Println(t, log)
 }
 
-func (CLI) Warning(log interface{}) {
+func (debugCLI) Warning(log interface{}) {
 	t := time.Now().Format("2006/01/02 15:04:05")
 	fmt.Println(t, log)
 }
 
-func (CLI) Error(log interface{}) {
+func (debugCLI) Error(log interface{}) {
 	t := time.Now().Format("2006/01/02 15:04:05")
 	fmt.Println(t, log)
 }

@@ -34,6 +34,7 @@ const (
 	Normal RoutingMode = iota
 	OnlyUnpavedAccountElevation
 	OnlyUnpavedHardcore
+	NoLengthCareEasiest
 	NoLengthCareNormal
 	NoLengthOnlyUnpavedHardcore
 )
@@ -52,6 +53,10 @@ type DistanceFinder interface {
 
 type ElevationGrader interface {
 	Grade([]Point, float64) (*WayElevation, error)
+}
+
+type WayGrader interface {
+	GradeWays() error
 }
 
 type Router interface {

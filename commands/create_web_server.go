@@ -132,6 +132,8 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 			mode = gravelmap.OnlyUnpavedHardcore
 		case "no_length_care_normal":
 			mode = gravelmap.NoLengthCareNormal
+		case "easiest":
+			mode = gravelmap.NoLengthCareEasiest
 		case "no_length_care_unpaved_hardcore":
 			mode = gravelmap.NoLengthOnlyUnpavedHardcore
 		default:
@@ -139,7 +141,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), cli.NewCLI())
+	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), cli.NewDebugCLI())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -184,6 +186,8 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request) {
 			mode = gravelmap.OnlyUnpavedHardcore
 		case "no_length_care_normal":
 			mode = gravelmap.NoLengthCareNormal
+		case "easiest":
+			mode = gravelmap.NoLengthCareEasiest
 		case "no_length_care_unpaved_hardcore":
 			mode = gravelmap.NoLengthOnlyUnpavedHardcore
 		default:
@@ -191,7 +195,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), cli.NewCLI())
+	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), logger)
 	if err != nil {
 		log.Fatal(err)
 	}

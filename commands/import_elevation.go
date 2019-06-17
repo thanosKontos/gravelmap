@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/thanosKontos/gravelmap/cli"
 	"github.com/thanosKontos/gravelmap/elevation/srtm_ascii"
 	"log"
 	"os"
@@ -37,7 +36,7 @@ func importElevationCmdRun(inputFilename string) error {
 		os.Getenv("DBPASS"),
 		os.Getenv("DBNAME"),
 		os.Getenv("DBPORT"),
-		cli.NewCLI(),
+		logger,
 	)
 	if err != nil {
 		log.Fatal(err)

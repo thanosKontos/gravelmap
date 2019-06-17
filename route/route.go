@@ -7,6 +7,7 @@ import (
 	"github.com/thanosKontos/gravelmap"
 	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -52,15 +53,23 @@ func (r *PgRouting) Close() error {
 
 // Route calculates the route between 2 points and gives a slice of trip legs as features.
 func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point, mode gravelmap.RoutingMode) ([]gravelmap.RoutingLeg, error) {
-	source, err := r.findClosestWaySourceId(pointFrom)
-	if err != nil {
-		return nil, err
-	}
+	start := time.Now()
 
-	destination, err := r.findClosestWaySourceId(pointTo)
-	if err != nil {
-		return nil, err
-	}
+	sourceCh := make(chan string, 1)
+	destCh := make(chan string, 1)
+
+	go func() {
+		source, _ := r.findClosestWaySourceId(pointFrom)
+		sourceCh <- source
+	}()
+
+	go func() {
+		destination, _ := r.findClosestWaySourceId(pointTo)
+		destCh <- destination
+	}()
+
+	source := <-sourceCh
+	destination := <-destCh
 
 	query := `SELECT
 			node, tag_id, source, target, length_m, start_end_elevation, grade, ST_AsText(the_geom) as points
@@ -81,6 +90,9 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point, mode gravelmap.Rou
 	features := make([]gravelmap.RoutingLeg, 0)
 
 	rows, err := r.routingClient.Query(query)
+	if err != nil {
+		return nil, err
+	}
 	for rows.Next() {
 		coordinates := make([]gravelmap.Point, 0)
 		feature := gravelmap.RoutingLeg{}
@@ -168,6 +180,8 @@ func (r *PgRouting) Route(pointFrom, pointTo gravelmap.Point, mode gravelmap.Rou
 		features = append(features, feature)
 	}
 
+	r.logger.Debug(fmt.Sprintf("Took %s", time.Since(start)))
+
 	return features, nil
 }
 
@@ -225,7 +239,11 @@ func costSelectsFromRoutingMode(mode gravelmap.RoutingMode) string {
 	}
 
 	if mode == gravelmap.NoLengthCareNormal {
-		return fmt.Sprintf("((%s)*elevation_cost*length_m) as cost, ((%s)*reverse_elevation_cost) as reverse_cost", normalSurfaceCostFactor, normalSurfaceCostFactor)
+		return fmt.Sprintf("((%s)*elevation_cost) as cost, ((%s)*reverse_elevation_cost) as reverse_cost", normalSurfaceCostFactor, normalSurfaceCostFactor)
+	}
+
+	if mode == gravelmap.NoLengthCareEasiest {
+		return "elevation_cost*5 as cost, reverse_elevation_cost*5 as reverse_cost"
 	}
 
 	return fmt.Sprintf("(%s) as cost, (%s) as reverse_cost", onlyPavedSurfaceCostFactor, onlyPavedSurfaceCostFactor)

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/thanosKontos/gravelmap/cli"
 	"github.com/thanosKontos/gravelmap/routing_prepare"
 	"log"
 	"os"
@@ -31,7 +30,7 @@ func createRoutingDBCmdRun() error {
 		os.Getenv("DBNAME"),
 		os.Getenv("DBPORT"),
 		os.Getenv("DBDEFAULTDBNAME"),
-		cli.NewCLI(),
+		logger,
 	)
 	if err != nil {
 		log.Fatal(err)
