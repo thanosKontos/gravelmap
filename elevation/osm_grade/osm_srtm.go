@@ -73,7 +73,7 @@ func (og *srtmOsmGrader) GradeWays() error {
 
 	if len(og.OSMIDs) > 0 {
 		countSQL = fmt.Sprintf("SELECT COUNT(gid) FROM ways WHERE osm_id IN (%s)", strings.Join(og.OSMIDs, ","))
-		waysSQL = fmt.Sprintf("SELECT %s FROM ways WHERE osm_id IN (%s) ORDER BY gid", strings.Join(og.OSMIDs, ",")) + " LIMIT %d"
+		waysSQL = "SELECT %s FROM ways " + fmt.Sprintf("WHERE osm_id IN (%s) ORDER BY gid", strings.Join(og.OSMIDs, ",")) + " LIMIT %d"
 	}
 
 	row := og.client.QueryRow(countSQL)
