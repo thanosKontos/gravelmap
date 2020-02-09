@@ -30,13 +30,17 @@ func createFilterOSMCommand() *cobra.Command {
 
 // createRoutingDBCmdRun defines the command run actions.
 func createfilterOSMCmdRun(inputFilename, outputFilename string) error {
+	if inputFilename == "" || outputFilename == "" {
+		log.Fatalln("please specify input and output files")
+	}
+
 	osmium := osmfitler.NewOsmium(inputFilename, outputFilename)
 	err := osmium.Filter()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println("Database prepared.")
+	log.Println("OSM file prepared.")
 
 	return nil
 }
