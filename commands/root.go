@@ -29,6 +29,8 @@ func Execute() {
 	rootCommand.AddCommand(importRoutingDataCommand())
 	rootCommand.AddCommand(createFilterOSMCommand())
 	rootCommand.AddCommand(dijkstraCommand())
+	rootCommand.AddCommand(osmParserCommand())
+	//rootCommand.AddCommand(binaryFileCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
