@@ -88,4 +88,3 @@ func writeNextBytes(file *os.File, bytes []byte) {
 	}
 
 }
-

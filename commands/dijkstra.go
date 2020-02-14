@@ -19,7 +19,7 @@ type Node struct {
 }
 
 type NodeUsage struct {
-	ID int64
+	ID    int64
 	Count int
 }
 
@@ -78,7 +78,6 @@ func dijkstraCommand() *cobra.Command {
 
 			logNodes(db, OSMFilename)
 			fmt.Println("Done logging nodes")
-
 
 			f, err := os.Open(OSMFilename)
 			if err != nil {
@@ -255,7 +254,6 @@ func logNodes(db *memdb.MemDB, filename string) {
 						nd := &NodeUsage{nodeID, 1}
 						wtTxn.Insert("node_usage", nd)
 					} else {
-
 
 						newCnt := raw.(*NodeUsage).Count + 1
 						nd := &NodeUsage{nodeID, newCnt}
