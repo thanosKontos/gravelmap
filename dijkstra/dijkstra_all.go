@@ -21,7 +21,7 @@ func (g *Graph) postSetupEvaluateAll(src, dest int) (BestPaths, error) {
 		if current.distance > g.best {
 			continue
 		}
-		for v, dist := range current.arcs {
+		for v, dist := range current.Arcs {
 			//If the arc has better access, than the current best, update the Vertex being touched
 			if (current.distance+dist < g.Verticies[v].distance) ||
 				(current.distance+dist == g.Verticies[v].distance && !g.Verticies[v].containsBest(current.ID)) {

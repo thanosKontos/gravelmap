@@ -28,9 +28,10 @@ func Execute() {
 	rootCommand.AddCommand(createGradeWaysCommand())
 	rootCommand.AddCommand(importRoutingDataCommand())
 	rootCommand.AddCommand(createFilterOSMCommand())
-	rootCommand.AddCommand(dijkstraCommand())
+	rootCommand.AddCommand(dijkstraPocCommand())
 	rootCommand.AddCommand(osmParserCommand())
-	//rootCommand.AddCommand(binaryFileCommand())
+	rootCommand.AddCommand(binaryFileCommand())
+	rootCommand.AddCommand(searchCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

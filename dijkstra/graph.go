@@ -52,7 +52,7 @@ func (g *Graph) GetVertex(ID int) (*Vertex, error) {
 
 func (g Graph) validate() error {
 	for _, v := range g.Verticies {
-		for a := range v.arcs {
+		for a := range v.Arcs {
 			if a >= len(g.Verticies) || (g.Verticies[a].ID == 0 && a != 0) {
 				return errors.New(fmt.Sprint("Graph validation error;", "Vertex ", a, " referenced in arcs by Vertex ", v.ID))
 			}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 
+	"encoding/gob"
 	"github.com/hashicorp/go-memdb"
 	"github.com/qedus/osmpbf"
 	"github.com/spf13/cobra"
@@ -24,9 +25,9 @@ type OsmNodeCount struct {
 }
 
 // dijkstraCommand defines the version command.
-func dijkstraCommand() *cobra.Command {
+func dijkstraPocCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "dijkstra",
+		Use:   "dijkstra-poc",
 		Short: "a dijkstra test",
 		Long:  "a dijkstra test",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -179,6 +180,17 @@ func dijkstraCommand() *cobra.Command {
 			}
 
 			fmt.Println("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
+
+			dataFile, err := os.Create("_files/graph.gob")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			dataEncoder := gob.NewEncoder(dataFile)
+			dataEncoder.Encode(&graph)
+
+			dataFile.Close()
 
 			//rdTxn := db.Txn(false)
 			//raw, _ := rdTxn.First("edge_node", "id", 26171771)

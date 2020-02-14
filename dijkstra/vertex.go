@@ -9,12 +9,12 @@ type Vertex struct {
 	distance      int64
 	bestVerticies []int
 	//A set of all weights to the nodes in the map
-	arcs map[int]int64
+	Arcs map[int]int64
 }
 
 //NewVertex creates a new vertex
 func NewVertex(ID int) *Vertex {
-	return &Vertex{ID: ID, bestVerticies: []int{-1}, arcs: map[int]int64{}}
+	return &Vertex{ID: ID, bestVerticies: []int{-1}, Arcs: map[int]int64{}}
 }
 
 //AddVerticies adds the listed verticies to the graph, overwrites any existing
@@ -45,10 +45,10 @@ func (v *Vertex) containsBest(id int) bool {
 // Vertex in the graph. Note that AddArc will overwrite any existing distance set
 // if there is already an arc set to Destination.
 func (v *Vertex) AddArc(Destination int, Distance int64) {
-	if v.arcs == nil {
-		v.arcs = map[int]int64{}
+	if v.Arcs == nil {
+		v.Arcs = map[int]int64{}
 	}
-	v.arcs[Destination] = Distance
+	v.Arcs[Destination] = Distance
 }
 
 /*
@@ -61,10 +61,10 @@ func (v *Vertex) RemoveArc(Destination int) {
 
 //GetArc gets the specified arc to Destination, bool is false if no arc found
 func (v *Vertex) GetArc(Destination int) (distance int64, ok bool) {
-	if v.arcs == nil {
+	if v.Arcs == nil {
 		return 0, false
 	}
 	//idk why but doesn't work on one line?
-	distance, ok = v.arcs[Destination]
+	distance, ok = v.Arcs[Destination]
 	return
 }
