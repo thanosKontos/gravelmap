@@ -13,12 +13,12 @@ import (
 	"github.com/thanosKontos/gravelmap/dijkstra"
 )
 
-type Node struct {
-	OldID int64
-	NewID int
+type EdgeNode struct {
+	OsmNdID int64
+	GmNdID  int
 }
 
-type NodeUsage struct {
+type OsmNodeCount struct {
 	ID    int64
 	Count int
 }
@@ -30,12 +30,23 @@ func dijkstraCommand() *cobra.Command {
 		Short: "a dijkstra test",
 		Long:  "a dijkstra test",
 		Run: func(cmd *cobra.Command, args []string) {
+
+
+			//var latlngs = []maps.LatLng{{Lat: 39.87709, Lng: 32.74713}, {Lat: 39.87709, Lng: 32.74787}, {Lat: 39.87653, Lng: 32.74746}}
+			//encoded := maps.Encode(latlngs)
+
+			//decode, _ := maps.DecodePolyline("ynkrFq|zfE?sCnBrA")
+			//fmt.Println(decode)
+			//os.Exit(0)
+
+
+
 			graph := dijkstra.NewGraph()
 
 			schema := &memdb.DBSchema{
 				Tables: map[string]*memdb.TableSchema{
-					"node_usage": &memdb.TableSchema{
-						Name: "node_usage",
+					"osm_node_count": &memdb.TableSchema{
+						Name: "osm_node_count",
 						Indexes: map[string]*memdb.IndexSchema{
 							"id": &memdb.IndexSchema{
 								Name:    "id",
@@ -49,18 +60,18 @@ func dijkstraCommand() *cobra.Command {
 							},
 						},
 					},
-					"node": &memdb.TableSchema{
-						Name: "node",
+					"edge_node": &memdb.TableSchema{
+						Name: "edge_node",
 						Indexes: map[string]*memdb.IndexSchema{
 							"id": &memdb.IndexSchema{
 								Name:    "id",
 								Unique:  true,
-								Indexer: &memdb.IntFieldIndex{Field: "OldID"},
+								Indexer: &memdb.IntFieldIndex{Field: "OsmNdID"},
 							},
 							"new_id": &memdb.IndexSchema{
 								Name:    "new_id",
 								Unique:  true,
-								Indexer: &memdb.IntFieldIndex{Field: "NewID"},
+								Indexer: &memdb.IntFieldIndex{Field: "GmNdID"},
 							},
 						},
 					},
@@ -73,7 +84,7 @@ func dijkstraCommand() *cobra.Command {
 				panic(err)
 			}
 
-			//"/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
+			//OSMFilename := "/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
 			OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
 
 			logNodes(db, OSMFilename)
@@ -118,12 +129,12 @@ func dijkstraCommand() *cobra.Command {
 
 							rdTxn := db.Txn(false)
 
-							raw, _ := rdTxn.First("node_usage", "id", nd)
+							raw, _ := rdTxn.First("osm_node_count", "id", nd)
 							rdTxn.Abort()
 
 							if raw != nil {
-								if raw.(*NodeUsage).Count > 1 {
-									intersections = append(intersections, raw.(*NodeUsage).ID)
+								if raw.(*OsmNodeCount).Count > 1 {
+									intersections = append(intersections, raw.(*OsmNodeCount).ID)
 								}
 							}
 						}
@@ -134,17 +145,17 @@ func dijkstraCommand() *cobra.Command {
 						var newIntersectionIDs []int
 						for _, isnNd := range intersections {
 							rdTxn := db.Txn(false)
-							raw, _ := rdTxn.First("node", "id", isnNd)
+							raw, _ := rdTxn.First("edge_node", "id", isnNd)
 							rdTxn.Abort()
 
 							if raw == nil {
 								autoInc++
-								nd := &Node{isnNd, autoInc}
-								wtTxn.Insert("node", nd)
+								nd := &EdgeNode{isnNd, autoInc}
+								wtTxn.Insert("edge_node", nd)
 
 								newIntersectionIDs = append(newIntersectionIDs, autoInc)
 							} else {
-								newIntersectionIDs = append(newIntersectionIDs, raw.(*Node).NewID)
+								newIntersectionIDs = append(newIntersectionIDs, raw.(*EdgeNode).GmNdID)
 							}
 						}
 
@@ -170,17 +181,17 @@ func dijkstraCommand() *cobra.Command {
 			fmt.Println("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
 
 			//rdTxn := db.Txn(false)
-			//raw, _ := rdTxn.First("node", "id", 26171771)
+			//raw, _ := rdTxn.First("edge_node", "id", 26171771)
 			//rdTxn.Abort()
 			//if raw != nil {
-			//	fmt.Println(raw.(*Node).NewID)
+			//	fmt.Println(raw.(*EdgeNode).GmNdID)
 			//}
 			//
 			//rdTxn = db.Txn(false)
-			//raw, _ = rdTxn.First("node", "id", 26207142)
+			//raw, _ = rdTxn.First("edge_node", "id", 26207142)
 			//rdTxn.Abort()
 			//if raw != nil {
-			//	fmt.Println(raw.(*Node).NewID)
+			//	fmt.Println(raw.(*EdgeNode).GmNdID)
 			//}
 
 			best, err := graph.Shortest(2173, 2201)
@@ -247,17 +258,17 @@ func logNodes(db *memdb.MemDB, filename string) {
 
 				for _, nodeID := range v.NodeIDs {
 					rdTxn := db.Txn(false)
-					raw, err := rdTxn.First("node_usage", "id", nodeID)
+					raw, err := rdTxn.First("osm_node_count", "id", nodeID)
 					rdTxn.Abort()
 
 					if err == nil && raw == nil {
-						nd := &NodeUsage{nodeID, 1}
-						wtTxn.Insert("node_usage", nd)
+						nd := &OsmNodeCount{nodeID, 1}
+						wtTxn.Insert("osm_node_count", nd)
 					} else {
 
-						newCnt := raw.(*NodeUsage).Count + 1
-						nd := &NodeUsage{nodeID, newCnt}
-						wtTxn.Insert("node_usage", nd)
+						newCnt := raw.(*OsmNodeCount).Count + 1
+						nd := &OsmNodeCount{nodeID, newCnt}
+						wtTxn.Insert("osm_node_count", nd)
 					}
 				}
 
