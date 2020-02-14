@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	//"unsafe"
 
 	"github.com/hashicorp/go-memdb"
 	"github.com/qedus/osmpbf"
@@ -78,7 +77,6 @@ func dijkstraCommand() *cobra.Command {
 			OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
 
 			logNodes(db, OSMFilename)
-
 			fmt.Println("Done logging nodes")
 
 
@@ -99,7 +97,8 @@ func dijkstraCommand() *cobra.Command {
 				log.Fatal(err)
 			}
 
-			var autoInc int = 0
+			var autoInc = 0
+			var lastAddedVertex = 0
 			var nc, wc, rc uint64
 			for {
 				if v, err := d.Decode(); err == io.EOF {
@@ -133,7 +132,6 @@ func dijkstraCommand() *cobra.Command {
 						// Now reform the intersections to new ids
 						wtTxn := db.Txn(true)
 
-
 						var newIntersectionIDs []int
 						for _, isnNd := range intersections {
 							rdTxn := db.Txn(false)
@@ -153,14 +151,10 @@ func dijkstraCommand() *cobra.Command {
 
 						wtTxn.Commit()
 
-						addIntersectionsToGraph(graph, newIntersectionIDs)
-
-						best, err := graph.Shortest(1, 2)
-						if err != nil{
-							fmt.Println(wc)
-							log.Fatal(err)
+						vtx := addIntersectionsToGraph(graph, newIntersectionIDs, lastAddedVertex)
+						if vtx != -1 {
+							lastAddedVertex = vtx
 						}
-						fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
 
 						// Process Way v.
 
@@ -176,72 +170,52 @@ func dijkstraCommand() *cobra.Command {
 
 			fmt.Println("Nodes: %d, Ways: %d, Relations: %d\n", nc, wc, rc)
 
-			//2946311229
-			//1434184704
-			//
 			//rdTxn := db.Txn(false)
-			//raw, _ := rdTxn.First("node", "id", 2566122878)
+			//raw, _ := rdTxn.First("node", "id", 26171771)
 			//rdTxn.Abort()
 			//if raw != nil {
 			//	fmt.Println(raw.(*Node).NewID)
 			//}
-			//
-			//
 			//
 			//rdTxn = db.Txn(false)
-			//raw, _ = rdTxn.First("node", "id", 26171765)
+			//raw, _ = rdTxn.First("node", "id", 26207142)
 			//rdTxn.Abort()
 			//if raw != nil {
 			//	fmt.Println(raw.(*Node).NewID)
 			//}
 
+			best, err := graph.Shortest(2173, 2201)
 
-
-
-			//
-			//best, err := graph.Shortest(80156, 279292021)
-
-
-			////Add the verticies
-			//graph.AddVertex(1111)
-			//graph.AddVertex(1112)
-			//graph.AddVertex(1113)
-			//graph.AddVertex(1114)
-			//graph.AddVertex(1115)
-			//
-			////Add the arcs
-			//graph.AddArc(1111,1112,4)
-			//graph.AddArc(1111,1115,3)
-			//graph.AddArc(1111,1114,10)
-			//graph.AddArc(1112,1113,4)
-			//graph.AddArc(1113,1114,4)
-			//graph.AddArc(1115,1114,5)
-			//
-			//best, err := graph.Shortest(1, 2)
-			//if err != nil{
-			//	log.Fatal(err)
-			//}
-			//fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
+			fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
 		},
 	}
 }
 
-func addIntersectionsToGraph(graph *dijkstra.Graph, intersections []int) {
+func addIntersectionsToGraph(graph *dijkstra.Graph, intersections []int, previousLastAddedVertex int) int {
 	previous := 0
-	for i, isn := range intersections {
+	lastAddedVertex := -1
 
-		//fmt.Println("added vertex", isn)
-		graph.AddVertex(isn)
+	for i, isn := range intersections {
+		if isn > previousLastAddedVertex || previousLastAddedVertex == 0 {
+			//fmt.Println("added vertex", isn, "with previously added vertex", previousLastAddedVertex)
+			graph.AddVertex(isn)
+
+			lastAddedVertex = isn
+		}
 
 		if i == 0 {
 			previous = isn
 		} else {
-			//fmt.Println("added arc", isn, previous)
+			//fmt.Println(fmt.Sprintf("graph.AddArc(%d, %d, 1)", isn, previous))
 
 			graph.AddArc(isn, previous, 1)
 			graph.AddArc(previous, isn, 1)
 		}
 	}
+
+	//fmt.Println(lastAddedVertex)
+
+	return lastAddedVertex
 }
 
 func logNodes(db *memdb.MemDB, filename string) {
