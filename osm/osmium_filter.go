@@ -1,4 +1,4 @@
-package osmfitler
+package osm
 
 import (
 	"errors"

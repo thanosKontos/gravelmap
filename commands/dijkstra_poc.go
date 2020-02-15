@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"encoding/gob"
+
 	"github.com/hashicorp/go-memdb"
 	"github.com/qedus/osmpbf"
 	"github.com/spf13/cobra"
@@ -31,7 +32,6 @@ func dijkstraPocCommand() *cobra.Command {
 		Short: "a dijkstra test",
 		Long:  "a dijkstra test",
 		Run: func(cmd *cobra.Command, args []string) {
-
 
 			//var latlngs = []maps.LatLng{{Lat: 39.87709, Lng: 32.74713}, {Lat: 39.87709, Lng: 32.74787}, {Lat: 39.87653, Lng: 32.74746}}
 			//encoded := maps.Encode(latlngs)

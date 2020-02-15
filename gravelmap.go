@@ -93,3 +93,16 @@ type Logger interface {
 	Warning(log interface{})
 	Error(log interface{})
 }
+
+type OsmNode struct {
+	NdID int64
+}
+
+type OsmWay struct {
+	WayId int64
+	NdIds []int64
+}
+
+type OsmIterator interface {
+	Iterate() (chan OsmNode, chan OsmWay)
+}
