@@ -13,6 +13,7 @@ import (
 	"github.com/qedus/osmpbf"
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap/dijkstra"
+	"github.com/thanosKontos/gravelmap/prepare"
 )
 
 type EdgeNode struct {
@@ -32,6 +33,8 @@ func dijkstraPocCommand() *cobra.Command {
 		Short: "a dijkstra test",
 		Long:  "a dijkstra test",
 		Run: func(cmd *cobra.Command, args []string) {
+			//OSMFilename := "/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
+			OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
 
 			//var latlngs = []maps.LatLng{{Lat: 39.87709, Lng: 32.74713}, {Lat: 39.87709, Lng: 32.74787}, {Lat: 39.87653, Lng: 32.74746}}
 			//encoded := maps.Encode(latlngs)
@@ -41,26 +44,14 @@ func dijkstraPocCommand() *cobra.Command {
 			//os.Exit(0)
 
 
-
 			graph := dijkstra.NewGraph()
+
+			edge := prepare.NewEdge(OSMFilename)
+			edge.Prepare()
+
 
 			schema := &memdb.DBSchema{
 				Tables: map[string]*memdb.TableSchema{
-					"osm_node_count": &memdb.TableSchema{
-						Name: "osm_node_count",
-						Indexes: map[string]*memdb.IndexSchema{
-							"id": &memdb.IndexSchema{
-								Name:    "id",
-								Unique:  true,
-								Indexer: &memdb.IntFieldIndex{Field: "ID"},
-							},
-							"count": &memdb.IndexSchema{
-								Name:    "count",
-								Unique:  true,
-								Indexer: &memdb.IntFieldIndex{Field: "Count"},
-							},
-						},
-					},
 					"edge_node": &memdb.TableSchema{
 						Name: "edge_node",
 						Indexes: map[string]*memdb.IndexSchema{
@@ -85,11 +76,8 @@ func dijkstraPocCommand() *cobra.Command {
 				panic(err)
 			}
 
-			//OSMFilename := "/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
-			OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
-
-			logNodes(db, OSMFilename)
-			fmt.Println("Done logging nodes")
+			//logNodes(db, OSMFilename)
+			//fmt.Println("Done logging nodes")
 
 			f, err := os.Open(OSMFilename)
 			if err != nil {
@@ -128,15 +116,8 @@ func dijkstraPocCommand() *cobra.Command {
 								continue
 							}
 
-							rdTxn := db.Txn(false)
-
-							raw, _ := rdTxn.First("osm_node_count", "id", nd)
-							rdTxn.Abort()
-
-							if raw != nil {
-								if raw.(*OsmNodeCount).Count > 1 {
-									intersections = append(intersections, raw.(*OsmNodeCount).ID)
-								}
+							if edge.IsEdge(nd) {
+								intersections = append(intersections, nd)
 							}
 						}
 
@@ -238,54 +219,4 @@ func addIntersectionsToGraph(graph *dijkstra.Graph, intersections []int, previou
 	//fmt.Println(lastAddedVertex)
 
 	return lastAddedVertex
-}
-
-func logNodes(db *memdb.MemDB, filename string) {
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	d := osmpbf.NewDecoder(f)
-
-	// use more memory from the start, it is faster
-	d.SetBufferSize(osmpbf.MaxBlobSize)
-
-	// start decoding with several goroutines, it is faster
-	err = d.Start(runtime.GOMAXPROCS(-1))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for {
-		if v, err := d.Decode(); err == io.EOF {
-			break
-		} else if err != nil {
-			log.Fatal(err)
-		} else {
-			switch v := v.(type) {
-			case *osmpbf.Way:
-				wtTxn := db.Txn(true)
-
-				for _, nodeID := range v.NodeIDs {
-					rdTxn := db.Txn(false)
-					raw, err := rdTxn.First("osm_node_count", "id", nodeID)
-					rdTxn.Abort()
-
-					if err == nil && raw == nil {
-						nd := &OsmNodeCount{nodeID, 1}
-						wtTxn.Insert("osm_node_count", nd)
-					} else {
-
-						newCnt := raw.(*OsmNodeCount).Count + 1
-						nd := &OsmNodeCount{nodeID, newCnt}
-						wtTxn.Insert("osm_node_count", nd)
-					}
-				}
-
-				wtTxn.Commit()
-			}
-		}
-	}
 }
