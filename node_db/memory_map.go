@@ -1,6 +1,8 @@
 package node_db
 
-import "github.com/thanosKontos/gravelmap"
+import (
+	"github.com/thanosKontos/gravelmap"
+)
 
 type NodeMap map[int64]*gravelmap.NodeOsm2GM
 

@@ -14,6 +14,11 @@ type NodeOsm2GMReaderWriter interface {
 	Read(osmNdID int64) *NodeOsm2GM
 }
 
+type GMNode struct {
+	ID int32
+	Point
+}
+
 // Point represents a single point on earth
 type Point struct {
 	Lat float64

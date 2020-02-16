@@ -30,7 +30,6 @@ func Execute() {
 	rootCommand.AddCommand(createFilterOSMCommand())
 	rootCommand.AddCommand(dijkstraPocCommand())
 	rootCommand.AddCommand(osmParserCommand())
-	rootCommand.AddCommand(binaryFileCommand())
 	rootCommand.AddCommand(searchCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

@@ -1,7 +1,6 @@
 package prepare
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -68,15 +67,12 @@ func (g *graph) Prepare () {
 			}
 		}
 	}
+}
 
-
-	fmt.Println("graph created")
-	best, err := g.graph.Shortest(1, 2173)
-
-	fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
-
-	//best, err = g.graph.Shortest(1150183, 1150708)
-	//fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
+// TODO this is incorrect. Need to create an abstraction in GM domain and return this instead
+// But will leave this technical debt for the POC
+func (g *graph) GetGraph () *dijkstra.Graph {
+	return g.graph
 }
 
 func (g *graph) getEdge (nd int64) *gravelmap.NodeOsm2GM {
