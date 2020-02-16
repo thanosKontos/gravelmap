@@ -16,13 +16,14 @@ type graph struct {
 	osmFilename string
 	graph *dijkstra.Graph
 	nodeDB *memdb.MemDB
+	nodeDB2 map[int64]*Node
 }
 
-func NewGraph(osmFilename string, nodeDB *memdb.MemDB) *graph {
+func NewGraph(osmFilename string, nodeDB2 map[int64]*Node) *graph {
 	return &graph{
 		osmFilename: osmFilename,
 		graph: dijkstra.NewGraph(),
-		nodeDB: nodeDB,
+		nodeDB2: nodeDB2,
 	}
 }
 
@@ -60,7 +61,7 @@ func (g *graph) Prepare () {
 						intersections = append(intersections, edge.NewID)
 					}
 				}
-//fmt.Println(intersections)
+
 				vtx := g.addIntersectionsToGraph(intersections, lastAddedVertex)
 				if vtx != -1 {
 					lastAddedVertex = vtx
@@ -72,24 +73,30 @@ func (g *graph) Prepare () {
 	//best, err := g.graph.Shortest(2173, 2201)
 	//best, err := g.graph.Shortest(1, 2)
 	//best, err := g.graph.Shortest(214768, 214762)
-	best, err := g.graph.Shortest(214425, 2)
+	best, err := g.graph.Shortest(206199, 2)
 
 	fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
 }
 
 func (g *graph) getEdge (nd int64) *Node {
-	rdTxn := g.nodeDB.Txn(false)
-
-	raw, _ := rdTxn.First(nodeTable, "id", nd)
-	rdTxn.Abort()
-
-	if raw != nil {
-		if raw.(*Node).Occurences > 1 {
-			return raw.(*Node)
-		}
+	node := g.nodeDB2[nd]
+	if node.Occurences > 1 {
+		return node
 	}
 
 	return nil
+	//rdTxn := g.nodeDB.Txn(false)
+	//
+	//raw, _ := rdTxn.First(nodeTable, "id", nd)
+	//rdTxn.Abort()
+	//
+	//if raw != nil {
+	//	if raw.(*Node).Occurences > 1 {
+	//		return raw.(*Node)
+	//	}
+	//}
+	//
+	//return nil
 }
 
 func (g *graph) addIntersectionsToGraph(intersections []int, previousLastAddedVertex int) int {
@@ -99,20 +106,16 @@ func (g *graph) addIntersectionsToGraph(intersections []int, previousLastAddedVe
 	for i, isn := range intersections {
 		if isn > previousLastAddedVertex || previousLastAddedVertex == 0 {
 			g.graph.AddVertex(isn)
-			//fmt.Println(isn)
 			lastAddedVertex = isn
 		}
 
 		if i == 0 {
 			previous = isn
 		} else {
-			//fmt.Println(isn, previous)
 			g.graph.AddArc(isn, previous, 1)
 			g.graph.AddArc(previous, isn, 1)
 		}
 	}
-
-	//fmt.Println(lastAddedVertex)
 
 	return lastAddedVertex
 }

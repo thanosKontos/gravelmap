@@ -1,7 +1,6 @@
 package prepare
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -16,6 +15,7 @@ const nodeTable = "gravelmap_osm_gm_node"
 type nodeQuery struct {
 	osmFilename  string
 	db *memdb.MemDB
+	db2 map[int64]*Node
 }
 
 type Node struct {
@@ -50,13 +50,16 @@ func NewNodeQuerer(osmFilename string) *nodeQuery {
 		panic(err)
 	}
 
+	db2 := make(map[int64]*Node)
+
 	return &nodeQuery{
 		osmFilename:  osmFilename,
 		db: db,
+		db2: db2,
 	}
 }
 
-func (n *nodeQuery) Prepare () *memdb.MemDB {
+func (n *nodeQuery) Prepare () map[int64]*Node {
 	f, err := os.Open(n.osmFilename)
 	if err != nil {
 		log.Fatal(err)
@@ -89,23 +92,25 @@ func (n *nodeQuery) Prepare () *memdb.MemDB {
 
 					if ndDB == nil {
 						inc++
-						if osmNdID == 20974186 {
-							fmt.Println(osmNdID, inc, 1)
-						}
+						//if osmNdID == 20974186 {
+						//	fmt.Println(osmNdID, inc, 1)
+						//}
 
-						wtTxn := n.db.Txn(true)
-						wtTxn.Insert(nodeTable, &Node{osmNdID, inc, 1})
-						wtTxn.Commit()
+						n.db2[osmNdID] = &Node{osmNdID, inc, 1}
+						//wtTxn := n.db.Txn(true)
+						//wtTxn.Insert(nodeTable, &Node{osmNdID, inc, 1})
+						//wtTxn.Commit()
 					} else {
 						newCnt := ndDB.Occurences + 1
 
-						if osmNdID == 20974186 {
-							fmt.Println(ndDB.OldID, ndDB.NewID, newCnt)
-						}
+						//if osmNdID == 20974186 {
+						//	fmt.Println(ndDB.OldID, ndDB.NewID, newCnt)
+						//}
 
-						wtTxn := n.db.Txn(true)
-						wtTxn.Insert(nodeTable, &Node{ndDB.OldID, ndDB.NewID, newCnt})
-						wtTxn.Commit()
+						n.db2[osmNdID] = &Node{ndDB.OldID, ndDB.NewID, newCnt}
+						//wtTxn := n.db.Txn(true)
+						//wtTxn.Insert(nodeTable, &Node{ndDB.OldID, ndDB.NewID, newCnt})
+						//wtTxn.Commit()
 					}
 				}
 
@@ -114,11 +119,12 @@ func (n *nodeQuery) Prepare () *memdb.MemDB {
 		}
 	}
 
-	return n.db
+	return n.db2
+	//return n.db
 }
 
 func (n *nodeQuery) getOSMNodeIDFromDB(osmNdID int64) *Node {
-	rdTxn := n.db.Txn(false)
+	/*rdTxn := n.db.Txn(false)
 	rs, _ := rdTxn.First(nodeTable, "id", osmNdID)
 	rdTxn.Abort()
 
@@ -130,6 +136,12 @@ func (n *nodeQuery) getOSMNodeIDFromDB(osmNdID int64) *Node {
 		return nil
 	} else {
 		return rs.(*Node)
+	}*/
+
+	if val, ok := n.db2[osmNdID]; ok {
+		return val
+	} else {
+		return nil
 	}
 }
 
