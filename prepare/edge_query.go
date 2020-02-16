@@ -10,7 +10,9 @@ import (
 	"github.com/qedus/osmpbf"
 )
 
-type edge struct {
+const edgeTable = "gravelmap_osm_node_count"
+
+type edgeQuery struct {
 	osmFilename  string
 	db *memdb.MemDB
 }
@@ -20,11 +22,11 @@ type osmNodeCount struct {
 	Count int
 }
 
-func NewEdge(osmFilename string) *edge {
+func NewEdgeQuery(osmFilename string) *edgeQuery {
 	schema := &memdb.DBSchema{
 		Tables: map[string]*memdb.TableSchema{
-			"gravelmap_osm_node_count": {
-				Name: "gravelmap_osm_node_count",
+			edgeTable: {
+				Name: edgeTable,
 				Indexes: map[string]*memdb.IndexSchema{
 					"id": {
 						Name:    "id",
@@ -46,13 +48,13 @@ func NewEdge(osmFilename string) *edge {
 		panic(err)
 	}
 
-	return &edge{
+	return &edgeQuery{
 		osmFilename:  osmFilename,
 		db: db,
 	}
 }
 
-func (e *edge) Prepare () {
+func (e *edgeQuery) Prepare () {
 	f, err := os.Open(e.osmFilename)
 	if err != nil {
 		log.Fatal(err)
@@ -82,17 +84,17 @@ func (e *edge) Prepare () {
 
 				for _, nodeID := range v.NodeIDs {
 					rdTxn := e.db.Txn(false)
-					raw, err := rdTxn.First("gravelmap_osm_node_count", "id", nodeID)
+					raw, err := rdTxn.First(edgeTable, "id", nodeID)
 					rdTxn.Abort()
 
 					if err == nil && raw == nil {
 						nd := &osmNodeCount{nodeID, 1}
-						wtTxn.Insert("gravelmap_osm_node_count", nd)
+						wtTxn.Insert(edgeTable, nd)
 					} else {
 
 						newCnt := raw.(*osmNodeCount).Count + 1
 						nd := &osmNodeCount{nodeID, newCnt}
-						wtTxn.Insert("gravelmap_osm_node_count", nd)
+						wtTxn.Insert(edgeTable, nd)
 					}
 				}
 
@@ -102,10 +104,10 @@ func (e *edge) Prepare () {
 	}
 }
 
-func (e *edge) IsEdge (nd int64) bool {
+func (e *edgeQuery) IsEdge (nd int64) bool {
 	rdTxn := e.db.Txn(false)
 
-	raw, _ := rdTxn.First("gravelmap_osm_node_count", "id", nd)
+	raw, _ := rdTxn.First(edgeTable, "id", nd)
 	rdTxn.Abort()
 
 	if raw != nil {

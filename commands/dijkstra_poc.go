@@ -43,11 +43,22 @@ func dijkstraPocCommand() *cobra.Command {
 			//fmt.Println(decode)
 			//os.Exit(0)
 
+			nodeQuery:= prepare.NewNodeQuerer(OSMFilename)
+			nodeDB := nodeQuery.Prepare()
+
+			fmt.Println("done 1")
+
+			gmGraph := prepare.NewGraph(OSMFilename, nodeDB)
+			gmGraph.Prepare()
+
+			fmt.Println("done 2")
+			os.Exit(0)
 
 			graph := dijkstra.NewGraph()
 
-			edge := prepare.NewEdge(OSMFilename)
-			edge.Prepare()
+
+			edgeQuery:= prepare.NewEdgeQuery(OSMFilename)
+			edgeQuery.Prepare()
 
 
 			schema := &memdb.DBSchema{
@@ -116,7 +127,7 @@ func dijkstraPocCommand() *cobra.Command {
 								continue
 							}
 
-							if edge.IsEdge(nd) {
+							if edgeQuery.IsEdge(nd) {
 								intersections = append(intersections, nd)
 							}
 						}
