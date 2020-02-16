@@ -3,6 +3,17 @@ package gravelmap
 // MinRoutingDistance defines the minimum distance from our start/end points to some point in our route engine
 const MinRoutingDistance = 2000
 
+type NodeOsm2GM struct {
+	OldID int64
+	NewID int
+	Occurrences int
+}
+
+type NodeOsm2GMReaderWriter interface {
+	Write(gm *NodeOsm2GM) error
+	Read(osmNdID int64) *NodeOsm2GM
+}
+
 // Point represents a single point on earth
 type Point struct {
 	Lat float64
@@ -94,15 +105,3 @@ type Logger interface {
 	Error(log interface{})
 }
 
-type OsmNode struct {
-	NdID int64
-}
-
-type OsmWay struct {
-	WayId int64
-	NdIds []int64
-}
-
-type OsmIterator interface {
-	Iterate() (chan OsmNode, chan OsmWay)
-}

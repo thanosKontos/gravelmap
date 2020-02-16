@@ -7,23 +7,22 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/hashicorp/go-memdb"
 	"github.com/qedus/osmpbf"
+	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/dijkstra"
 )
 
 type graph struct {
 	osmFilename string
 	graph *dijkstra.Graph
-	nodeDB *memdb.MemDB
-	nodeDB2 map[int64]*Node
+	nodeDB gravelmap.NodeOsm2GMReaderWriter
 }
 
-func NewGraph(osmFilename string, nodeDB2 map[int64]*Node) *graph {
+func NewGraph(osmFilename string, nodeDB gravelmap.NodeOsm2GMReaderWriter) *graph {
 	return &graph{
 		osmFilename: osmFilename,
 		graph: dijkstra.NewGraph(),
-		nodeDB2: nodeDB2,
+		nodeDB: nodeDB,
 	}
 }
 
@@ -70,33 +69,23 @@ func (g *graph) Prepare () {
 		}
 	}
 
-	//best, err := g.graph.Shortest(2173, 2201)
-	//best, err := g.graph.Shortest(1, 2)
-	//best, err := g.graph.Shortest(214768, 214762)
-	best, err := g.graph.Shortest(206199, 2)
+
+	fmt.Println("graph created")
+	best, err := g.graph.Shortest(1, 2173)
 
 	fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
+
+	//best, err = g.graph.Shortest(1150183, 1150708)
+	//fmt.Println("Shortest distance ", best.Distance, " following path ", best.Path)
 }
 
-func (g *graph) getEdge (nd int64) *Node {
-	node := g.nodeDB2[nd]
-	if node.Occurences > 1 {
+func (g *graph) getEdge (nd int64) *gravelmap.NodeOsm2GM {
+	node := g.nodeDB.Read(nd)
+	if node.Occurrences > 1 {
 		return node
 	}
 
 	return nil
-	//rdTxn := g.nodeDB.Txn(false)
-	//
-	//raw, _ := rdTxn.First(nodeTable, "id", nd)
-	//rdTxn.Abort()
-	//
-	//if raw != nil {
-	//	if raw.(*Node).Occurences > 1 {
-	//		return raw.(*Node)
-	//	}
-	//}
-	//
-	//return nil
 }
 
 func (g *graph) addIntersectionsToGraph(intersections []int, previousLastAddedVertex int) int {
