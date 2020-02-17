@@ -3,10 +3,12 @@ package commands
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap/node_db"
 	"github.com/thanosKontos/gravelmap/prepare"
+	"github.com/thanosKontos/gravelmap/way"
 	"googlemaps.github.io/maps"
 )
 
@@ -57,6 +59,11 @@ func dijkstraPocCommand() *cobra.Command {
 			ndFileStore := node_db.NewNodeFileStore("_files", OSMFilename, nodeDB)
 			ndFileStore.Persist()
 
+			wayFileStore := way.NewWayFileStore("_files", OSMFilename, nodeDB, ndFileStore)
+			wayFileStore.Persist()
+
+			os.Exit(0)
+
 			log.Println("Node file written")
 
 			var latLngs []maps.LatLng
@@ -66,7 +73,6 @@ func dijkstraPocCommand() *cobra.Command {
 				latLngs = append(latLngs, maps.LatLng{Lat: test_node.Lat, Lng: test_node.Lng})
 			}
 			fmt.Println(maps.Encode(latLngs))
-
 		},
 	}
 }

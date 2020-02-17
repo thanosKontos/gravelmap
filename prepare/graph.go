@@ -94,12 +94,12 @@ func (g *graph) addIntersectionsToGraph(intersections []int, previousLastAddedVe
 			lastAddedVertex = isn
 		}
 
-		if i == 0 {
-			previous = isn
-		} else {
+		if i != 0 {
 			g.graph.AddArc(isn, previous, 1)
 			g.graph.AddArc(previous, isn, 1)
 		}
+
+		previous = isn
 	}
 
 	return lastAddedVertex

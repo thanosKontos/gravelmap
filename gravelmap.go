@@ -19,6 +19,10 @@ type GMNode struct {
 	Point
 }
 
+type GmNodeReader interface {
+	Read(ndID int32) (*GMNode, error)
+}
+
 // Point represents a single point on earth
 type Point struct {
 	Lat float64
