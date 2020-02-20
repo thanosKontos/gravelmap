@@ -1,6 +1,9 @@
 package way
 
 import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -86,15 +89,13 @@ func (fs *fileStore) Persist() error {
 						}
 					}
 				}
-
-				//fmt.Println("\n============")
 			default:
 				break
 			}
 		}
 	}
 
-	return nil
+	return fs.writeFilesForWays(ways)
 }
 
 func (fs *fileStore) getWayPolyline(wayNds []int) string {
@@ -106,3 +107,41 @@ func (fs *fileStore) getWayPolyline(wayNds []int) string {
 
 	return maps.Encode(latLngs)
 }
+
+type nodeStartRecord struct {
+	nodeStart int32
+	connectionsCnt int32
+	nodeToOffset int64
+}
+
+func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
+	f, err := os.Create(fmt.Sprintf("%s/%s", fs.destinationDir, "node_start.bin"))
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+
+	//recordSize := 8
+
+	var offset int64 = 0
+	for ndID, way := range ways {
+		//f.Seek(int64(ndID*recordSize), 0)
+		nodeStart := nodeStartRecord{int32(ndID), int32(len(way)), offset}
+
+		var buf bytes.Buffer
+		err := binary.Write(&buf, binary.BigEndian, nodeStart)
+		if err != nil {
+			return err
+		}
+
+		n, err := f.Write(buf.Bytes())
+		if err != nil {
+			return err
+		}
+
+		offset += int64(n)
+ 	}
+
+	return nil
+}
+

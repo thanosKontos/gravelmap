@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap/node_db"
@@ -57,14 +56,21 @@ func dijkstraPocCommand() *cobra.Command {
 			log.Println("Shortest distance", best.Distance, "following path", best.Path)
 
 			ndFileStore := node_db.NewNodeFileStore("_files", OSMFilename, nodeDB)
-			ndFileStore.Persist()
-
-			wayFileStore := way.NewWayFileStore("_files", OSMFilename, nodeDB, ndFileStore)
-			wayFileStore.Persist()
-
-			os.Exit(0)
+			err := ndFileStore.Persist()
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			log.Println("Node file written")
+
+			wayFileStore := way.NewWayFileStore("_files", OSMFilename, nodeDB, ndFileStore)
+			err = wayFileStore.Persist()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			log.Println("Way files written")
+
 
 			var latLngs []maps.LatLng
 			for _, pathNd := range best.Path {
