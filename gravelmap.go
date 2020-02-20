@@ -9,7 +9,7 @@ type NodeOsm2GM struct {
 	Occurrences int
 }
 
-type NodeOsm2GMReaderWriter interface {
+type Osm2GmNodeReaderWriter interface {
 	Write(gm *NodeOsm2GM) error
 	Read(osmNdID int64) *NodeOsm2GM
 }

@@ -1,4 +1,4 @@
-package node_db
+package node
 
 import (
 	"bytes"
@@ -21,10 +21,10 @@ const (
 type fileStore struct {
 	destinationDir string
 	osmFilename string
-	nodeDB gravelmap.NodeOsm2GMReaderWriter
+	nodeDB gravelmap.Osm2GmNodeReaderWriter
 }
 
-func NewNodeFileStore(destinationDir string, osmFilename string, nodeDB gravelmap.NodeOsm2GMReaderWriter) *fileStore {
+func NewNodeFileStore(destinationDir string, osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter) *fileStore {
 	return &fileStore{
 		destinationDir: destinationDir,
 		osmFilename: osmFilename,

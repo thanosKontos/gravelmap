@@ -14,10 +14,10 @@ import (
 type graph struct {
 	osmFilename string
 	graph *dijkstra.Graph
-	nodeDB gravelmap.NodeOsm2GMReaderWriter
+	nodeDB gravelmap.Osm2GmNodeReaderWriter
 }
 
-func NewGraph(osmFilename string, nodeDB gravelmap.NodeOsm2GMReaderWriter) *graph {
+func NewGraph(osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter) *graph {
 	return &graph{
 		osmFilename: osmFilename,
 		graph: dijkstra.NewGraph(),

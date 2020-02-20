@@ -17,11 +17,11 @@ import (
 type fileStore struct {
 	destinationDir string
 	osmFilename string
-	nodeDB gravelmap.NodeOsm2GMReaderWriter
+	nodeDB gravelmap.Osm2GmNodeReaderWriter
 	gmNodeRd gravelmap.GmNodeReader
 }
 
-func NewWayFileStore(destinationDir string, osmFilename string, nodeDB gravelmap.NodeOsm2GMReaderWriter, gmNodeRd gravelmap.GmNodeReader) *fileStore {
+func NewWayFileStore(destinationDir string, osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter, gmNodeRd gravelmap.GmNodeReader) *fileStore {
 	return &fileStore{
 		destinationDir: destinationDir,
 		osmFilename: osmFilename,
@@ -100,8 +100,8 @@ func (fs *fileStore) Persist() error {
 
 func (fs *fileStore) getWayPolyline(wayNds []int) string {
 	var latLngs []maps.LatLng
-	for _, nd := range wayNds {
-		gmNode, _ := fs.gmNodeRd.Read(int32(nd))
+	for _, gmNdID := range wayNds {
+		gmNode, _ := fs.gmNodeRd.Read(int32(gmNdID))
 		latLngs = append(latLngs, maps.LatLng{Lat: gmNode.Lat, Lng: gmNode.Lng})
 	}
 
@@ -109,7 +109,6 @@ func (fs *fileStore) getWayPolyline(wayNds []int) string {
 }
 
 type nodeStartRecord struct {
-	nodeStart int32
 	connectionsCnt int32
 	nodeToOffset int64
 }
@@ -121,12 +120,12 @@ func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 		return err
 	}
 
-	//recordSize := 8
+	recordSize := 8
 
 	var offset int64 = 0
-	for ndID, way := range ways {
-		//f.Seek(int64(ndID*recordSize), 0)
-		nodeStart := nodeStartRecord{int32(ndID), int32(len(way)), offset}
+	for gmNdID, way := range ways {
+		f.Seek(int64(gmNdID*recordSize), 0)
+		nodeStart := nodeStartRecord{int32(len(way)), offset}
 
 		var buf bytes.Buffer
 		err := binary.Write(&buf, binary.BigEndian, nodeStart)

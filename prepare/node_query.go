@@ -12,17 +12,17 @@ import (
 
 type nodeQuery struct {
 	osmFilename  string
-	ndDB gravelmap.NodeOsm2GMReaderWriter
+	osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter
 }
 
-func NewNodeQuerer(osmFilename string, ndDB gravelmap.NodeOsm2GMReaderWriter) *nodeQuery {
+func NewOsm2GmNodeExtractor(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *nodeQuery {
 	return &nodeQuery{
 		osmFilename:  osmFilename,
-		ndDB: ndDB,
+		osm2GmNodeRw: osm2GmNodeRw,
 	}
 }
 
-func (n *nodeQuery) Prepare () gravelmap.NodeOsm2GMReaderWriter {
+func (n *nodeQuery) Extract() gravelmap.Osm2GmNodeReaderWriter {
 	f, err := os.Open(n.osmFilename)
 	if err != nil {
 		log.Fatal(err)
@@ -50,19 +50,19 @@ func (n *nodeQuery) Prepare () gravelmap.NodeOsm2GMReaderWriter {
 			switch v := v.(type) {
 			case *osmpbf.Way:
 				for _, osmNdID := range v.NodeIDs {
-					ndDB := n.ndDB.Read(osmNdID)
+					ndDB := n.osm2GmNodeRw.Read(osmNdID)
 
 					if ndDB == nil {
 						inc++
-						n.ndDB.Write(&gravelmap.NodeOsm2GM{osmNdID, inc, 1})
+						n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{osmNdID, inc, 1})
 					} else {
 						newCnt := ndDB.Occurrences + 1
-						n.ndDB.Write(&gravelmap.NodeOsm2GM{ndDB.OldID, ndDB.NewID, newCnt})
+						n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{ndDB.OldID, ndDB.NewID, newCnt})
 					}
 				}
 			}
 		}
 	}
 
-	return n.ndDB
+	return n.osm2GmNodeRw
 }

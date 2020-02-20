@@ -1,4 +1,4 @@
-package node_db
+package node
 
 import (
 	"github.com/thanosKontos/gravelmap"
@@ -6,7 +6,7 @@ import (
 
 type NodeMap map[int64]*gravelmap.NodeOsm2GM
 
-func NewNodeMapDB() NodeMap {
+func NewOsm2GmNodeMemoryStore() NodeMap {
 	return make(NodeMap)
 }
 
