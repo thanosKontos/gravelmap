@@ -3,6 +3,7 @@ package way
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,11 @@ import (
 
 type fileRead struct {
 	storageDir string
+}
+
+type polylinePosition struct {
+	offset int64
+	length int32
 }
 
 func NewWayFileRead(storageDir string) *fileRead {
@@ -27,7 +33,13 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]string, error) {
 		return []string{}, err
 	}
 
-	plLkFl, err := os.Create(fmt.Sprintf("%s/%s", fr.storageDir, edgeToFilename))
+	plLkFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, edgeToFilename))
+	defer plLkFl.Close()
+	if err != nil {
+		return []string{}, err
+	}
+
+	plFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, polylinesFilename))
 	defer plLkFl.Close()
 	if err != nil {
 		return []string{}, err
@@ -40,9 +52,18 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]string, error) {
 	fmt.Println("xxx", nodeStart)
 
 
-	fr.readEdgeToFile(plLkFl, *nodeStart, edgeTo)
+	polylinePos, err := fr.readEdgeToFile(plLkFl, *nodeStart, edgeTo)
+	if err != nil {
+		return []string{}, err
+	}
 
+	//fmt.Println(polylinePos)
+	pl, err := fr.readPolylineFromFile(plFl, polylinePos.length, polylinePos.offset)
+	if err != nil {
+		return []string{}, err
+	}
 
+	fmt.Println(pl)
 
 	//for i := 0; int32(i) < nodeStart.ConnectionsCnt; i++ {
 	//}
@@ -62,14 +83,15 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]string, error) {
 	return polylines, nil
 }
 
-func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeToId int32) error {
-
-	//var polygonLookups []int32
-
+func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeToId int32) (*polylinePosition, error) {
 	readOffset := edgeStart.NodeToOffset
-	f.Seek(readOffset, 0)
+	var polylineLength int32
+	var polylineOffset int64
+	found := false
 
 	for i := 0; int32(i) < edgeStart.ConnectionsCnt; i++ {
+		f.Seek(readOffset, 0)
+
 		var storedEdgeTo int32
 
 		data := readNextBytes(f, 4)
@@ -79,17 +101,40 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 		fmt.Println("found edge to", storedEdgeTo)
 
 		if storedEdgeTo == edgeToId {
+			data := readNextBytes(f, 4)
+			buffer := bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &polylineLength)
 
+			data = readNextBytes(f, 8)
+			buffer = bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &polylineOffset)
+
+			found = true
+			break
 		}
 
-		readOffset = readOffset + 3*4
+		readOffset = readOffset + 2*4 + 8
 	}
 
+	if !found {
+		return nil, errors.New("polyline not found")
+	}
 
-	fmt.Println("peos")
-	os.Exit(0)
+	polylinePos := polylinePosition{polylineOffset, polylineLength}
 
-	return nil
+	return &polylinePos, nil
+}
+
+func (fr *fileRead) readPolylineFromFile(f *os.File, length int32, offset int64) (string, error) {
+	f.Seek(offset, 0)
+
+	buffer := make([]byte, length)
+	_, err := f.Read(buffer)
+	if err != nil {
+		return "", err
+	}
+
+	return string(buffer), nil
 }
 
 func (fr *fileRead) readEdgeStartFile(f *os.File, edgeStartId int32) (*edgeStartRecord, error) {

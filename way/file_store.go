@@ -109,6 +109,12 @@ func (fs *fileStore) getWayPolyline(wayGmNds []int) string {
 	return maps.Encode(latLngs)
 }
 
+type polylineLookupRecord struct {
+	nodeTo int32
+	polylineLen int32
+	polylineOffset int64
+}
+
 func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 	var gmNodeIdsSorted []int
 	for k := range ways {
@@ -135,21 +141,25 @@ func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 	}
 
 	var offset int64 = 0
-	var polylineOffset int32 = 0
+	var polylineOffset int64 = 0
 
-	for _, gmNdID := range gmNodeIdsSorted {
+	for i, gmNdID := range gmNodeIdsSorted {
 		way := ways[gmNdID]
 
 		var polylines []string
-		var wayToPolylineLookups []int32
+		var wayToPolylineLookups []polylineLookupRecord
 
 		for i := 0; i < len(way); i++ {
 			polylineLen := int32(len(way[i].polyline))
 
-			wayToPolylineLookups = append(wayToPolylineLookups, int32(way[i].ndTo))
-			wayToPolylineLookups = append(wayToPolylineLookups, polylineLen)
-			wayToPolylineLookups = append(wayToPolylineLookups, polylineOffset)
-			polylineOffset += polylineLen
+			polylineLookupRec := polylineLookupRecord{int32(way[i].ndTo), polylineLen, polylineOffset}
+			wayToPolylineLookups = append(wayToPolylineLookups, polylineLookupRec)
+			//wayToPolylineLookups = polylineLookupRecord{int32(way[i].ndTo), polylineLen, polylineOffset}
+
+			//wayToPolylineLookups = append(wayToPolylineLookups, int32(way[i].ndTo))
+			//wayToPolylineLookups = append(wayToPolylineLookups, polylineLen)
+			//wayToPolylineLookups = append(wayToPolylineLookups, polylineOffset)
+			polylineOffset += int64(polylineLen)
 
 			polylines = append(polylines, way[i].polyline)
 		}
@@ -170,13 +180,21 @@ func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 			return err
 		}
 
-		offset += 4*int64(len(way))*3
+		offset += 4*int64(len(way))*2+int64(len(way))*8
+
+		if i >= 20 {
+			//os.Exit(0)
+		}
+
+		fmt.Println("==========")
 	}
 
 	return nil
 }
 
-func (fs *fileStore) writePolylinesLookupFile(f *os.File, plsLookup []int32) error {
+func (fs *fileStore) writePolylinesLookupFile(f *os.File, plsLookup []polylineLookupRecord) error {
+	fmt.Println("wrote to edgesLookup file", plsLookup)
+
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, plsLookup)
 	if err != nil {
@@ -188,6 +206,8 @@ func (fs *fileStore) writePolylinesLookupFile(f *os.File, plsLookup []int32) err
 }
 
 func (fs *fileStore) writePolylinesFile(f *os.File, pls []string) error {
+	fmt.Println("wrote to polylines file", pls)
+
 	for _, pl := range pls {
 		_, err := f.WriteString(pl)
 		if err != nil {
@@ -200,6 +220,8 @@ func (fs *fileStore) writePolylinesFile(f *os.File, pls []string) error {
 
 func (fs *fileStore) writeEdgeFromFile(f *os.File, edgeStartId int, edgeStart edgeStartRecord) error {
 	f.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
+
+	fmt.Println("wrote to edgesFrom file", edgeStart)
 
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, edgeStart)
