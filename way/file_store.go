@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"sort"
 
 	"github.com/qedus/osmpbf"
 	"github.com/thanosKontos/gravelmap"
@@ -15,15 +16,15 @@ import (
 )
 
 type fileStore struct {
-	destinationDir string
+	storageDir string
 	osmFilename string
 	nodeDB gravelmap.Osm2GmNodeReaderWriter
 	gmNodeRd gravelmap.GmNodeReader
 }
 
-func NewWayFileStore(destinationDir string, osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter, gmNodeRd gravelmap.GmNodeReader) *fileStore {
+func NewWayFileStore(storageDir string, osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter, gmNodeRd gravelmap.GmNodeReader) *fileStore {
 	return &fileStore{
-		destinationDir: destinationDir,
+		storageDir: storageDir,
 		osmFilename: osmFilename,
 		nodeDB: nodeDB,
 		gmNodeRd: gmNodeRd,
@@ -53,7 +54,7 @@ func (fs *fileStore) Persist() error {
 		return err
 	}
 
-	ways := make(map[int][]wayTo)
+	wayNds := make(map[int][]wayTo)
 	for {
 		if v, err := d.Decode(); err == io.EOF {
 			break
@@ -63,29 +64,29 @@ func (fs *fileStore) Persist() error {
 			switch v := v.(type) {
 			case *osmpbf.Way:
 				prevEdge := 0
-				var wayNd []int
+				var wayGmNds []int
 				for i, nd := range v.NodeIDs {
 					osm2gm := fs.nodeDB.Read(nd)
-					wayNd = append(wayNd, osm2gm.NewID)
+					wayGmNds = append(wayGmNds, osm2gm.NewID)
 
 					if i == 0 {
 						prevEdge = fs.nodeDB.Read(nd).NewID
 					} else if i == len(v.NodeIDs) - 1 {
 						gmID := fs.nodeDB.Read(nd).NewID
 
-						ways[gmID] = append(ways[gmID], wayTo{prevEdge, fs.getWayPolyline(wayNd)})
-						ways[prevEdge] = append(ways[prevEdge], wayTo{gmID, fs.getWayPolyline(wayNd)})
+						wayNds[gmID] = append(wayNds[gmID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds)})
+						wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmID, fs.getWayPolyline(wayGmNds)})
 
-						wayNd = []int{prevEdge}
+						wayGmNds = []int{prevEdge}
 					} else {
 						gmNd := fs.nodeDB.Read(nd)
 						if gmNd.Occurrences > 1 {
 
-							ways[gmNd.NewID] = append(ways[gmNd.NewID], wayTo{prevEdge, fs.getWayPolyline(wayNd)})
-							ways[prevEdge] = append(ways[prevEdge], wayTo{gmNd.NewID, fs.getWayPolyline(wayNd)})
+							wayNds[gmNd.NewID] = append(wayNds[gmNd.NewID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds)})
+							wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmNd.NewID, fs.getWayPolyline(wayGmNds)})
 
 							prevEdge = gmNd.NewID
-							wayNd = []int{prevEdge}
+							wayGmNds = []int{prevEdge}
 						}
 					}
 				}
@@ -95,12 +96,12 @@ func (fs *fileStore) Persist() error {
 		}
 	}
 
-	return fs.writeFilesForWays(ways)
+	return fs.writeFilesForWays(wayNds)
 }
 
-func (fs *fileStore) getWayPolyline(wayNds []int) string {
+func (fs *fileStore) getWayPolyline(wayGmNds []int) string {
 	var latLngs []maps.LatLng
-	for _, gmNdID := range wayNds {
+	for _, gmNdID := range wayGmNds {
 		gmNode, _ := fs.gmNodeRd.Read(int32(gmNdID))
 		latLngs = append(latLngs, maps.LatLng{Lat: gmNode.Lat, Lng: gmNode.Lng})
 	}
@@ -108,39 +109,105 @@ func (fs *fileStore) getWayPolyline(wayNds []int) string {
 	return maps.Encode(latLngs)
 }
 
-type nodeStartRecord struct {
-	connectionsCnt int32
-	nodeToOffset int64
-}
-
 func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
-	f, err := os.Create(fmt.Sprintf("%s/%s", fs.destinationDir, "node_start.bin"))
-	defer f.Close()
+	var gmNodeIdsSorted []int
+	for k := range ways {
+		gmNodeIdsSorted = append(gmNodeIdsSorted, k)
+	}
+	sort.Ints(gmNodeIdsSorted)
+
+	esFl, err := os.Create(fmt.Sprintf("%s/%s", fs.storageDir, edgeStartFilename))
+	defer esFl.Close()
 	if err != nil {
 		return err
 	}
 
-	recordSize := 8
+	plLkFl, err := os.Create(fmt.Sprintf("%s/%s", fs.storageDir, edgeToFilename))
+	defer plLkFl.Close()
+	if err != nil {
+		return err
+	}
+
+	plFl, err := os.Create(fmt.Sprintf("%s/%s", fs.storageDir, polylinesFilename))
+	defer plFl.Close()
+	if err != nil {
+		return err
+	}
 
 	var offset int64 = 0
-	for gmNdID, way := range ways {
-		f.Seek(int64(gmNdID*recordSize), 0)
-		nodeStart := nodeStartRecord{int32(len(way)), offset}
+	var polylineOffset int32 = 0
 
-		var buf bytes.Buffer
-		err := binary.Write(&buf, binary.BigEndian, nodeStart)
+	for _, gmNdID := range gmNodeIdsSorted {
+		way := ways[gmNdID]
+
+		var polylines []string
+		var wayToPolylineLookups []int32
+
+		for i := 0; i < len(way); i++ {
+			polylineLen := int32(len(way[i].polyline))
+
+			wayToPolylineLookups = append(wayToPolylineLookups, int32(way[i].ndTo))
+			wayToPolylineLookups = append(wayToPolylineLookups, polylineLen)
+			wayToPolylineLookups = append(wayToPolylineLookups, polylineOffset)
+			polylineOffset += polylineLen
+
+			polylines = append(polylines, way[i].polyline)
+		}
+		err = fs.writePolylinesFile(plFl, polylines)
 		if err != nil {
 			return err
 		}
 
-		n, err := f.Write(buf.Bytes())
+		err = fs.writePolylinesLookupFile(plLkFl, wayToPolylineLookups)
 		if err != nil {
 			return err
 		}
 
-		offset += int64(n)
- 	}
+		edgeStart := edgeStartRecord{int32(len(way)), offset}
+
+		err = fs.writeEdgeFromFile(esFl, gmNdID, edgeStart)
+		if err != nil {
+			return err
+		}
+
+		offset += 4*int64(len(way))*3
+	}
 
 	return nil
 }
 
+func (fs *fileStore) writePolylinesLookupFile(f *os.File, plsLookup []int32) error {
+	var buf bytes.Buffer
+	err := binary.Write(&buf, binary.BigEndian, plsLookup)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(buf.Bytes())
+	return err
+}
+
+func (fs *fileStore) writePolylinesFile(f *os.File, pls []string) error {
+	for _, pl := range pls {
+		_, err := f.WriteString(pl)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (fs *fileStore) writeEdgeFromFile(f *os.File, edgeStartId int, edgeStart edgeStartRecord) error {
+	f.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
+
+	var buf bytes.Buffer
+	err := binary.Write(&buf, binary.BigEndian, edgeStart)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(buf.Bytes())
+
+	return err
+}

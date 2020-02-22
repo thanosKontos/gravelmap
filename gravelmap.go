@@ -9,6 +9,11 @@ type NodeOsm2GM struct {
 	Occurrences int
 }
 
+type Way struct {
+	EdgeFrom int32
+	EdgeTo int32
+}
+
 type Osm2GmNodeReaderWriter interface {
 	Write(gm *NodeOsm2GM) error
 	Read(osmNdID int64) *NodeOsm2GM
@@ -21,6 +26,10 @@ type GMNode struct {
 
 type GmNodeReader interface {
 	Read(ndID int32) (*GMNode, error)
+}
+
+type WayPolylineReader interface {
+	Read(ways []Way) []string
 }
 
 // Point represents a single point on earth

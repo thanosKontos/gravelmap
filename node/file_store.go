@@ -122,10 +122,10 @@ func (fs *fileStore) Read(ndID int32) (*gravelmap.GMNode, error) {
 	return &gravelmap.GMNode{ID: ndID, Point: pt}, nil
 }
 
-func readNextBytes(file *os.File, number int) []byte {
+func readNextBytes(f *os.File, number int) []byte {
 	bytes := make([]byte, number)
 
-	_, err := file.Read(bytes)
+	_, err := f.Read(bytes)
 	if err != nil {
 		log.Fatal(err)
 	}
