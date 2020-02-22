@@ -24,6 +24,7 @@ func Execute() {
 	rootCommand.AddCommand(versionCommand())
 	rootCommand.AddCommand(createRoutingDBCommand())
 	rootCommand.AddCommand(createServerCommand())
+	rootCommand.AddCommand(createWebServerNewCommand())
 	rootCommand.AddCommand(importElevationCommand())
 	rootCommand.AddCommand(createGradeWaysCommand())
 	rootCommand.AddCommand(importRoutingDataCommand())

@@ -74,16 +74,14 @@ func (fs *fileStore) Persist() error {
 					} else if i == len(v.NodeIDs) - 1 {
 						gmID := fs.nodeDB.Read(nd).NewID
 
-						wayNds[gmID] = append(wayNds[gmID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds)})
-						wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmID, fs.getWayPolyline(wayGmNds)})
+						wayNds[gmID] = append(wayNds[gmID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
+						wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmID, fs.getWayPolyline(wayGmNds, false)})
 
 						wayGmNds = []int{prevEdge}
 					} else {
-						gmNd := fs.nodeDB.Read(nd)
-						if gmNd.Occurrences > 1 {
-
-							wayNds[gmNd.NewID] = append(wayNds[gmNd.NewID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds)})
-							wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmNd.NewID, fs.getWayPolyline(wayGmNds)})
+						if gmNd := fs.nodeDB.Read(nd); gmNd.Occurrences > 1 {
+							wayNds[gmNd.NewID] = append(wayNds[gmNd.NewID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
+							wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmNd.NewID, fs.getWayPolyline(wayGmNds, false)})
 
 							prevEdge = gmNd.NewID
 							wayGmNds = []int{prevEdge}
@@ -99,12 +97,24 @@ func (fs *fileStore) Persist() error {
 	return fs.writeFilesForWays(wayNds)
 }
 
-func (fs *fileStore) getWayPolyline(wayGmNds []int) string {
+func (fs *fileStore) getWayPolyline(wayGmNds []int, reverse bool) string {
 	var latLngs []maps.LatLng
-	for _, gmNdID := range wayGmNds {
-		gmNode, _ := fs.gmNodeRd.Read(int32(gmNdID))
-		latLngs = append(latLngs, maps.LatLng{Lat: gmNode.Lat, Lng: gmNode.Lng})
+
+	if reverse {
+		for i := len(wayGmNds)-1; i >= 0; i-- {
+			gmNode, _ := fs.gmNodeRd.Read(int32(wayGmNds[i]))
+			latLngs = append(latLngs, maps.LatLng{Lat: gmNode.Lat, Lng: gmNode.Lng})
+		}
+	} else {
+		for _, gmNdID := range wayGmNds {
+			gmNode, _ := fs.gmNodeRd.Read(int32(gmNdID))
+			latLngs = append(latLngs, maps.LatLng{Lat: gmNode.Lat, Lng: gmNode.Lng})
+		}
 	}
+
+
+
+
 
 	return maps.Encode(latLngs)
 }
@@ -154,11 +164,7 @@ func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 
 			polylineLookupRec := polylineLookupRecord{int32(way[i].ndTo), polylineLen, polylineOffset}
 			wayToPolylineLookups = append(wayToPolylineLookups, polylineLookupRec)
-			//wayToPolylineLookups = polylineLookupRecord{int32(way[i].ndTo), polylineLen, polylineOffset}
 
-			//wayToPolylineLookups = append(wayToPolylineLookups, int32(way[i].ndTo))
-			//wayToPolylineLookups = append(wayToPolylineLookups, polylineLen)
-			//wayToPolylineLookups = append(wayToPolylineLookups, polylineOffset)
 			polylineOffset += int64(polylineLen)
 
 			polylines = append(polylines, way[i].polyline)
@@ -181,20 +187,12 @@ func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 		}
 
 		offset += 4*int64(len(way))*2+int64(len(way))*8
-
-		if i >= 20 {
-			//os.Exit(0)
-		}
-
-		fmt.Println("==========")
 	}
 
 	return nil
 }
 
 func (fs *fileStore) writePolylinesLookupFile(f *os.File, plsLookup []polylineLookupRecord) error {
-	fmt.Println("wrote to edgesLookup file", plsLookup)
-
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, plsLookup)
 	if err != nil {
@@ -206,8 +204,6 @@ func (fs *fileStore) writePolylinesLookupFile(f *os.File, plsLookup []polylineLo
 }
 
 func (fs *fileStore) writePolylinesFile(f *os.File, pls []string) error {
-	fmt.Println("wrote to polylines file", pls)
-
 	for _, pl := range pls {
 		_, err := f.WriteString(pl)
 		if err != nil {

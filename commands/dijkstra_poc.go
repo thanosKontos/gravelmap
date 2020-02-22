@@ -10,6 +10,7 @@ import (
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/prepare"
 	"github.com/thanosKontos/gravelmap/way"
+	"googlemaps.github.io/maps"
 )
 
 type EdgeNode struct {
@@ -30,7 +31,11 @@ func dijkstraPocCommand() *cobra.Command {
 		Long:  "a dijkstra test",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			testWays := []int32{1,86123,135138,135133,121181,85173,5519,121174,116378,85694,86138,63143,4689,85131,121195,86120,85760,112247,63577,112242,112237,135110,56424,85141,135102,56428,135077,973,132006,135067,82937,698,85158,135054,132060,13339,132055,107433,112180,134875,85124,115145,39299,132050,96635,138762,138765,152794,112184,152793,152792,1690,86599,86594,86592,86591,86581,121805,2170,2173}
+			//testWays := []int32{1,86123,135138,135133,121181,85173,5519,121174,116378,85694,86138,63143,4689,85131,121195,86120,85760,112247,63577,112242,112237,135110,56424,85141,135102,56428,135077,973,132006,135067,82937,698,85158,135054,132060,13339,132055,107433,112180,134875,85124,115145,39299,132050,96635,138762,138765,152794,112184,152793,152792,1690,86599,86594,86592,86591,86581,121805,2170,2173}
+
+
+			testWays := []int32{1,86123,135138,135133,121181}
+
 			var testWayPairs []gravelmap.Way
 			var prev int32 = 0
 			for i, testway := range testWays {
@@ -44,11 +49,23 @@ func dijkstraPocCommand() *cobra.Command {
 				prev = testway
 			}
 
-
 			wayFile := way.NewWayFileRead("_files")
-			wayFile.Read(testWayPairs)
+			polylines, _ := wayFile.Read(testWayPairs)
 
-			fmt.Println("All done")
+			//fmt.Println(polylines)
+
+			var latLngs []maps.LatLng
+			for _, pl := range polylines {
+				tmpLatLngs, _ := maps.DecodePolyline(pl)
+				for _, latlng := range tmpLatLngs {
+					latLngs = append(latLngs, maps.LatLng{Lat: latlng.Lat, Lng: latlng.Lng})
+				}
+			}
+
+			fmt.Println(maps.Encode(latLngs))
+
+
+
 			os.Exit(0)
 
 

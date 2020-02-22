@@ -45,40 +45,23 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]string, error) {
 		return []string{}, err
 	}
 
-	var edgeFrom int32 = 86123
-	var edgeTo int32 = 135138
-
-	nodeStart, err := fr.readEdgeStartFile(esFl, edgeFrom)
-	fmt.Println("xxx", nodeStart)
-
-
-	polylinePos, err := fr.readEdgeToFile(plLkFl, *nodeStart, edgeTo)
-	if err != nil {
-		return []string{}, err
-	}
-
-	//fmt.Println(polylinePos)
-	pl, err := fr.readPolylineFromFile(plFl, polylinePos.length, polylinePos.offset)
-	if err != nil {
-		return []string{}, err
-	}
-
-	fmt.Println(pl)
-
-	//for i := 0; int32(i) < nodeStart.ConnectionsCnt; i++ {
-	//}
-
 	var polylines []string
-	//for _, way := range ways {
-	//
-	//
-	//
-	//
-	//
-	//}
+	for _, way := range ways {
+		nodeStart, err := fr.readEdgeStartFile(esFl, way.EdgeFrom)
 
+		polylinePos, err := fr.readEdgeToFile(plLkFl, *nodeStart, way.EdgeTo)
+		if err != nil {
+			return []string{}, err
+		}
 
-	fmt.Println(ways)
+		pl, err := fr.readPolylineFromFile(plFl, polylinePos.length, polylinePos.offset)
+
+		if err != nil {
+			return []string{}, err
+		}
+
+		polylines = append(polylines, pl)
+	}
 
 	return polylines, nil
 }
@@ -97,8 +80,6 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 		data := readNextBytes(f, 4)
 		buffer := bytes.NewBuffer(data)
 		binary.Read(buffer, binary.BigEndian, &storedEdgeTo)
-
-		fmt.Println("found edge to", storedEdgeTo)
 
 		if storedEdgeTo == edgeToId {
 			data := readNextBytes(f, 4)
