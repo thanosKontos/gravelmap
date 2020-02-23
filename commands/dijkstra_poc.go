@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/prepare"
@@ -99,7 +100,8 @@ func dijkstraPocCommand() *cobra.Command {
 
 
 			// ## 3. Create the dijkstra graph that we will use to do the actual routing ##
-			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore)
+			distanceCalc := distance.NewHaversine()
+			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore, distanceCalc)
 			gmGraph.Prepare()
 
 			// also persist it to file
@@ -122,7 +124,7 @@ func dijkstraPocCommand() *cobra.Command {
 
 			dGraph := gmGraph.GetGraph()
 			//best, _ := dGraph.Shortest(1, 2173)
-			best, _ := dGraph.Shortest(9044, 3959)
+			best, _ := dGraph.Shortest(14827, 1037)
 
 			log.Println("Shortest distance", best.Distance, "following path", best.Path)
 		},

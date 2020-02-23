@@ -15,13 +15,15 @@ type graph struct {
 	osmFilename string
 	graph *dijkstra.Graph
 	nodeDB gravelmap.Osm2GmNodeReaderWriter
+	distanceCalc gravelmap.DistanceCalculator
 }
 
-func NewGraph(osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter) *graph {
+func NewGraph(osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter, distanceCalc gravelmap.DistanceCalculator) *graph {
 	return &graph{
 		osmFilename: osmFilename,
 		graph: dijkstra.NewGraph(),
 		nodeDB: nodeDB,
+		distanceCalc: distanceCalc,
 	}
 }
 

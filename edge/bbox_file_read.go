@@ -32,7 +32,7 @@ func (fr *bboxFileRead) FindClosest(point gravelmap.Point) (int32, error) {
 	}
 
 	var closestEdge int32 = 0
-	var closestEdgeDistance int32 = 0
+	var closestEdgeDistance int64 = 0
 	for {
 		edgeRec := bboxEdgeRecord{}
 		data := readNextBytes(f, 20)

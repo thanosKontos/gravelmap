@@ -86,7 +86,7 @@ type ElevationFinder interface {
 
 // DistanceCalculator describes implementations of finding the distance between 2 points
 type DistanceCalculator interface {
-	Calculate(x, y Point) int32
+	Calculate(x, y Point) int64
 }
 
 type EdgeBatchStorer interface {

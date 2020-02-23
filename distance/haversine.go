@@ -21,7 +21,7 @@ func degreesToRadians(d float64) float64 {
 }
 
 // Distance calculates the distance between two points on earth on a straight line (in meters)
-func (h *haversine) Calculate(x, y gravelmap.Point) int32 {
+func (h *haversine) Calculate(x, y gravelmap.Point) int64 {
 	lat1 := degreesToRadians(x.Lat)
 	lng1 := degreesToRadians(x.Lng)
 	lat2 := degreesToRadians(y.Lat)
@@ -33,5 +33,5 @@ func (h *haversine) Calculate(x, y gravelmap.Point) int32 {
 	a := math.Pow(math.Sin(diffLat/2), 2) + math.Cos(lat1)*math.Cos(lat2) * math.Pow(math.Sin(diffLon/2), 2)
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
-	return int32(c * earthRadius)
+	return int64(c * earthRadius)
 }
