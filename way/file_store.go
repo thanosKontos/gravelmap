@@ -112,10 +112,6 @@ func (fs *fileStore) getWayPolyline(wayGmNds []int, reverse bool) string {
 		}
 	}
 
-
-
-
-
 	return maps.Encode(latLngs)
 }
 
@@ -153,7 +149,7 @@ func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 	var offset int64 = 0
 	var polylineOffset int64 = 0
 
-	for i, gmNdID := range gmNodeIdsSorted {
+	for _, gmNdID := range gmNodeIdsSorted {
 		way := ways[gmNdID]
 
 		var polylines []string
