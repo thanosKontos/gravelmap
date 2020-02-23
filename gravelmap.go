@@ -7,7 +7,6 @@ type NodeOsm2GM struct {
 	OldID int64
 	NewID int
 	Occurrences int
-	Point Point
 }
 
 type Way struct {
@@ -91,10 +90,6 @@ type DistanceCalculator interface {
 
 type EdgeBatchStorer interface {
 	BatchStore(ndBatch []GMNode) error
-}
-
-type EdgeFinder interface {
-	FindClosest(point Point) (int32, error)
 }
 
 // ElevationGrader describes implementations of finding the elevation for continuous points
