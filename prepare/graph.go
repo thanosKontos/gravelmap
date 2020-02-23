@@ -54,9 +54,9 @@ func (g *graph) Prepare () {
 			case *osmpbf.Way:
 				var intersections []int
 				for _, osmNdID := range v.NodeIDs {
-					edge := g.getEdge(osmNdID)
-					if edge != nil {
-						intersections = append(intersections, edge.NewID)
+					gmNode := g.nodeDB.Read(osmNdID)
+					if gmNode.Occurrences > 1 {
+						intersections = append(intersections, gmNode.NewID)
 					}
 				}
 
@@ -73,15 +73,6 @@ func (g *graph) Prepare () {
 // But will leave this technical debt for the POC
 func (g *graph) GetGraph () *dijkstra.Graph {
 	return g.graph
-}
-
-func (g *graph) getEdge (nd int64) *gravelmap.NodeOsm2GM {
-	node := g.nodeDB.Read(nd)
-	if node.Occurrences > 1 {
-		return node
-	}
-
-	return nil
 }
 
 func (g *graph) addIntersectionsToGraph(intersections []int, previousLastAddedVertex int) int {
