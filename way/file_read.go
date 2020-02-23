@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/thanosKontos/gravelmap"
@@ -134,14 +133,10 @@ func (fr *fileRead) readEdgeStartFile(f *os.File, edgeStartId int32) (*edgeStart
 }
 
 func readNextBytes(file *os.File, number int) []byte {
-	bytes := make([]byte, number)
+	byteSeq := make([]byte, number)
+	_, _ = file.Read(byteSeq)
 
-	_, err := file.Read(bytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return bytes
+	return byteSeq
 }
 
 

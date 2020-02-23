@@ -83,9 +83,13 @@ type ElevationFinder interface {
 	FindElevation(Point) (float64, error)
 }
 
-// DistanceFinder describes implementations of finding the distance between 2 points
-type DistanceFinder interface {
-	Distance(pointFrom, pointTo Point) (float64, error)
+// DistanceCalculator describes implementations of finding the distance between 2 points
+type DistanceCalculator interface {
+	Calculate(x, y Point) int32
+}
+
+type EdgeBatchStorer interface {
+	BatchStore(ndBatch []GMNode) error
 }
 
 // ElevationGrader describes implementations of finding the elevation for continuous points

@@ -15,20 +15,27 @@ import (
 
 const (
 	recordSize = 16
-	filename = "node.bin"
+	filename = "node_positions.bin"
 )
 
 type fileStore struct {
 	destinationDir string
 	osmFilename string
 	nodeDB gravelmap.Osm2GmNodeReaderWriter
+	edgeBatchStorer gravelmap.EdgeBatchStorer
 }
 
-func NewNodeFileStore(destinationDir string, osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter) *fileStore {
+func NewNodeFileStore(
+	destinationDir string,
+	osmFilename string,
+	nodeDB gravelmap.Osm2GmNodeReaderWriter,
+	edgeBatchStorer gravelmap.EdgeBatchStorer,
+) *fileStore {
 	return &fileStore{
 		destinationDir: destinationDir,
 		osmFilename: osmFilename,
 		nodeDB: nodeDB,
+		edgeBatchStorer: edgeBatchStorer,
 	}
 }
 
@@ -56,6 +63,8 @@ func (fs *fileStore) Persist() error {
 		return err
 	}
 
+	var gmNdBatch []gravelmap.GMNode
+
 	for {
 		if v, err := d.Decode(); err == io.EOF {
 			break
@@ -69,13 +78,34 @@ func (fs *fileStore) Persist() error {
 					continue
 				}
 
+				// TODO: create an extract node service and create a node package to include the 2 jobs below
+				// inject to the service a osmFilename, nodePositionWriter, gmEdgeBboxWriter (the implementation will be file)
+
 				gmNd := gravelmap.GMNode{ID: int32(gm2OsmNode.NewID), Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
 
+				// Write nodes in file in order to be able to find lat long per id
 				writeGmNode(f, gmNd)
+
+
+
+				// Write edge in bounding boxes in order to be able to find closest edge per lat/lng
+				if gm2OsmNode.Occurrences > 1 {
+					gmNdBatch = append(gmNdBatch, gmNd)
+
+					if len(gmNdBatch) >= 10000 {
+						fs.edgeBatchStorer.BatchStore(gmNdBatch)
+						gmNdBatch = []gravelmap.GMNode{}
+					}
+				}
+
 			default:
 				break
 			}
 		}
+	}
+
+	if len(gmNdBatch) > 0 {
+		fs.edgeBatchStorer.BatchStore(gmNdBatch)
 	}
 
 	return nil
@@ -94,6 +124,7 @@ func writeGmNode(f *os.File, gmNd gravelmap.GMNode) {
 	}
 	writeNextBytes(f, buf.Bytes())
 }
+
 func writeNextBytes(file *os.File, bytes []byte) {
 	_, err := file.Write(bytes)
 
@@ -123,12 +154,8 @@ func (fs *fileStore) Read(ndID int32) (*gravelmap.GMNode, error) {
 }
 
 func readNextBytes(f *os.File, number int) []byte {
-	bytes := make([]byte, number)
+	byteSeq := make([]byte, number)
+	_, _ = f.Read(byteSeq)
 
-	_, err := f.Read(bytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return bytes
+	return byteSeq
 }

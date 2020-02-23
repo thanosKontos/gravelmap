@@ -213,8 +213,6 @@ func (fs *fileStore) writePolylinesFile(f *os.File, pls []string) error {
 func (fs *fileStore) writeEdgeFromFile(f *os.File, edgeStartId int, edgeStart edgeStartRecord) error {
 	f.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
 
-	fmt.Println("wrote to edgesFrom file", edgeStart)
-
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, edgeStart)
 	if err != nil {

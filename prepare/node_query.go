@@ -10,19 +10,19 @@ import (
 	"github.com/thanosKontos/gravelmap"
 )
 
-type nodeQuery struct {
+type osm2GmEdge struct {
 	osmFilename  string
 	osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter
 }
 
-func NewOsm2GmNodeExtractor(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *nodeQuery {
-	return &nodeQuery{
+func NewOsm2GmEdge(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *osm2GmEdge {
+	return &osm2GmEdge{
 		osmFilename:  osmFilename,
 		osm2GmNodeRw: osm2GmNodeRw,
 	}
 }
 
-func (n *nodeQuery) Extract() gravelmap.Osm2GmNodeReaderWriter {
+func (n *osm2GmEdge) Extract() gravelmap.Osm2GmNodeReaderWriter {
 	f, err := os.Open(n.osmFilename)
 	if err != nil {
 		log.Fatal(err)
@@ -54,10 +54,10 @@ func (n *nodeQuery) Extract() gravelmap.Osm2GmNodeReaderWriter {
 
 					if ndDB == nil {
 						inc++
-						n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{osmNdID, inc, 1})
+						_ = n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{OldID: osmNdID, NewID: inc, Occurrences: 1})
 					} else {
 						newCnt := ndDB.Occurrences + 1
-						n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{ndDB.OldID, ndDB.NewID, newCnt})
+						_ = n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{OldID: ndDB.OldID, NewID: ndDB.NewID, Occurrences: newCnt})
 					}
 				}
 			}
