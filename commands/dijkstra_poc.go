@@ -1,18 +1,15 @@
 package commands
 
 import (
-	"fmt"
+	"encoding/gob"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/prepare"
 	"github.com/thanosKontos/gravelmap/way"
-	"googlemaps.github.io/maps"
 )
 
 type EdgeNode struct {
@@ -33,12 +30,12 @@ func dijkstraPocCommand() *cobra.Command {
 		Long:  "a dijkstra test",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			distanceCalc := distance.NewHaversine()
-			bboxFr := edge.NewBBoxFileRead("_files", distanceCalc)
-
-			fmt.Println(bboxFr.FindClosest(gravelmap.Point{53.0510267,8.8365358}))
-
-			os.Exit(0)
+			//distanceCalc := distance.NewHaversine()
+			//bboxFr := edge.NewBBoxFileRead("_files", distanceCalc)
+			//
+			//fmt.Println(bboxFr.FindClosest(gravelmap.Point{53.0510267,8.8365358}))
+			//
+			//os.Exit(0)
 
 
 
@@ -79,53 +76,55 @@ func dijkstraPocCommand() *cobra.Command {
 			//OSMFilename := "/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
 			OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
 
+			// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
 			osm2GmStore := node.NewOsm2GmNodeMemoryStore()
-			osm2GmEdge:= prepare.NewOsm2GmEdge(OSMFilename, osm2GmStore)
-			nodeDB := osm2GmEdge.Extract()
+			osm2GmNode:= prepare.NewOsm2GmNode(OSMFilename, osm2GmStore)
+			osm2GmNode.Extract()
+
 
 			log.Println("Done preparing node in-memory DB")
 
-			gmGraph := prepare.NewGraph(OSMFilename, nodeDB)
+
+			// ## 2. Store nodes to lookup files (nodeId -> lat/lon and lat/lon to closest nodeId)
+			bboxFS := edge.NewBBoxFileStore("_files")
+			ndFileStore := node.NewNodeFileStore("_files", OSMFilename, osm2GmStore, bboxFS)
+			err := ndFileStore.Persist()
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println("Node file written")
+
+
+			// TODO: here we need to pass to the graph preperator some kind of elevation grader and distance calculator
+
+
+			// ## 3. Create the dijkstra graph that we will use to do the actual routing ##
+			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore)
 			gmGraph.Prepare()
 
-			log.Println("Done creating graph")
+			// also persist it to file
+			graphFile, _ := os.Create("_files/graph.gob")
+			dataEncoder := gob.NewEncoder(graphFile)
+			dataEncoder.Encode(gmGraph.GetGraph())
+			graphFile.Close()
+			log.Println("Graph created")
+
+
+			// ## 4. Store polylines for ways
+			wayFileStore := way.NewWayFileStore("_files", OSMFilename, osm2GmStore, ndFileStore)
+			err = wayFileStore.Persist()
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println("Way files written")
+
+
 
 			dGraph := gmGraph.GetGraph()
 			//best, _ := dGraph.Shortest(1, 2173)
 			best, _ := dGraph.Shortest(9044, 3959)
 
-
 			log.Println("Shortest distance", best.Distance, "following path", best.Path)
-
-			bboxFS := edge.NewBBoxFileStore("_files")
-
-			ndFileStore := node.NewNodeFileStore("_files", OSMFilename, nodeDB, bboxFS)
-			err := ndFileStore.Persist()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			log.Println("Node file written")
-
-
-
-			wayFileStore := way.NewWayFileStore("_files", OSMFilename, nodeDB, ndFileStore)
-			err = wayFileStore.Persist()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			log.Println("Way files written")
-
-
-			fmt.Println("------")
-			var latLngs []maps.LatLng
-			for _, pathNd := range best.Path {
-				test_node, _ := ndFileStore.Read(int32(pathNd))
-
-				latLngs = append(latLngs, maps.LatLng{Lat: test_node.Lat, Lng: test_node.Lng})
-			}
-			fmt.Println(maps.Encode(latLngs))
 		},
 	}
 }

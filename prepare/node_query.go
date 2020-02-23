@@ -15,14 +15,14 @@ type osm2GmEdge struct {
 	osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter
 }
 
-func NewOsm2GmEdge(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *osm2GmEdge {
+func NewOsm2GmNode(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *osm2GmEdge {
 	return &osm2GmEdge{
 		osmFilename:  osmFilename,
 		osm2GmNodeRw: osm2GmNodeRw,
 	}
 }
 
-func (n *osm2GmEdge) Extract() gravelmap.Osm2GmNodeReaderWriter {
+func (n *osm2GmEdge) Extract() error {
 	f, err := os.Open(n.osmFilename)
 	if err != nil {
 		log.Fatal(err)
@@ -37,7 +37,7 @@ func (n *osm2GmEdge) Extract() gravelmap.Osm2GmNodeReaderWriter {
 	// start decoding with several goroutines, it is faster
 	err = d.Start(runtime.GOMAXPROCS(-1))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	inc := 0
@@ -45,7 +45,7 @@ func (n *osm2GmEdge) Extract() gravelmap.Osm2GmNodeReaderWriter {
 		if v, err := d.Decode(); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Fatal(err)
+			return err
 		} else {
 			switch v := v.(type) {
 			case *osmpbf.Way:
@@ -64,5 +64,5 @@ func (n *osm2GmEdge) Extract() gravelmap.Osm2GmNodeReaderWriter {
 		}
 	}
 
-	return n.osm2GmNodeRw
+	return nil
 }

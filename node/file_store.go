@@ -21,20 +21,20 @@ const (
 type fileStore struct {
 	destinationDir string
 	osmFilename string
-	nodeDB gravelmap.Osm2GmNodeReaderWriter
+	osm2GmStore gravelmap.Osm2GmNodeReaderWriter
 	edgeBatchStorer gravelmap.EdgeBatchStorer
 }
 
 func NewNodeFileStore(
 	destinationDir string,
 	osmFilename string,
-	nodeDB gravelmap.Osm2GmNodeReaderWriter,
+	osm2GmStore gravelmap.Osm2GmNodeReaderWriter,
 	edgeBatchStorer gravelmap.EdgeBatchStorer,
 ) *fileStore {
 	return &fileStore{
 		destinationDir: destinationDir,
 		osmFilename: osmFilename,
-		nodeDB: nodeDB,
+		osm2GmStore: osm2GmStore,
 		edgeBatchStorer: edgeBatchStorer,
 	}
 }
@@ -73,10 +73,13 @@ func (fs *fileStore) Persist() error {
 		} else {
 			switch v := v.(type) {
 			case *osmpbf.Node:
-				gm2OsmNode := fs.nodeDB.Read(v.ID)
+				gm2OsmNode := fs.osm2GmStore.Read(v.ID)
 				if gm2OsmNode == nil {
 					continue
 				}
+
+				gm2OsmNode.Point = gravelmap.Point{Lat: v.Lat, Lng: v.Lon}
+				_ = fs.osm2GmStore.Write(gm2OsmNode)
 
 				// TODO: create an extract node service and create a node package to include the 2 jobs below
 				// inject to the service a osmFilename, nodePositionWriter, gmEdgeBboxWriter (the implementation will be file)
