@@ -15,15 +15,15 @@ type graph struct {
 	osmFilename string
 	graph *dijkstra.Graph
 	nodeDB gravelmap.Osm2GmNodeReaderWriter
-	distanceCalc gravelmap.DistanceCalculator
+	costEvaluator gravelmap.CostEvaluator
 }
 
-func NewGraph(osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter, distanceCalc gravelmap.DistanceCalculator) *graph {
+func NewGraph(osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter, costEvaluator gravelmap.CostEvaluator) *graph {
 	return &graph{
 		osmFilename: osmFilename,
 		graph: dijkstra.NewGraph(),
 		nodeDB: nodeDB,
-		distanceCalc: distanceCalc,
+		costEvaluator: costEvaluator,
 	}
 }
 
@@ -60,7 +60,7 @@ func (g *graph) Prepare () {
 					gmNds = append(gmNds, *gmNode)
 				}
 
-				vtx := g.addWaysWithCostToGraph(gmNds, lastAddedVertex)
+				vtx := g.addWaysWithCostToGraph(gmNds, v.Tags, lastAddedVertex)
 				if vtx != -1 {
 					lastAddedVertex = vtx
 				}
@@ -75,10 +75,9 @@ func (g *graph) GetGraph () *dijkstra.Graph {
 	return g.graph
 }
 
-func (g *graph) addWaysWithCostToGraph(wayNdsOsm2GM []gravelmap.NodeOsm2GM, previousLastAddedVertex int) int {
+func (g *graph) addWaysWithCostToGraph(wayNdsOsm2GM []gravelmap.NodeOsm2GM, tags map[string]string, previousLastAddedVertex int) int {
+	var evaluativeWay = gravelmap.EvaluativeWay{Tags: tags}
 	var previousSubwayPoint = gravelmap.Point{}
-	var distance int64 = 0
-
 	var previousEdge gravelmap.NodeOsm2GM
 	var firstEdge gravelmap.NodeOsm2GM
 	lastAddedVertex := -1
@@ -91,22 +90,27 @@ func (g *graph) addWaysWithCostToGraph(wayNdsOsm2GM []gravelmap.NodeOsm2GM, prev
 			}
 
 			if isFirstEdge := firstEdge == (gravelmap.NodeOsm2GM{}); isFirstEdge {
+				evaluativeWay.Points = append(evaluativeWay.Points, ndOsm2GM.Point)
 				previousSubwayPoint = ndOsm2GM.Point
 				firstEdge = ndOsm2GM
 				previousEdge = ndOsm2GM
 				continue
 			}
 
-			distance += g.distanceCalc.Calculate(ndOsm2GM.Point, previousSubwayPoint)
+			evaluativeWay.Points = append(evaluativeWay.Points, ndOsm2GM.Point)
 
-			g.graph.AddArc(ndOsm2GM.GmID, previousEdge.GmID, distance)
-			g.graph.AddArc(previousEdge.GmID, ndOsm2GM.GmID, distance)
+			cost := g.costEvaluator.Evaluate(evaluativeWay)
+
+			g.graph.AddArc(ndOsm2GM.GmID, previousEdge.GmID, cost.Cost)
+			g.graph.AddArc(previousEdge.GmID, ndOsm2GM.GmID, cost.ReverseCost)
+
+			evaluativeWay.Points = []gravelmap.Point{ndOsm2GM.Point}
 
 			previousEdge = ndOsm2GM
 			previousSubwayPoint = ndOsm2GM.Point
 		} else {
 			if hasPreviousSubwayPoint := previousSubwayPoint != (gravelmap.Point{}); hasPreviousSubwayPoint {
-				distance += g.distanceCalc.Calculate(ndOsm2GM.Point, previousSubwayPoint)
+				evaluativeWay.Points = append(evaluativeWay.Points, ndOsm2GM.Point)
 			}
 		}
 	}

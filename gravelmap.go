@@ -15,6 +15,21 @@ type Way struct {
 	EdgeTo int32
 }
 
+// EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
+type EvaluativeWay struct {
+	Tags map[string]string
+	Points []Point
+}
+
+type WayCost struct {
+	Cost int64
+	ReverseCost int64
+}
+
+type CostEvaluator interface {
+	Evaluate(way EvaluativeWay) WayCost
+}
+
 type Osm2GmNodeReaderWriter interface {
 	Write(gm *NodeOsm2GM) error
 	Read(osmNdID int64) *NodeOsm2GM

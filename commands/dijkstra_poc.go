@@ -101,7 +101,8 @@ func dijkstraPocCommand() *cobra.Command {
 
 			// ## 3. Create the dijkstra graph that we will use to do the actual routing ##
 			distanceCalc := distance.NewHaversine()
-			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore, distanceCalc)
+			costEvaluator := way.NewCostEvaluate(distanceCalc)
+			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore, costEvaluator)
 			gmGraph.Prepare()
 
 			// also persist it to file
