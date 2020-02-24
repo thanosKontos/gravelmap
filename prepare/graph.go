@@ -54,15 +54,13 @@ func (g *graph) Prepare () {
 		} else {
 			switch v := v.(type) {
 			case *osmpbf.Way:
-				var intersections []int
+				var gmNds []gravelmap.NodeOsm2GM
 				for _, osmNdID := range v.NodeIDs {
 					gmNode := g.nodeDB.Read(osmNdID)
-					if gmNode.Occurrences > 1 {
-						intersections = append(intersections, gmNode.NewID)
-					}
+					gmNds = append(gmNds, *gmNode)
 				}
 
-				vtx := g.addIntersectionsToGraph(intersections, lastAddedVertex)
+				vtx := g.addWaysWithCostToGraph(gmNds, lastAddedVertex)
 				if vtx != -1 {
 					lastAddedVertex = vtx
 				}
@@ -77,22 +75,32 @@ func (g *graph) GetGraph () *dijkstra.Graph {
 	return g.graph
 }
 
-func (g *graph) addIntersectionsToGraph(intersections []int, previousLastAddedVertex int) int {
-	previous := 0
+func (g *graph) addWaysWithCostToGraph(wayNds []gravelmap.NodeOsm2GM, previousLastAddedVertex int) int {
+	var previousEdge gravelmap.NodeOsm2GM
+	var firstEdge gravelmap.NodeOsm2GM
 	lastAddedVertex := -1
 
-	for i, isn := range intersections {
-		if isn > previousLastAddedVertex || previousLastAddedVertex == 0 {
-			g.graph.AddVertex(isn)
-			lastAddedVertex = isn
+	for _, wayNd := range wayNds {
+		if isEdge := wayNd.Occurrences > 1; isEdge {
+			if wayNd.NewID > previousLastAddedVertex || previousLastAddedVertex == 0 {
+				g.graph.AddVertex(wayNd.NewID)
+				lastAddedVertex = wayNd.NewID
+			}
+
+			if isFirstEdge := firstEdge == (gravelmap.NodeOsm2GM{}); isFirstEdge {
+				firstEdge = wayNd
+				previousEdge = wayNd
+				continue
+			}
+
+
+
+			g.graph.AddArc(wayNd.NewID, previousEdge.NewID, 1)
+			g.graph.AddArc(previousEdge.NewID, wayNd.NewID, 1)
+
+			previousEdge = wayNd
 		}
 
-		if i != 0 {
-			g.graph.AddArc(isn, previous, 1)
-			g.graph.AddArc(previous, isn, 1)
-		}
-
-		previous = isn
 	}
 
 	return lastAddedVertex
