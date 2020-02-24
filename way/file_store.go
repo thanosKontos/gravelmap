@@ -67,12 +67,12 @@ func (fs *fileStore) Persist() error {
 				var wayGmNds []int
 				for i, nd := range v.NodeIDs {
 					osm2gm := fs.nodeDB.Read(nd)
-					wayGmNds = append(wayGmNds, osm2gm.NewID)
+					wayGmNds = append(wayGmNds, osm2gm.GmID)
 
 					if i == 0 {
-						prevEdge = fs.nodeDB.Read(nd).NewID
+						prevEdge = fs.nodeDB.Read(nd).GmID
 					} else if i == len(v.NodeIDs) - 1 {
-						gmID := fs.nodeDB.Read(nd).NewID
+						gmID := fs.nodeDB.Read(nd).GmID
 
 						wayNds[gmID] = append(wayNds[gmID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
 						wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmID, fs.getWayPolyline(wayGmNds, false)})
@@ -80,10 +80,10 @@ func (fs *fileStore) Persist() error {
 						wayGmNds = []int{prevEdge}
 					} else {
 						if gmNd := fs.nodeDB.Read(nd); gmNd.Occurrences > 1 {
-							wayNds[gmNd.NewID] = append(wayNds[gmNd.NewID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
-							wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmNd.NewID, fs.getWayPolyline(wayGmNds, false)})
+							wayNds[gmNd.GmID] = append(wayNds[gmNd.GmID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
+							wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmNd.GmID, fs.getWayPolyline(wayGmNds, false)})
 
-							prevEdge = gmNd.NewID
+							prevEdge = gmNd.GmID
 							wayGmNds = []int{prevEdge}
 						}
 					}

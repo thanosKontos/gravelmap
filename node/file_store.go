@@ -84,7 +84,7 @@ func (fs *fileStore) Persist() error {
 				// TODO: create an extract node service and create a node package to include the 2 jobs below
 				// inject to the service a osmFilename, nodePositionWriter, gmEdgeBboxWriter (the implementation will be file)
 
-				gmNd := gravelmap.GMNode{ID: int32(gm2OsmNode.NewID), Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
+				gmNd := gravelmap.GMNode{ID: int32(gm2OsmNode.GmID), Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
 
 				// Write nodes in file in order to be able to find lat long per id
 				writeGmNode(f, gmNd)

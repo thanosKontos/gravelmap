@@ -4,8 +4,8 @@ package gravelmap
 const MinRoutingDistance = 2000
 
 type NodeOsm2GM struct {
-	OldID int64
-	NewID int
+	OsmID int64
+	GmID int
 	Occurrences int
 	Point Point
 }

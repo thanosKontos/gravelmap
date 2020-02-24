@@ -11,7 +11,7 @@ func NewOsm2GmNodeMemoryStore() NodeMap {
 }
 
 func (nm NodeMap) Write(gm *gravelmap.NodeOsm2GM) error {
-	nm[gm.OldID] = gm
+	nm[gm.OsmID] = gm
 
 	return nil
 }

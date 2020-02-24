@@ -75,32 +75,40 @@ func (g *graph) GetGraph () *dijkstra.Graph {
 	return g.graph
 }
 
-func (g *graph) addWaysWithCostToGraph(wayNds []gravelmap.NodeOsm2GM, previousLastAddedVertex int) int {
+func (g *graph) addWaysWithCostToGraph(wayNdsOsm2GM []gravelmap.NodeOsm2GM, previousLastAddedVertex int) int {
+	var previousSubwayPoint = gravelmap.Point{}
+	var distance int64 = 0
+
 	var previousEdge gravelmap.NodeOsm2GM
 	var firstEdge gravelmap.NodeOsm2GM
 	lastAddedVertex := -1
 
-	for _, wayNd := range wayNds {
-		if isEdge := wayNd.Occurrences > 1; isEdge {
-			if wayNd.NewID > previousLastAddedVertex || previousLastAddedVertex == 0 {
-				g.graph.AddVertex(wayNd.NewID)
-				lastAddedVertex = wayNd.NewID
+	for _, ndOsm2GM := range wayNdsOsm2GM {
+		if isEdge := ndOsm2GM.Occurrences > 1; isEdge {
+			if ndOsm2GM.GmID > previousLastAddedVertex || previousLastAddedVertex == 0 {
+				g.graph.AddVertex(ndOsm2GM.GmID)
+				lastAddedVertex = ndOsm2GM.GmID
 			}
 
 			if isFirstEdge := firstEdge == (gravelmap.NodeOsm2GM{}); isFirstEdge {
-				firstEdge = wayNd
-				previousEdge = wayNd
+				previousSubwayPoint = ndOsm2GM.Point
+				firstEdge = ndOsm2GM
+				previousEdge = ndOsm2GM
 				continue
 			}
 
+			distance += g.distanceCalc.Calculate(ndOsm2GM.Point, previousSubwayPoint)
 
+			g.graph.AddArc(ndOsm2GM.GmID, previousEdge.GmID, distance)
+			g.graph.AddArc(previousEdge.GmID, ndOsm2GM.GmID, distance)
 
-			g.graph.AddArc(wayNd.NewID, previousEdge.NewID, 1)
-			g.graph.AddArc(previousEdge.NewID, wayNd.NewID, 1)
-
-			previousEdge = wayNd
+			previousEdge = ndOsm2GM
+			previousSubwayPoint = ndOsm2GM.Point
+		} else {
+			if hasPreviousSubwayPoint := previousSubwayPoint != (gravelmap.Point{}); hasPreviousSubwayPoint {
+				distance += g.distanceCalc.Calculate(ndOsm2GM.Point, previousSubwayPoint)
+			}
 		}
-
 	}
 
 	return lastAddedVertex

@@ -54,10 +54,10 @@ func (n *osm2GmEdge) Extract() error {
 
 					if ndDB == nil {
 						inc++
-						_ = n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{OldID: osmNdID, NewID: inc, Occurrences: 1})
+						_ = n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{OsmID: osmNdID, GmID: inc, Occurrences: 1})
 					} else {
 						newCnt := ndDB.Occurrences + 1
-						_ = n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{OldID: ndDB.OldID, NewID: ndDB.NewID, Occurrences: newCnt})
+						_ = n.osm2GmNodeRw.Write(&gravelmap.NodeOsm2GM{OsmID: ndDB.OsmID, GmID: ndDB.GmID, Occurrences: newCnt})
 					}
 				}
 			}
