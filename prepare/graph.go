@@ -54,13 +54,13 @@ func (g *graph) Prepare () {
 		} else {
 			switch v := v.(type) {
 			case *osmpbf.Way:
-				var gmNds []gravelmap.NodeOsm2GM
+				var osm2gms []gravelmap.NodeOsm2GM
 				for _, osmNdID := range v.NodeIDs {
-					gmNode := g.nodeDB.Read(osmNdID)
-					gmNds = append(gmNds, *gmNode)
+					osm2gm := g.nodeDB.Read(osmNdID)
+					osm2gms = append(osm2gms, *osm2gm)
 				}
 
-				vtx := g.addWaysWithCostToGraph(gmNds, v.Tags, lastAddedVertex)
+				vtx := g.addWaysWithCostToGraph(osm2gms, v.Tags, lastAddedVertex)
 				if vtx != -1 {
 					lastAddedVertex = vtx
 				}

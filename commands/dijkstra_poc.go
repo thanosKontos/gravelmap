@@ -31,24 +31,7 @@ func dijkstraPocCommand() *cobra.Command {
 		Short: "a dijkstra test",
 		Long:  "a dijkstra test",
 		Run: func(cmd *cobra.Command, args []string) {
-			//logger := log.NewDebugCLI()
-
-
-			//var points []gravelmap.Point
-			//points = append(points, gravelmap.Point{Lat: 40.0884137, Lng: 22.3584989})
-			//points = append(points, gravelmap.Point{Lat: 40.1026541, Lng: 22.5018883})
-			//
-			//elevation := elevation.NewHgt("/tmp", logger)
-			//pts, err2 := elevation.Get(points)
-			//if err2 != nil {
-			//	fmt.Println(err2)
-			//}
-			//
-			//elevation.Close()
-			//fmt.Println(pts)
-			//os.Exit(0)
-
-
+			os.Mkdir("_files", 0777)
 
 			//OSMFilename := "/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
 			OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
@@ -73,15 +56,14 @@ func dijkstraPocCommand() *cobra.Command {
 
 			// TODO: here we need to pass to the graph preperator some kind of elevation grader and distance calculator
 
-			elevation := elevation.NewHgt("/tmp", logger)
-
 			// ## 3. Create the dijkstra graph that we will use to do the actual routing ##
-			distanceCalc := distance.NewHaversine()
-			costEvaluator := way.NewCostEvaluate(distanceCalc, elevation)
+			elevationGetterCloser := elevation.NewHgt("/tmp", logger)
+			distanceCalculator := distance.NewHaversine()
+			costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser)
 			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore, costEvaluator)
 			gmGraph.Prepare()
 
-			elevation.Close()
+			elevationGetterCloser.Close()
 
 			// also persist it to file
 			graphFile, _ := os.Create("_files/graph.gob")
@@ -89,7 +71,6 @@ func dijkstraPocCommand() *cobra.Command {
 			dataEncoder.Encode(gmGraph.GetGraph())
 			graphFile.Close()
 			logger.Info("Graph created")
-
 
 			// ## 4. Store polylines for ways
 			wayFileStore := way.NewWayFileStore("_files", OSMFilename, osm2GmStore, ndFileStore)

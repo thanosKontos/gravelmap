@@ -141,7 +141,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), log2.NewDebugCLI())
+	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), log2.NewStdout("info"))
 	if err != nil {
 		log.Fatal(err)
 	}
