@@ -15,6 +15,12 @@ type Way struct {
 	EdgeTo int32
 }
 
+type WayElevation struct {
+	Elevations []int32
+	Incline int32
+	Grade float64
+}
+
 // EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
 type EvaluativeWay struct {
 	Tags map[string]string
@@ -24,6 +30,11 @@ type EvaluativeWay struct {
 type WayCost struct {
 	Cost int64
 	ReverseCost int64
+}
+
+type ElevationGetterCloser interface {
+	Get(points []Point, distance float64) (*WayElevation, error)
+	Close()
 }
 
 type CostEvaluator interface {
@@ -54,8 +65,8 @@ type Point struct {
 	Lng float64
 }
 
-// WayElevation represents the elevation of a road (start, end and the gradient percentage)
-type WayElevation struct {
+// WayElevationOld represents the elevation of a road (start, end and the gradient percentage)
+type WayElevationOld struct {
 	Grade  float64
 	Start  float64
 	End    float64
@@ -114,7 +125,7 @@ type EdgeFinder interface {
 
 // ElevationGrader describes implementations of finding the elevation for continuous points
 type ElevationGrader interface {
-	Grade([]Point, float64) (*WayElevation, error)
+	Grade([]Point, float64) (*WayElevationOld, error)
 }
 
 // WayGrader describes implementations of grading the elevation of roads/paths

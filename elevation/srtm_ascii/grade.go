@@ -17,7 +17,7 @@ func NewElevationGrader(elevationFinder gravelmap.ElevationFinder) (*ElevationGr
 	}, nil
 }
 
-func (g *ElevationGrader) Grade(points []gravelmap.Point, distance float64) (*gravelmap.WayElevation, error) {
+func (g *ElevationGrader) Grade(points []gravelmap.Point, distance float64) (*gravelmap.WayElevationOld, error) {
 	if len(points) < 2 {
 		return nil, errors.New("cannot grade way of one or less points")
 	}
@@ -51,7 +51,7 @@ func (g *ElevationGrader) Grade(points []gravelmap.Point, distance float64) (*gr
 		return nil, errors.New("division by zero")
 	}
 
-	return &gravelmap.WayElevation{
+	return &gravelmap.WayElevationOld{
 		Grade:  grade,
 		Start:  startElev,
 		End:    endElev,

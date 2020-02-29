@@ -39,7 +39,7 @@ func TestGetTagsWeight(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T){
-			weight := getVehicleRoadAcceptance(test.tags)
+			weight := getVehicleWayAcceptance(test.tags)
 			assert.Equal(t, test.expected, weight)
 		})
 	}

@@ -3,7 +3,8 @@ package commands
 import (
 	"fmt"
 	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/cli"
+	"github.com/thanosKontos/gravelmap/log"
+
 	"os"
 
 	"github.com/joho/godotenv"
@@ -58,9 +59,9 @@ func rootCommand() *cobra.Command {
 // persistentPreRunECommand defines the root command actions before the run command.
 func persistentPreRunECommand(cmdName string, verbose bool) error {
 	if verbose {
-		logger = cli.NewDebugCLI()
+		logger = log.NewDebugCLI()
 	} else {
-		logger = cli.NewNullCLI()
+		logger = log.NewNullCLI()
 	}
 
 	return nil

@@ -1,8 +1,6 @@
 package way
 
 import (
-	"fmt"
-
 	"github.com/thanosKontos/gravelmap"
 )
 
@@ -23,18 +21,33 @@ const (
 	vehicleAcceptanceNo
 )
 
-type costEvaluate struct {
-	distanceCalc gravelmap.DistanceCalculator
+const (
+	// wayAcceptanceYes defines a way that is allowed to follow in a specific direction (e.g. a 2 way road)
+	wayAcceptanceYes = iota
+
+	// wayAcceptanceNo defines a way that is not allowed to follow in a specific direction (e.g. a direction off a one way road)
+	wayAcceptanceNo
+)
+
+type wayAcceptance struct {
+	normal int32
+	reverse int32
 }
 
-func NewCostEvaluate(distanceCalc gravelmap.DistanceCalculator) *costEvaluate {
+type costEvaluate struct {
+	distanceCalc gravelmap.DistanceCalculator
+	elevationGetterCloser gravelmap.ElevationGetterCloser
+}
+
+func NewCostEvaluate(distanceCalc gravelmap.DistanceCalculator, elevationGetterCloser gravelmap.ElevationGetterCloser) *costEvaluate {
 	return &costEvaluate{
 		distanceCalc: distanceCalc,
+		elevationGetterCloser: elevationGetterCloser,
 	}
 }
 
 func (ce *costEvaluate) Evaluate(way gravelmap.EvaluativeWay) gravelmap.WayCost {
-	var distance float64 = 0.0
+	var distance = 0.0
 	prevPoint := gravelmap.Point{}
 	for i, pt := range way.Points {
 		if i == 0 {
@@ -45,104 +58,79 @@ func (ce *costEvaluate) Evaluate(way gravelmap.EvaluativeWay) gravelmap.WayCost 
 		distance += float64(ce.distanceCalc.Calculate(pt, prevPoint))
 	}
 
-	tagsWeight := getTagsWeight(way.Tags)
+	wayAcceptance := getWayAcceptance(way.Tags)
+	vehicleAcceptance := getVehicleWayAcceptance(way.Tags)
 
-	//fmt.Println(tagsWeight)
-	//fmt.Println("==================")
+	wayAcceptanceWeightNormal := 1.0
+	wayAcceptanceWeightReverse := 1.0
+	if wayAcceptance.normal == wayAcceptanceNo {
+		wayAcceptanceWeightNormal = 10000
+	}
+	if wayAcceptance.reverse == wayAcceptanceNo {
+		wayAcceptanceWeightReverse = 10000
+	}
+
+	vehicleAcceptanceWeight := 1.0
+	switch vehicleAcceptance {
+	case vehicleAcceptanceExclusively:
+		vehicleAcceptanceWeight = 0.7
+	case vehicleAcceptancePartially:
+		vehicleAcceptanceWeight = 2
+	case vehicleAcceptanceMaybe:
+		vehicleAcceptanceWeight = 1000
+	case vehicleAcceptanceNo:
+		vehicleAcceptanceWeight = 10000
+	}
+
+	offRoadWeight := getOffRoadWeight(way.Tags)
+
+	elevation, err := ce.elevationGetterCloser.Get(way.Points, distance)
+	elevationWeight := elevationWeight{1, 1}
+	if err == nil {
+		elevationWeight = getElevationWeight(*elevation)
+	}
 
 	return gravelmap.WayCost{
-		Cost: int64(distance*tagsWeight.weight),
-		ReverseCost: int64(distance*tagsWeight.oppositeWeight),
+		Cost: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightNormal * offRoadWeight * elevationWeight.weight),
+		ReverseCost: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightReverse * offRoadWeight * elevationWeight.reverse),
 	}
 }
 
-type bidirectionalWeight struct {
-	weight float64
-	oppositeWeight float64
-}
-
-func getTagsWeight(tags map[string]string) bidirectionalWeight {
-	fmt.Println(tags)
-
-	// Remove tags with
-
-	weight := bidirectionalWeight{1, 1}
-
-	//if _, ok := tags["cycleway:right"]; ok {
-	//	weight = 1
-	//}
-	//
-	//if _, ok := tags["cycleway:left"]; ok {
-	//	weight = 1
-	//}
-
-	if val, ok := tags["surface"]; ok {
-		if val == "unpaved" || val == "gravel" || val == "fine_gravel" || val == "ground" {
-			if val, ok := tags["bicycle"]; ok {
-				if val == "yes" || val == "permissive" {
-					weight = bidirectionalWeight{weight.weight*0.6, weight.oppositeWeight*0.6}
-				}
-			}
-			weight = bidirectionalWeight{weight.weight*0.7, weight.oppositeWeight*0.7}
-		}
-	}
-
-	if val, ok := tags["highway"]; ok {
-		if val == "footway" || val == "path" {
-			if val, ok := tags["bicycle"]; ok {
-				if val == "yes" || val == "permissive" || val == "designated" {
-					weight = bidirectionalWeight{weight.weight*0.7, weight.oppositeWeight*0.7}
-				} else {
-					weight = bidirectionalWeight{weight.weight*10000, weight.oppositeWeight*10000}
-				}
-			} else {
-				weight = bidirectionalWeight{weight.weight*10000, weight.oppositeWeight*10000}
-			}
-		}
-
-		if val == "cycleway" {
-			weight = bidirectionalWeight{weight.weight*0.9, weight.oppositeWeight*0.9}
-		}
-
-		if val == "service" {
-			if val, ok := tags["bicycle"]; ok {
-				if val == "yes" || val == "permissive" || val == "designated" {
-					weight = bidirectionalWeight{weight.weight*0.9, weight.oppositeWeight*0.9}
-				}
-			} else {
-				return bidirectionalWeight{10000.0, 10000.0}
-			}
-		}
-	}
-
-	if _, ok := tags["cycleway"]; ok {
-		weight = bidirectionalWeight{weight.weight*0.9, weight.oppositeWeight*0.9}
-	}
-
-	if val, ok := tags["bicycle"]; ok {
-		if val == "yes" || val == "permissive" || val == "designated" {
-			weight = bidirectionalWeight{weight.weight*0.9, weight.oppositeWeight*0.9}
-		}
-	}
-
-	//map[cycleway:opposite highway:residential maxspeed:30 name:Emtinghauser Weg oneway:yes oneway:bicycle:no source:yahoo images source:maxspeed:DE:zone30 surface:asphalt]
-
+func getWayAcceptance(tags map[string]string) wayAcceptance {
 	if val, ok := tags["oneway"]; ok {
 		if val == "yes" {
 			if val, ok := tags["cycleway"]; ok {
-				if val == "opposite" {
-					weight = bidirectionalWeight{1000.0, weight.weight}
+				if val == "opposite" || val == "opposite_lane" {
+					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 				}
-			} else {
-				weight = bidirectionalWeight{weight.weight, 10000.0}
+			}
+
+			if val, ok := tags["cycleway:left"]; ok {
+				if val == "opposite_lane" {
+					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
+				}
+			}
+
+			if val, ok := tags["cycleway:right"]; ok {
+				if val == "opposite_lane" {
+					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
+				}
+			}
+
+			if val, ok := tags["oneway:bicycle"]; ok {
+				if val == "no" {
+					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
+				}
 			}
 		}
+
+		return wayAcceptance{wayAcceptanceNo, wayAcceptanceYes}
 	}
 
-	return weight
+	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 }
 
-func getVehicleRoadAcceptance(tags map[string]string) int32 {
+func getVehicleWayAcceptance(tags map[string]string) int32 {
 	if _, ok := tags["mtb:scale"]; ok {
 		return vehicleAcceptanceExclusively
 	}
@@ -176,10 +164,72 @@ func getVehicleRoadAcceptance(tags map[string]string) int32 {
 			}
 		}
 
+		if val == "motorway" {
+			return vehicleAcceptanceNo
+		}
+
+		if val == "primary" {
+			return vehicleAcceptancePartially
+		}
+
 		return vehicleAcceptanceYes
 	}
 
 	return vehicleAcceptanceMaybe
 }
 
+func getOffRoadWeight(tags map[string]string) float64 {
+	if val, ok := tags["surface"]; ok {
+		if val == "unpaved" || val == "fine_gravel" || val == "gravel" || val == "compacted" || val == "pebblestone" || val == "earth" || val == "dirt" || val == "grass" || val == "ground" {
+			return 0.6
+		}
+	}
 
+	if val, ok := tags["highway"]; ok {
+		if val == "track" {
+			return 0.6
+		}
+	}
+
+	return 1
+}
+
+type elevationWeight struct {
+	weight float64
+	reverse float64
+}
+
+//0%: A flat road
+//1-3%: Slightly uphill but not particularly challenging. A bit like riding into the wind.
+//4-6%: A manageable gradient that can cause fatigue over long periods.
+//7-9%: Starting to become uncomfortable for seasoned riders, and very challenging for new climbers.
+//10%-15%: A painful gradient, especially if maintained for any length of time
+//16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
+func getElevationWeight(elevation gravelmap.WayElevation) elevationWeight {
+	switch {
+	case elevation.Grade < -15:
+		return elevationWeight{1, 15}
+	case elevation.Grade < -10:
+		return elevationWeight{1, 10}
+	case elevation.Grade < -7:
+		return elevationWeight{1, 7}
+	case elevation.Grade < -4:
+		return elevationWeight{0.8, 3}
+	case elevation.Grade < -2:
+		return elevationWeight{0.8, 1.2}
+	case elevation.Grade < 0:
+		return elevationWeight{0.8, 1}
+	case elevation.Grade < 2:
+		return elevationWeight{1, 0.8}
+	case elevation.Grade < 4:
+		return elevationWeight{1.2, 0.8}
+	case elevation.Grade < 7:
+		return elevationWeight{3, 0.8}
+	case elevation.Grade < 10:
+		return elevationWeight{7, 1}
+	case elevation.Grade < 15:
+		return elevationWeight{10, 1}
+	default:
+		return elevationWeight{15, 1}
+	}
+}

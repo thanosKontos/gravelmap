@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/cli"
+	log2 "github.com/thanosKontos/gravelmap/log"
 	"github.com/thanosKontos/gravelmap/kml"
 	"github.com/thanosKontos/gravelmap/route"
 	"log"
@@ -141,7 +141,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), cli.NewDebugCLI())
+	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), log2.NewDebugCLI())
 	if err != nil {
 		log.Fatal(err)
 	}

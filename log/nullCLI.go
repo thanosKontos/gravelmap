@@ -1,9 +1,9 @@
-package cli
+package log
 
 type nullCLI struct {
 }
 
-// NewDebugCLI initialize and return an new DebugCLI object.
+// NewNullCLI initialize and return an new DebugCLI object.
 func NewNullCLI() *nullCLI {
 	return &nullCLI{}
 }
