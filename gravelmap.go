@@ -15,6 +15,17 @@ type Way struct {
 	EdgeTo int32
 }
 
+type WayTo struct {
+	NdTo int
+	Polyline string
+}
+
+type WayStorer interface {
+	Store(ways map[int][]WayTo) error
+}
+
+//type WayInfo struct
+
 type WayElevation struct {
 	Elevations []int32
 	Incline int32

@@ -3,116 +3,22 @@ package way
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
-	"io"
-	"log"
 	"os"
-	"runtime"
 	"sort"
 
-	"github.com/qedus/osmpbf"
+	"fmt"
+
 	"github.com/thanosKontos/gravelmap"
-	"googlemaps.github.io/maps"
 )
 
 type fileStore struct {
 	storageDir string
-	osmFilename string
-	nodeDB gravelmap.Osm2GmNodeReaderWriter
-	gmNodeRd gravelmap.GmNodeReader
 }
 
-func NewWayFileStore(storageDir string, osmFilename string, nodeDB gravelmap.Osm2GmNodeReaderWriter, gmNodeRd gravelmap.GmNodeReader) *fileStore {
+func NewFileStore(storageDir string) *fileStore {
 	return &fileStore{
 		storageDir: storageDir,
-		osmFilename: osmFilename,
-		nodeDB: nodeDB,
-		gmNodeRd: gmNodeRd,
 	}
-}
-
-type wayTo struct {
-	ndTo int
-	polyline string
-}
-
-func (fs *fileStore) Persist() error {
-	osmF, err := os.Open(fs.osmFilename)
-	if err != nil {
-		return err
-	}
-	defer osmF.Close()
-
-	d := osmpbf.NewDecoder(osmF)
-
-	// use more memory from the start, it is faster
-	d.SetBufferSize(osmpbf.MaxBlobSize)
-
-	// start decoding with several goroutines, it is faster
-	err = d.Start(runtime.GOMAXPROCS(-1))
-	if err != nil {
-		return err
-	}
-
-	wayNds := make(map[int][]wayTo)
-	for {
-		if v, err := d.Decode(); err == io.EOF {
-			break
-		} else if err != nil {
-			log.Fatal(err)
-		} else {
-			switch v := v.(type) {
-			case *osmpbf.Way:
-				prevEdge := 0
-				var wayGmNds []int
-				for i, osmNdID := range v.NodeIDs {
-					osm2gm := fs.nodeDB.Read(osmNdID)
-					wayGmNds = append(wayGmNds, osm2gm.GmID)
-
-					if i == 0 {
-						prevEdge = fs.nodeDB.Read(osmNdID).GmID
-					} else if i == len(v.NodeIDs) - 1 {
-						gmID := fs.nodeDB.Read(osmNdID).GmID
-
-						wayNds[gmID] = append(wayNds[gmID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
-						wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmID, fs.getWayPolyline(wayGmNds, false)})
-
-						wayGmNds = []int{prevEdge}
-					} else {
-						if gmNd := fs.nodeDB.Read(osmNdID); gmNd.Occurrences > 1 {
-							wayNds[gmNd.GmID] = append(wayNds[gmNd.GmID], wayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
-							wayNds[prevEdge] = append(wayNds[prevEdge], wayTo{gmNd.GmID, fs.getWayPolyline(wayGmNds, false)})
-
-							prevEdge = gmNd.GmID
-							wayGmNds = []int{prevEdge}
-						}
-					}
-				}
-			default:
-				break
-			}
-		}
-	}
-
-	return fs.writeFilesForWays(wayNds)
-}
-
-func (fs *fileStore) getWayPolyline(wayGmNds []int, reverse bool) string {
-	var latLngs []maps.LatLng
-
-	if reverse {
-		for i := len(wayGmNds)-1; i >= 0; i-- {
-			gmNode, _ := fs.gmNodeRd.Read(int32(wayGmNds[i]))
-			latLngs = append(latLngs, maps.LatLng{Lat: gmNode.Lat, Lng: gmNode.Lng})
-		}
-	} else {
-		for _, gmNdID := range wayGmNds {
-			gmNode, _ := fs.gmNodeRd.Read(int32(gmNdID))
-			latLngs = append(latLngs, maps.LatLng{Lat: gmNode.Lat, Lng: gmNode.Lng})
-		}
-	}
-
-	return maps.Encode(latLngs)
 }
 
 type polylineLookupRecord struct {
@@ -121,7 +27,7 @@ type polylineLookupRecord struct {
 	polylineOffset int64
 }
 
-func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
+func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 	var gmNodeIdsSorted []int
 	for k := range ways {
 		gmNodeIdsSorted = append(gmNodeIdsSorted, k)
@@ -156,14 +62,14 @@ func (fs *fileStore) writeFilesForWays(ways map[int][]wayTo) error {
 		var wayToPolylineLookups []polylineLookupRecord
 
 		for i := 0; i < len(way); i++ {
-			polylineLen := int32(len(way[i].polyline))
+			polylineLen := int32(len(way[i].Polyline))
 
-			polylineLookupRec := polylineLookupRecord{int32(way[i].ndTo), polylineLen, polylineOffset}
+			polylineLookupRec := polylineLookupRecord{int32(way[i].NdTo), polylineLen, polylineOffset}
 			wayToPolylineLookups = append(wayToPolylineLookups, polylineLookupRec)
 
 			polylineOffset += int64(polylineLen)
 
-			polylines = append(polylines, way[i].polyline)
+			polylines = append(polylines, way[i].Polyline)
 		}
 		err = fs.writePolylinesFile(plFl, polylines)
 		if err != nil {

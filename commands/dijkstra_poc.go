@@ -10,6 +10,7 @@ import (
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/elevation"
 	"github.com/thanosKontos/gravelmap/node"
+	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/prepare"
 	"github.com/thanosKontos/gravelmap/way"
 )
@@ -53,11 +54,14 @@ func dijkstraPocCommand() *cobra.Command {
 			}
 			logger.Info("Node file written")
 
+			// TODO: here we need to pass to the graph preperator
 
-			// TODO: here we need to pass to the graph preperator some kind of elevation grader and distance calculator
+
+
+
 
 			// ## 3. Create the dijkstra graph that we will use to do the actual routing ##
-			elevationGetterCloser := elevation.NewHgt("/tmp", logger)
+			elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 			distanceCalculator := distance.NewHaversine()
 			costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser)
 			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore, costEvaluator)
@@ -73,8 +77,9 @@ func dijkstraPocCommand() *cobra.Command {
 			logger.Info("Graph created")
 
 			// ## 4. Store polylines for ways
-			wayFileStore := way.NewWayFileStore("_files", OSMFilename, osm2GmStore, ndFileStore)
-			err = wayFileStore.Persist()
+			wayStorer := way.NewFileStore("_files")
+			osmWayFileRead := osm.NewOsmWayFileRead(OSMFilename, osm2GmStore, ndFileStore, wayStorer)
+			err = osmWayFileRead.Process()
 			if err != nil {
 				logger.Error("Way files written")
 				os.Exit(0)

@@ -22,13 +22,17 @@ var errorCannotGradeWay = errors.New("could not grade way")
 type hgt struct {
 	files map[string]*os.File
 	destinationDir string
+	nasaUsername string
+	nasaPassword string
 	logger gravelmap.Logger
 }
 
-func NewHgt(destinationDir string, logger gravelmap.Logger) *hgt {
+func NewHgt(destinationDir, nasaUsername, nasaPassword string, logger gravelmap.Logger) *hgt {
 	return &hgt{
 		files: make(map[string]*os.File),
 		destinationDir: destinationDir,
+		nasaUsername: nasaUsername,
+		nasaPassword: nasaPassword,
 		logger: logger,
 	}
 }
@@ -102,7 +106,7 @@ func (h *hgt) downloadFile(dms string) error {
 	h.logger.Debug(fmt.Sprintf("Start downloading file: %s", dms))
 
 	url := fmt.Sprintf("http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/%s.SRTMGL1.hgt.zip", dms)
-	out, err := exec.Command("wget", url, "--http-user=tkontos", "--http-password=1234", "-P", h.destinationDir).Output()
+	out, err := exec.Command("wget", url, fmt.Sprintf("--http-user=%s", h.nasaUsername), fmt.Sprintf("--http-password=%s", h.nasaPassword), "-P", h.destinationDir).Output()
 	if err != nil {
 		h.logger.Error("wget error")
 
@@ -110,8 +114,6 @@ func (h *hgt) downloadFile(dms string) error {
 	}
 
 	h.logger.Debug(string(out))
-
-
 
 	zipFile := fmt.Sprintf("/%s/%s.SRTMGL1.hgt.zip", h.destinationDir, dms)
 	out, err = exec.Command("tar", "xvf", zipFile, "-C", h.destinationDir).Output()
