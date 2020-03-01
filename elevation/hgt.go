@@ -39,8 +39,7 @@ func NewHgt(destinationDir, nasaUsername, nasaPassword string, logger gravelmap.
 
 func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayElevation, error) {
 	var ptElevations []int32
-	var prevEle int32
-	var incline int32 = 0
+	var elevationStart, elevationEnd int16
 
 	if distance <= 10 {
 		h.logger.Debug("Could not grade (small distance)")
@@ -79,15 +78,23 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 			return nil, errorCannotGradeWay
 		}
 
-		if i != 0 {
-			incline += ele - prevEle
+		if i == 0 {
+			elevationStart = int16(ele)
+		}
+
+		if i == len(points) - 1 {
+			elevationEnd = int16(ele)
 		}
 
 		ptElevations = append(ptElevations, ele)
-		prevEle = ele
 	}
 
-	return &gravelmap.WayElevation{Elevations: ptElevations, Incline: incline, Grade: float64(incline*100)/distance}, nil
+	return &gravelmap.WayElevation{
+		Elevations: ptElevations,
+		Grade: float64(elevationEnd - elevationStart*100)/distance,
+		ElevationStart: elevationStart,
+		ElevationEnd: elevationEnd,
+	}, nil
 }
 
 func readNextBytes(file *os.File, number int) []byte {

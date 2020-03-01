@@ -4,15 +4,15 @@ package gravelmap
 const MinRoutingDistance = 2000
 
 const (
-	WayTypePaved = iota
+	WayTypePaved int8 = iota
 	WayTypeUnaved
 	WayTypePath
 )
 
 type Node struct {
-	GmID int
+	Id          int
 	Occurrences int
-	Point Point
+	Point       Point
 }
 
 type Way struct {
@@ -22,9 +22,25 @@ type Way struct {
 
 type WayTo struct {
 	NdTo int
+	Points []Point
+	Tags map[string]string
+
+	Distance int32
 	WayType int8
 	Grade float32
-	Polyline string
+	ElevationStart int16
+	ElevationEnd int16
+	Cost int64
+}
+
+type WayEvaluation struct {
+	Cost int64
+	ReverseCost int64
+	Distance int32
+	WayType int8
+	Grade float32
+	ElevationStart int16
+	ElevationEnd int16
 }
 
 type WayStorer interface {
@@ -32,13 +48,14 @@ type WayStorer interface {
 }
 
 type GraphWayAdder interface {
-	AddWays(wayNdsOsm2GM []Node, tags map[string]string, previousLastAddedVertex int) int
+	AddWays(ways map[int][]WayTo)
 }
 
 type WayElevation struct {
 	Elevations []int32
-	Incline int32
 	Grade float64
+	ElevationStart int16
+	ElevationEnd int16
 }
 
 // EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
@@ -47,6 +64,7 @@ type EvaluativeWay struct {
 	Points []Point
 }
 
+// TODO delete
 type WayCost struct {
 	Cost int64
 	ReverseCost int64
@@ -58,7 +76,7 @@ type ElevationGetterCloser interface {
 }
 
 type CostEvaluator interface {
-	Evaluate(way EvaluativeWay) WayCost
+	Evaluate(points []Point, tags map[string]string) WayEvaluation
 }
 
 type Osm2GmNodeReaderWriter interface {
@@ -66,13 +84,8 @@ type Osm2GmNodeReaderWriter interface {
 	Read(osmNdID int64) *Node
 }
 
-type GMNode struct {
-	ID int32
-	Point
-}
-
 type GmNodeReader interface {
-	Read(ndID int32) (*GMNode, error)
+	Read(ndID int) (*Node, error)
 }
 
 type WayPolylineReader interface {
@@ -118,7 +131,7 @@ type DistanceCalculator interface {
 }
 
 type EdgeBatchStorer interface {
-	BatchStore(ndBatch []GMNode) error
+	BatchStore(ndBatch []Node) error
 }
 
 type EdgeFinder interface {
@@ -146,7 +159,14 @@ type Logger interface {
 
 // PresentableWay describes a way with all information presentable to a client
 type PresentableWay struct {
+	Distance int32
 	Polyline string
 	SurfaceType int8
 	ElevationGrade float32
+	ElevationStart int16
+	ElevationEnd int16
+}
+
+type Encoder interface {
+	Encode(points []Point) string
 }

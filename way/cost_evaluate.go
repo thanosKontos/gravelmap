@@ -46,10 +46,10 @@ func NewCostEvaluate(distanceCalc gravelmap.DistanceCalculator, elevationGetterC
 	}
 }
 
-func (ce *costEvaluate) Evaluate(way gravelmap.EvaluativeWay) gravelmap.WayCost {
+func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]string) gravelmap.WayEvaluation {
 	var distance = 0.0
 	prevPoint := gravelmap.Point{}
-	for i, pt := range way.Points {
+	for i, pt := range points {
 		if i == 0 {
 			prevPoint = pt
 			continue
@@ -58,8 +58,8 @@ func (ce *costEvaluate) Evaluate(way gravelmap.EvaluativeWay) gravelmap.WayCost 
 		distance += float64(ce.distanceCalc.Calculate(pt, prevPoint))
 	}
 
-	wayAcceptance := getWayAcceptance(way.Tags)
-	vehicleAcceptance := getVehicleWayAcceptance(way.Tags)
+	wayAcceptance := getWayAcceptance(tags)
+	vehicleAcceptance := getVehicleWayAcceptance(tags)
 
 	wayAcceptanceWeightNormal := 1.0
 	wayAcceptanceWeightReverse := 1.0
@@ -82,17 +82,35 @@ func (ce *costEvaluate) Evaluate(way gravelmap.EvaluativeWay) gravelmap.WayCost 
 		vehicleAcceptanceWeight = 10000
 	}
 
-	offRoadWeight := getOffRoadWeight(way.Tags)
+	offRoadWeight := 1.0
+	wayType := gravelmap.WayTypePaved
+	if isOffRoadWay(tags) {
+		offRoadWeight = 0.6
+		wayType = gravelmap.WayTypeUnaved
+	}
 
-	elevation, err := ce.elevationGetterCloser.Get(way.Points, distance)
+	elevation, err := ce.elevationGetterCloser.Get(points, distance)
+	var elevationGrade float32 = 1
+	var elevationStart, elevationEnd int16
+	if elevation != nil {
+		elevationGrade = float32(elevation.Grade)
+		elevationStart = elevation.ElevationStart
+		elevationEnd = elevation.ElevationEnd
+	}
+
 	elevationWeight := elevationWeight{1, 1}
 	if err == nil {
 		elevationWeight = getElevationWeight(*elevation)
 	}
 
-	return gravelmap.WayCost{
+	return gravelmap.WayEvaluation{
 		Cost: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightNormal * offRoadWeight * elevationWeight.weight),
 		ReverseCost: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightReverse * offRoadWeight * elevationWeight.reverse),
+		Distance: int32(distance),
+		WayType: wayType,
+		Grade: elevationGrade,
+		ElevationStart: elevationStart,
+		ElevationEnd: elevationEnd,
 	}
 }
 
@@ -178,20 +196,20 @@ func getVehicleWayAcceptance(tags map[string]string) int32 {
 	return vehicleAcceptanceMaybe
 }
 
-func getOffRoadWeight(tags map[string]string) float64 {
+func isOffRoadWay(tags map[string]string) bool {
 	if val, ok := tags["surface"]; ok {
 		if val == "unpaved" || val == "fine_gravel" || val == "gravel" || val == "compacted" || val == "pebblestone" || val == "earth" || val == "dirt" || val == "grass" || val == "ground" {
-			return 0.6
+			return true
 		}
 	}
 
 	if val, ok := tags["highway"]; ok {
 		if val == "track" {
-			return 0.6
+			return true
 		}
 	}
 
-	return 1
+	return false
 }
 
 type elevationWeight struct {

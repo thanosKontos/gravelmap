@@ -9,6 +9,7 @@ import (
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/elevation"
+	"github.com/thanosKontos/gravelmap/encode"
 	graph2 "github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/osm"
@@ -59,10 +60,12 @@ func importRoutingDataCommand() *cobra.Command {
 			elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 			distanceCalculator := distance.NewHaversine()
 			costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser)
-			graph := graph2.NewDijkstra(costEvaluator)
-			wayStorer := way.NewFileStore("_files")
+			pointEncoder := encode.NewGooglemaps()
 
-			osmWayFileRead := osm.NewOsmWayFileRead(OSMFilename, osm2GmStore, ndFileStore, wayStorer, graph)
+			graph := graph2.NewDijkstra()
+			wayStorer := way.NewFileStore("_files", pointEncoder)
+
+			osmWayFileRead := osm.NewOsmWayFileRead(OSMFilename, osm2GmStore, ndFileStore, wayStorer, graph, costEvaluator)
 			err = osmWayFileRead.Process()
 			if err != nil {
 				logger.Error(err)

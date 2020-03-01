@@ -56,7 +56,14 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, erro
 			return []gravelmap.PresentableWay{}, err
 		}
 
-		presentableWays = append(presentableWays, gravelmap.PresentableWay{Polyline: pl, SurfaceType: edgeToRec.wayType, ElevationGrade: edgeToRec.grade})
+		presentableWays = append(presentableWays, gravelmap.PresentableWay{
+			Polyline: pl,
+			SurfaceType: edgeToRec.wayType,
+			ElevationGrade: edgeToRec.grade,
+			ElevationStart: edgeToRec.elevationStart,
+			ElevationEnd: edgeToRec.elevationEnd,
+			Distance: edgeToRec.distance,
+		})
 	}
 
 	fr.close()
@@ -66,10 +73,11 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, erro
 
 func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*edgeToRecord, error) {
 	readOffset := edgeStart.NodeToOffset
-	var polylineLength int32
+	var distance, polylineLength int32
 	var polylineOffset int64
 	var wayType int8
 	var grade float32
+	var elevationStart, elevationEnd int16
 	found := false
 
 	for i := 0; int32(i) < edgeStart.ConnectionsCnt; i++ {
@@ -82,13 +90,25 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 		binary.Read(buffer, binary.BigEndian, &storedEdgeTo)
 
 		if storedEdgeTo == edgeToId {
-			data := readNextBytes(fr.edgeToFile, 1)
+			data := readNextBytes(fr.edgeToFile, 4)
 			buffer := bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &distance)
+
+			data = readNextBytes(fr.edgeToFile, 1)
+			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &wayType)
 
 			data = readNextBytes(fr.edgeToFile, 4)
 			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &grade)
+
+			data = readNextBytes(fr.edgeToFile, 2)
+			buffer = bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &elevationStart)
+
+			data = readNextBytes(fr.edgeToFile, 2)
+			buffer = bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &elevationEnd)
 
 			data = readNextBytes(fr.edgeToFile, 4)
 			buffer = bytes.NewBuffer(data)
@@ -111,8 +131,11 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 
 	edgeToRecord := edgeToRecord{
 		nodeTo: edgeToId,
+		distance: distance,
 		wayType: wayType,
 		grade: grade,
+		elevationStart: elevationStart,
+		elevationEnd: elevationEnd,
 		polylinePosition: polylinePosition{length: polylineLength, offset: polylineOffset},
 	}
 

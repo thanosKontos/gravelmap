@@ -63,7 +63,7 @@ func (fs *fileStore) Persist() error {
 		return err
 	}
 
-	var gmNdBatch []gravelmap.GMNode
+	var gmNdBatch []gravelmap.Node
 
 	for {
 		if v, err := d.Decode(); err == io.EOF {
@@ -84,7 +84,7 @@ func (fs *fileStore) Persist() error {
 				// TODO: create an extract node service and create a node package to include the 2 jobs below
 				// inject to the service a osmFilename, nodePositionWriter, gmEdgeBboxWriter (the implementation will be file)
 
-				gmNd := gravelmap.GMNode{ID: int32(gm2OsmNode.GmID), Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
+				gmNd := gravelmap.Node{Id: gm2OsmNode.Id, Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
 
 				// Write nodes in file in order to be able to find lat long per id
 				writeGmNode(f, gmNd)
@@ -97,7 +97,7 @@ func (fs *fileStore) Persist() error {
 
 					if len(gmNdBatch) >= 10000 {
 						fs.edgeBatchStorer.BatchStore(gmNdBatch)
-						gmNdBatch = []gravelmap.GMNode{}
+						gmNdBatch = []gravelmap.Node{}
 					}
 				}
 
@@ -114,8 +114,8 @@ func (fs *fileStore) Persist() error {
 	return nil
 }
 
-func writeGmNode(f *os.File, gmNd gravelmap.GMNode) {
-	_, err := f.Seek(int64(gmNd.ID*recordSize), 0)
+func writeGmNode(f *os.File, gmNd gravelmap.Node) {
+	_, err := f.Seek(int64(gmNd.Id* recordSize), 0)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -136,7 +136,7 @@ func writeNextBytes(file *os.File, bytes []byte) {
 	}
 }
 
-func (fs *fileStore) Read(ndID int32) (*gravelmap.GMNode, error) {
+func (fs *fileStore) Read(ndID int) (*gravelmap.Node, error) {
 	f, err := os.Open(fmt.Sprintf("%s/%s", fs.destinationDir, filename))
 	defer f.Close()
 	if err != nil {
@@ -153,7 +153,7 @@ func (fs *fileStore) Read(ndID int32) (*gravelmap.GMNode, error) {
 		log.Fatal("binary.Read failed", err)
 	}
 
-	return &gravelmap.GMNode{ID: ndID, Point: pt}, nil
+	return &gravelmap.Node{Id: ndID, Point: pt}, nil
 }
 
 func readNextBytes(f *os.File, number int) []byte {

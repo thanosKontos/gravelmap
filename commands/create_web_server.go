@@ -93,29 +93,18 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 
 	dataFile.Close()
 
-
-	fmt.Println("EDGES:", edgeFrom, edgeTo)
-
-
 	best, err := graph.Shortest(int(edgeFrom), int(edgeTo))
 
-
-	testWays := best.Path
-	var testWayPairs []gravelmap.Way
-	var prev = 0
-	var routingData []gravelmap.RoutingLeg
-
-
-
-	for i, testway := range testWays {
+	var resultEdgePairs []gravelmap.Way
+	var prevEdge = 0
+	for i, curEdge := range best.Path {
 		if i == 0 {
-			prev = testway
+			prevEdge = curEdge
 			continue
 		}
 
-		testWayPairs = append(testWayPairs, gravelmap.Way{EdgeFrom: int32(prev), EdgeTo: int32(testway)})
-
-		prev = testway
+		resultEdgePairs = append(resultEdgePairs, gravelmap.Way{EdgeFrom: int32(prevEdge), EdgeTo: int32(curEdge)})
+		prevEdge = curEdge
 	}
 
 	wayFile, err := way.NewWayFileRead("_files")
@@ -123,8 +112,9 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
 	}
 
+	var routingData []gravelmap.RoutingLeg
+	presentableWays, _ := wayFile.Read(resultEdgePairs)
 
-	presentableWays, _ := wayFile.Read(testWayPairs)
 	for _, pWay := range presentableWays {
 		var latLngs []gravelmap.Point
 		tmpLatLngs, _ := maps.DecodePolyline(pWay.Polyline)
@@ -135,9 +125,13 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 
 		routingLeg := gravelmap.RoutingLeg{
 			Coordinates: latLngs,
-			Length: 10,
-			Paved: pWay.SurfaceType == gravelmap.WayTypeUnaved,
-			Elevation: &gravelmap.RoutingLegElevation{Grade: float64(pWay.ElevationGrade), Start: 10, End: 20.0},
+			Length: float64(pWay.Distance),
+			Paved: pWay.SurfaceType == gravelmap.WayTypePaved,
+			Elevation: &gravelmap.RoutingLegElevation{
+				Grade: float64(pWay.ElevationGrade),
+				Start: float64(pWay.ElevationStart),
+				End: float64(pWay.ElevationEnd),
+			},
 		}
 
 		routingData = append(routingData, routingLeg)
