@@ -79,7 +79,7 @@ func (fs *fileStore) Persist() error {
 				}
 
 				gm2OsmNode.Point = gravelmap.Point{Lat: v.Lat, Lng: v.Lon}
-				_ = fs.osm2GmStore.Write(gm2OsmNode)
+				_ = fs.osm2GmStore.Write(v.ID, gm2OsmNode)
 
 				// TODO: create an extract node service and create a node package to include the 2 jobs below
 				// inject to the service a osmFilename, nodePositionWriter, gmEdgeBboxWriter (the implementation will be file)

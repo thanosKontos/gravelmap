@@ -9,8 +9,7 @@ const (
 	WayTypePath
 )
 
-type NodeOsm2GM struct {
-	OsmID int64
+type Node struct {
 	GmID int
 	Occurrences int
 	Point Point
@@ -33,7 +32,7 @@ type WayStorer interface {
 }
 
 type GraphWayAdder interface {
-	AddWays(wayNdsOsm2GM []NodeOsm2GM, tags map[string]string, previousLastAddedVertex int) int
+	AddWays(wayNdsOsm2GM []Node, tags map[string]string, previousLastAddedVertex int) int
 }
 
 type WayElevation struct {
@@ -63,8 +62,8 @@ type CostEvaluator interface {
 }
 
 type Osm2GmNodeReaderWriter interface {
-	Write(gm *NodeOsm2GM) error
-	Read(osmNdID int64) *NodeOsm2GM
+	Write(osmNdID int64, gm *Node) error
+	Read(osmNdID int64) *Node
 }
 
 type GMNode struct {

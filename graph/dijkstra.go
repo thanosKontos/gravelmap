@@ -21,11 +21,11 @@ func (d *dijkstra) Get() *dijkstra2.Graph {
 	return d.graph
 }
 
-func (d *dijkstra) AddWays(wayNdsOsm2GM []gravelmap.NodeOsm2GM, tags map[string]string, previousLastAddedVertex int) int {
+func (d *dijkstra) AddWays(wayNdsOsm2GM []gravelmap.Node, tags map[string]string, previousLastAddedVertex int) int {
 	var evaluativeWay = gravelmap.EvaluativeWay{Tags: tags}
 	var previousSubwayPoint = gravelmap.Point{}
-	var previousEdge gravelmap.NodeOsm2GM
-	var firstEdge gravelmap.NodeOsm2GM
+	var previousEdge gravelmap.Node
+	var firstEdge gravelmap.Node
 	lastAddedVertex := -1
 
 	for _, ndOsm2GM := range wayNdsOsm2GM {
@@ -35,7 +35,7 @@ func (d *dijkstra) AddWays(wayNdsOsm2GM []gravelmap.NodeOsm2GM, tags map[string]
 				lastAddedVertex = ndOsm2GM.GmID
 			}
 
-			if isFirstEdge := firstEdge == (gravelmap.NodeOsm2GM{}); isFirstEdge {
+			if isFirstEdge := firstEdge == (gravelmap.Node{}); isFirstEdge {
 				evaluativeWay.Points = append(evaluativeWay.Points, ndOsm2GM.Point)
 				previousSubwayPoint = ndOsm2GM.Point
 				firstEdge = ndOsm2GM

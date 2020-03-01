@@ -65,7 +65,7 @@ func (fs *osmFileRead) Process() error {
 			case *osmpbf.Way:
 				prevEdge := 0
 				var wayGmNds []int
-				var osm2gms []gravelmap.NodeOsm2GM
+				var osm2gms []gravelmap.Node
 				for i, osmNdID := range v.NodeIDs {
 					osm2gm := fs.nodeDB.Read(osmNdID)
 					osm2gms = append(osm2gms, *osm2gm)
