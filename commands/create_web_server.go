@@ -1,118 +1,57 @@
 package commands
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/thanosKontos/gravelmap"
-	log2 "github.com/thanosKontos/gravelmap/log"
-	"github.com/thanosKontos/gravelmap/kml"
-	"github.com/thanosKontos/gravelmap/route"
-	"log"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/thanosKontos/gravelmap"
+	"github.com/thanosKontos/gravelmap/dijkstra"
+	"github.com/thanosKontos/gravelmap/distance"
+	"github.com/thanosKontos/gravelmap/edge"
+	"github.com/thanosKontos/gravelmap/way"
+	"googlemaps.github.io/maps"
+
+	"net/http"
 )
 
-var kmlBase = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>Extracted route from gravelmap</name>
-    <description>Extracted route from gravelmap route from x to y.</description>
-    <Style id="red-pvd">
-      <LineStyle>
-        <color>ff5252ff</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="red-upvd">
-      <LineStyle>
-        <color>ff5252ff</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    <Style id="green-pvd">
-      <LineStyle>
-        <color>7f236b31</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="green-upvd">
-      <LineStyle>
-        <color>7f236b31</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    <Style id="pink-pvd">
-      <LineStyle>
-        <color>7fe863ff</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="pink-upvd">
-      <LineStyle>
-        <color>7fe863ff</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    <Style id="blue-pvd">
-      <LineStyle>
-        <color>7f9e4a42</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="blue-upvd">
-      <LineStyle>
-        <color>7f9e4a42</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    %s
-  </Document>
-</kml>
-`
-
-var placeMarkBase = `<Placemark>
-<styleUrl>#%s</styleUrl>
-<LineString>
-<extrude>1</extrude>
-<tessellate>1</tessellate>
-<altitudeMode>absolute</altitudeMode>
-<coordinates>%s</coordinates>
-</LineString>
-</Placemark>`
-
-// createRoutingDataCommand defines the create route command.
-func createServerCommand() *cobra.Command {
-	createServerCmd := &cobra.Command{
-		Use:   "create-server",
+// createWebServerNewCommand defines the create server command.
+func createWebServerNewCommand() *cobra.Command {
+	createWebServerNewCmd := &cobra.Command{
+		Use:   "create-web-server",
 		Short: "create a simple server to host a test route website",
 		Long:  "create a simple server to host a test route website",
 	}
 
-	createServerCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return createServerCmdRun()
+	createWebServerNewCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return createWebServerNewCmdRun()
 	}
 
-	return createServerCmd
+	return createWebServerNewCmd
 }
 
 // createRoutingDataCmdRun defines the command run actions.
-func createServerCmdRun() error {
-	http.HandleFunc("/route", routeHandler)
-	http.HandleFunc("/create-kml", createKmlHandler)
+func createWebServerNewCmdRun() error {
+	http.HandleFunc("/route", routeNewHandler)
 
 	http.ListenAndServe(":8000", nil)
 
 	return nil
 }
 
-func routeHandler(w http.ResponseWriter, r *http.Request) {
+func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	pointFrom, err := getPointFromParams("from", r)
-	pointTo, err2 := getPointFromParams("to", r)
+
+	distanceCalc := distance.NewHaversine()
+	bboxFr := edge.NewBBoxFileRead("_files", distanceCalc)
+
+	pointFrom, err := getPointFromParamsNew("from", r)
+	pointTo, err2 := getPointFromParamsNew("to", r)
 	if err != nil || err2 != nil {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
@@ -120,125 +59,107 @@ func routeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var mode gravelmap.RoutingMode
-	modeParam, ok := r.URL.Query()["routing_mode"]
-	if !ok {
-		mode = gravelmap.Normal
-	} else {
-		switch modeParam[0] {
-		case "only_unpaved_account_elevation":
-			mode = gravelmap.OnlyUnpavedAccountElevation
-		case "only_unpaved_hardcore":
-			mode = gravelmap.OnlyUnpavedHardcore
-		case "no_length_care_normal":
-			mode = gravelmap.NoLengthCareNormal
-		case "easiest":
-			mode = gravelmap.NoLengthCareEasiest
-		case "no_length_care_unpaved_hardcore":
-			mode = gravelmap.NoLengthOnlyUnpavedHardcore
-		default:
-			mode = gravelmap.Normal
-		}
-	}
-
-	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), log2.NewStdout("info"))
+	edgeFrom, err := bboxFr.FindClosest(*pointFrom)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	features, err := pgRouter.Route(
-		*pointFrom,
-		*pointTo,
-		mode,
-	)
-	if err != nil {
-		w.WriteHeader(500)
-		fmt.Fprintf(w, `{"message": "%s"}`, err)
+		w.WriteHeader(400)
+		json, _ := json.Marshal(err)
+		fmt.Fprintf(w, string(json))
 
 		return
 	}
 
-	json, _ := json.Marshal(features)
+	edgeTo, err := bboxFr.FindClosest(*pointTo)
+	if err != nil {
+		w.WriteHeader(400)
+		json, _ := json.Marshal(err)
+		fmt.Fprintf(w, string(json))
+
+		return
+	}
+
+
+	graph := dijkstra.NewGraph()
+	dataFile, err := os.Open("_files/graph.gob")
+	if err != nil {
+		fmt.Fprintf(w, `{"message": "Cannot open graph file"}`)
+	}
+
+	dataDecoder := gob.NewDecoder(dataFile)
+	err = dataDecoder.Decode(&graph)
+	if err != nil {
+		w.WriteHeader(400)
+		fmt.Fprintf(w, `{"message": "Cannot open graph file"}`)
+	}
+
+	dataFile.Close()
+
+
+	fmt.Println("EDGES:", edgeFrom, edgeTo)
+
+
+	best, err := graph.Shortest(int(edgeFrom), int(edgeTo))
+
+
+	testWays := best.Path
+	var testWayPairs []gravelmap.Way
+	var prev = 0
+	var routingData []gravelmap.RoutingLeg
+
+
+
+	for i, testway := range testWays {
+		if i == 0 {
+			prev = testway
+			continue
+		}
+
+		testWayPairs = append(testWayPairs, gravelmap.Way{EdgeFrom: int32(prev), EdgeTo: int32(testway)})
+
+		prev = testway
+	}
+
+	wayFile, err := way.NewWayFileRead("_files")
+	if err != nil {
+		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
+	}
+
+
+	presentableWays, _ := wayFile.Read(testWayPairs)
+	for _, pWay := range presentableWays {
+		var latLngs []gravelmap.Point
+		tmpLatLngs, _ := maps.DecodePolyline(pWay.Polyline)
+
+		for _, latlng := range tmpLatLngs {
+			latLngs = append(latLngs, gravelmap.Point{Lat: latlng.Lat, Lng: latlng.Lng})
+		}
+
+		routingLeg := gravelmap.RoutingLeg{
+			Coordinates: latLngs,
+			Length: 10,
+			Paved: pWay.SurfaceType == gravelmap.WayTypeUnaved,
+			Elevation: &gravelmap.RoutingLegElevation{Grade: float64(pWay.ElevationGrade), Start: 10, End: 20.0},
+		}
+
+		routingData = append(routingData, routingLeg)
+	}
+
+	json, _ := json.Marshal(routingData)
 	fmt.Fprintf(w, string(json))
 }
 
-func createKmlHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	pointFrom, err := getPointFromParams("from", r)
-	pointTo, err2 := getPointFromParams("to", r)
-	if err != nil || err2 != nil {
-		w.WriteHeader(400)
-		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
-
-		return
-	}
-
-	var mode gravelmap.RoutingMode
-	modeParam, ok := r.URL.Query()["routing_mode"]
-	if !ok {
-		mode = gravelmap.Normal
-	} else {
-		switch modeParam[0] {
-		case "only_unpaved_account_elevation":
-			mode = gravelmap.OnlyUnpavedAccountElevation
-		case "only_unpaved_hardcore":
-			mode = gravelmap.OnlyUnpavedHardcore
-		case "no_length_care_normal":
-			mode = gravelmap.NoLengthCareNormal
-		case "easiest":
-			mode = gravelmap.NoLengthCareEasiest
-		case "no_length_care_unpaved_hardcore":
-			mode = gravelmap.NoLengthOnlyUnpavedHardcore
-		default:
-			mode = gravelmap.Normal
-		}
-	}
-
-	pgRouter, err := route.NewPgRouting(os.Getenv("DBUSER"), os.Getenv("DBPASS"), os.Getenv("DBNAME"), os.Getenv("DBPORT"), logger)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	features, err := pgRouter.Route(
-		*pointFrom,
-		*pointTo,
-		mode,
-	)
-	if err != nil {
-		w.WriteHeader(500)
-		fmt.Fprintf(w, `{"message": "%s"}`, err)
-
-		return
-	}
-
-	kml := kml.NewKml()
-	kmlString, err := kml.CreateFromRoute(features)
-	if err != nil {
-		w.WriteHeader(500)
-		fmt.Fprintf(w, `{"message": "%s"}`, err)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/vnd.google-earth.kml+xml")
-	w.Header().Set("Content-Disposition", "attachment; filename=\"test.kml\"")
-	fmt.Fprintf(w, kmlString)
-}
-
-func getPointFromParams(param string, r *http.Request) (*gravelmap.Point, error) {
+func getPointFromParamsNew(param string, r *http.Request) (*gravelmap.Point, error) {
 	fromKeys, ok := r.URL.Query()[param]
 	if !ok || len(fromKeys[0]) < 1 {
 		return nil, errors.New("non existing param")
 	}
 	latLng := strings.Split(fromKeys[0], ",")
 
-	lat, err := strconv.ParseFloat(latLng[1], 64)
+	lat, err := strconv.ParseFloat(latLng[0], 64)
 	if err != nil {
 		return nil, err
 	}
 
-	lng, err := strconv.ParseFloat(latLng[0], 64)
+	lng, err := strconv.ParseFloat(latLng[1], 64)
 	if err != nil {
 		return nil, err
 	}

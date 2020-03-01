@@ -23,15 +23,9 @@ func Execute() {
 
 	rootCommand := rootCommand()
 	rootCommand.AddCommand(versionCommand())
-	rootCommand.AddCommand(createRoutingDBCommand())
-	rootCommand.AddCommand(createServerCommand())
 	rootCommand.AddCommand(createWebServerNewCommand())
-	rootCommand.AddCommand(importElevationCommand())
-	rootCommand.AddCommand(createGradeWaysCommand())
-	rootCommand.AddCommand(importRoutingDataCommand())
 	rootCommand.AddCommand(createFilterOSMCommand())
-	rootCommand.AddCommand(dijkstraPocCommand())
-	rootCommand.AddCommand(osmParserCommand())
+	rootCommand.AddCommand(importRoutingDataCommand())
 	rootCommand.AddCommand(searchCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
