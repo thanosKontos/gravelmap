@@ -101,49 +101,42 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 
 
 	testWays := best.Path
-	//testWays := []int32{1,86123,135138,135133,121181,85173,5519,121174,116378,85694,86138,63143,4689,85131,121195,86120,85760,112247,63577,112242,112237,135110,56424,85141,135102,56428,135077,973,132006,135067,82937,698,85158,135054,132060,13339,132055,107433,112180,134875,85124,115145,39299,132050,96635,138762,138765,152794,112184,152793,152792,1690,86599,86594,86592,86591,86581,121805,2170,2173}
-	//testWays := []int32{1,86123,135138,135133,121181}
 	var testWayPairs []gravelmap.Way
-	var prev int = 0
+	var prev = 0
+	var routingData []gravelmap.RoutingLeg
+
+
+
 	for i, testway := range testWays {
 		if i == 0 {
 			prev = testway
 			continue
 		}
 
-		testWayPairs = append(testWayPairs, gravelmap.Way{int32(prev), int32(testway)})
+		testWayPairs = append(testWayPairs, gravelmap.Way{EdgeFrom: int32(prev), EdgeTo: int32(testway)})
 
 		prev = testway
 	}
 
 	wayFile := way.NewWayFileRead("_files")
-	polylines, _ := wayFile.Read(testWayPairs)
-
-	var latLngs []struct{
-		Lat float64
-		Lng float64
-	}
-	for _, pl := range polylines {
-		tmpLatLngs, _ := maps.DecodePolyline(pl)
+	presentableWays, _ := wayFile.Read(testWayPairs)
+	for _, pWay := range presentableWays {
+		var latLngs []gravelmap.Point
+		tmpLatLngs, _ := maps.DecodePolyline(pWay.Polyline)
 
 		for _, latlng := range tmpLatLngs {
-			latLngs = append(latLngs, struct{
-				Lat float64
-				Lng float64
-			}{Lat: latlng.Lat, Lng: latlng.Lng})
+			latLngs = append(latLngs, gravelmap.Point{Lat: latlng.Lat, Lng: latlng.Lng})
 		}
-	}
 
-	routingData := []struct {
-		Elevation interface{}
-		Paved bool
-		Coordinates []struct{
-			Lat float64
-			Lng float64
+		routingLeg := gravelmap.RoutingLeg{
+			Coordinates: latLngs,
+			Length: 10,
+			Paved: pWay.SurfaceType == gravelmap.WayTypeUnaved,
+			Elevation: &gravelmap.RoutingLegElevation{Grade: float64(pWay.ElevationGrade), Start: 10, End: 20.0},
 		}
-	}{{
-		nil, true, latLngs,
-	}}
+
+		routingData = append(routingData, routingLeg)
+	}
 
 	json, _ := json.Marshal(routingData)
 	fmt.Fprintf(w, string(json))

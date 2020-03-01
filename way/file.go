@@ -15,3 +15,15 @@ type edgeStartRecord struct {
 	ConnectionsCnt int32
 	NodeToOffset int64
 }
+
+type polylinePosition struct {
+	length int32
+	offset int64
+}
+
+type edgeToRecord struct {
+	nodeTo int32
+	wayType int8
+	grade float32
+	polylinePosition
+}

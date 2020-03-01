@@ -123,6 +123,8 @@ func (h *hgt) downloadFile(dms string) error {
 		return err
 	}
 
+	h.logger.Debug(fmt.Sprintf("Done downloading file: %s", dms))
+
 	return nil
 }
 

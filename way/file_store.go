@@ -31,14 +31,6 @@ func NewFileStore(storageDir string) *fileStore {
 	}
 }
 
-type edgeToRecord struct {
-	nodeTo int32
-	wayType int8
-	grade float32
-	polylineLen int32
-	polylineOffset int64
-}
-
 func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 	var gmNodeIdsSorted []int
 	for k := range ways {
@@ -62,8 +54,7 @@ func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 				nodeTo: int32(way[i].NdTo),
 				wayType: gravelmap.WayTypeUnaved,
 				grade: 5.0,
-				polylineLen: polylineLen,
-				polylineOffset: polylineOffset,
+				polylinePosition: polylinePosition{length:polylineLen, offset:polylineOffset},
 			}
 			edgeToRecords = append(edgeToRecords, edgeToRec)
 

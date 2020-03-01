@@ -179,3 +179,9 @@ type Logger interface {
 	Error(log interface{})
 }
 
+// PresentableWay describes a way with all information presentable to a client
+type PresentableWay struct {
+	Polyline string
+	SurfaceType int8
+	ElevationGrade float32
+}

@@ -14,58 +14,55 @@ type fileRead struct {
 	storageDir string
 }
 
-type polylinePosition struct {
-	offset int64
-	length int32
-}
-
 func NewWayFileRead(storageDir string) *fileRead {
 	return &fileRead{
 		storageDir: storageDir,
 	}
 }
 
-func (fr *fileRead) Read(ways []gravelmap.Way) ([]string, error) {
+func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, error) {
+	var presentableWays []gravelmap.PresentableWay
+
 	esFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, edgeStartFilename))
 	defer esFl.Close()
 	if err != nil {
-		return []string{}, err
+		return []gravelmap.PresentableWay{}, err
 	}
 
 	plLkFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, edgeToFilename))
 	defer plLkFl.Close()
 	if err != nil {
-		return []string{}, err
+		return []gravelmap.PresentableWay{}, err
 	}
 
 	plFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, polylinesFilename))
 	defer plLkFl.Close()
 	if err != nil {
-		return []string{}, err
+		return []gravelmap.PresentableWay{}, err
 	}
 
-	var polylines []string
+	//presentableWaysvar polylines []string
 	for _, way := range ways {
 		nodeStart, err := fr.readEdgeStartFile(esFl, way.EdgeFrom)
 
-		polylinePos, err := fr.readEdgeToFile(plLkFl, *nodeStart, way.EdgeTo)
+		edgeToRec, err := fr.readEdgeToFile(plLkFl, *nodeStart, way.EdgeTo)
 		if err != nil {
-			return []string{}, err
+			return []gravelmap.PresentableWay{}, err
 		}
 
-		pl, err := fr.readPolylineFromFile(plFl, polylinePos.length, polylinePos.offset)
+		pl, err := fr.readPolylineFromFile(plFl, edgeToRec.polylinePosition.length, edgeToRec.polylinePosition.offset)
 
 		if err != nil {
-			return []string{}, err
+			return []gravelmap.PresentableWay{}, err
 		}
 
-		polylines = append(polylines, pl)
+		presentableWays = append(presentableWays, gravelmap.PresentableWay{Polyline: pl, SurfaceType: edgeToRec.wayType, ElevationGrade: edgeToRec.grade})
 	}
 
-	return polylines, nil
+	return presentableWays, nil
 }
 
-func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeToId int32) (*polylinePosition, error) {
+func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeToId int32) (*edgeToRecord, error) {
 	readOffset := edgeStart.NodeToOffset
 	var polylineLength int32
 	var polylineOffset int64
@@ -107,12 +104,17 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 	}
 
 	if !found {
-		return nil, errors.New("polyline not found")
+		return nil, errors.New("edge to record not found")
 	}
 
-	polylinePos := polylinePosition{polylineOffset, polylineLength}
+	edgeToRecord := edgeToRecord{
+		nodeTo: edgeToId,
+		wayType: wayType,
+		grade: grade,
+		polylinePosition: polylinePosition{length: polylineLength, offset: polylineOffset},
+	}
 
-	return &polylinePos, nil
+	return &edgeToRecord, nil
 }
 
 func (fr *fileRead) readPolylineFromFile(f *os.File, length int32, offset int64) (string, error) {
