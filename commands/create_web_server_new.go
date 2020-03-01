@@ -118,7 +118,12 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 		prev = testway
 	}
 
-	wayFile := way.NewWayFileRead("_files")
+	wayFile, err := way.NewWayFileRead("_files")
+	if err != nil {
+		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
+	}
+
+
 	presentableWays, _ := wayFile.Read(testWayPairs)
 	for _, pWay := range presentableWays {
 		var latLngs []gravelmap.Point

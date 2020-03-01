@@ -12,7 +12,6 @@ import (
 )
 
 type fileStore struct {
-	storageDir string
 	polylinesFile *os.File
 	edgeFromFile *os.File
 	edgeToFile *os.File
@@ -24,7 +23,6 @@ func NewFileStore(storageDir string) *fileStore {
 	plF, _ := os.Create(fmt.Sprintf("%s/%s", storageDir, polylinesFilename))
 
 	return &fileStore{
-		storageDir: storageDir,
 		edgeFromFile: efF,
 		edgeToFile: etF,
 		polylinesFile: plF,

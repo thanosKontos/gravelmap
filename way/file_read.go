@@ -11,46 +11,46 @@ import (
 )
 
 type fileRead struct {
-	storageDir string
+	edgeFromFile *os.File
+	edgeToFile *os.File
+	polylinesFile *os.File
 }
 
-func NewWayFileRead(storageDir string) *fileRead {
-	return &fileRead{
-		storageDir: storageDir,
+func NewWayFileRead(storageDir string) (*fileRead, error) {
+	efF, err := os.Open(fmt.Sprintf("%s/%s", storageDir, edgeStartFilename))
+	if err != nil {
+		return nil, err
 	}
+
+	etF, err := os.Open(fmt.Sprintf("%s/%s", storageDir, edgeToFilename))
+	if err != nil {
+		return nil, err
+	}
+
+	plF, err := os.Open(fmt.Sprintf("%s/%s", storageDir, polylinesFilename))
+	if err != nil {
+		return nil, err
+	}
+
+	return &fileRead{
+		edgeFromFile: efF,
+		edgeToFile: etF,
+		polylinesFile: plF,
+	}, nil
 }
 
 func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, error) {
 	var presentableWays []gravelmap.PresentableWay
 
-	esFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, edgeStartFilename))
-	defer esFl.Close()
-	if err != nil {
-		return []gravelmap.PresentableWay{}, err
-	}
-
-	plLkFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, edgeToFilename))
-	defer plLkFl.Close()
-	if err != nil {
-		return []gravelmap.PresentableWay{}, err
-	}
-
-	plFl, err := os.Open(fmt.Sprintf("%s/%s", fr.storageDir, polylinesFilename))
-	defer plLkFl.Close()
-	if err != nil {
-		return []gravelmap.PresentableWay{}, err
-	}
-
-	//presentableWaysvar polylines []string
 	for _, way := range ways {
-		nodeStart, err := fr.readEdgeStartFile(esFl, way.EdgeFrom)
+		nodeStart, err := fr.readEdgeStartFile(way.EdgeFrom)
 
-		edgeToRec, err := fr.readEdgeToFile(plLkFl, *nodeStart, way.EdgeTo)
+		edgeToRec, err := fr.readEdgeToFile(*nodeStart, way.EdgeTo)
 		if err != nil {
 			return []gravelmap.PresentableWay{}, err
 		}
 
-		pl, err := fr.readPolylineFromFile(plFl, edgeToRec.polylinePosition.length, edgeToRec.polylinePosition.offset)
+		pl, err := fr.readPolylineFromFile(edgeToRec.polylinePosition)
 
 		if err != nil {
 			return []gravelmap.PresentableWay{}, err
@@ -59,10 +59,12 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, erro
 		presentableWays = append(presentableWays, gravelmap.PresentableWay{Polyline: pl, SurfaceType: edgeToRec.wayType, ElevationGrade: edgeToRec.grade})
 	}
 
+	fr.close()
+
 	return presentableWays, nil
 }
 
-func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeToId int32) (*edgeToRecord, error) {
+func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*edgeToRecord, error) {
 	readOffset := edgeStart.NodeToOffset
 	var polylineLength int32
 	var polylineOffset int64
@@ -71,28 +73,28 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 	found := false
 
 	for i := 0; int32(i) < edgeStart.ConnectionsCnt; i++ {
-		f.Seek(readOffset, 0)
+		fr.edgeToFile.Seek(readOffset, 0)
 
 		var storedEdgeTo int32
 
-		data := readNextBytes(f, 4)
+		data := readNextBytes(fr.edgeToFile, 4)
 		buffer := bytes.NewBuffer(data)
 		binary.Read(buffer, binary.BigEndian, &storedEdgeTo)
 
 		if storedEdgeTo == edgeToId {
-			data := readNextBytes(f, 1)
+			data := readNextBytes(fr.edgeToFile, 1)
 			buffer := bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &wayType)
 
-			data = readNextBytes(f, 4)
+			data = readNextBytes(fr.edgeToFile, 4)
 			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &grade)
 
-			data = readNextBytes(f, 4)
+			data = readNextBytes(fr.edgeToFile, 4)
 			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &polylineLength)
 
-			data = readNextBytes(f, 8)
+			data = readNextBytes(fr.edgeToFile, 8)
 			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &polylineOffset)
 
@@ -117,24 +119,11 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 	return &edgeToRecord, nil
 }
 
-func (fr *fileRead) readPolylineFromFile(f *os.File, length int32, offset int64) (string, error) {
-	f.Seek(offset, 0)
-
-	buffer := make([]byte, length)
-	_, err := f.Read(buffer)
-	if err != nil {
-		return "", err
-	}
-
-	return string(buffer), nil
-}
-
-func (fr *fileRead) readEdgeStartFile(f *os.File, edgeStartId int32) (*edgeStartRecord, error) {
+func (fr *fileRead) readEdgeStartFile(edgeStartId int32) (*edgeStartRecord, error) {
 	edgeStart := edgeStartRecord{}
 
-	f.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
-
-	data := readNextBytes(f, edgeStartRecordSize)
+	fr.edgeFromFile.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
+	data := readNextBytes(fr.edgeFromFile, edgeStartRecordSize)
 	buffer := bytes.NewBuffer(data)
 	err := binary.Read(buffer, binary.BigEndian, &edgeStart)
 	if err != nil {
@@ -144,6 +133,18 @@ func (fr *fileRead) readEdgeStartFile(f *os.File, edgeStartId int32) (*edgeStart
 	return &edgeStart, nil
 }
 
+func (fr *fileRead) readPolylineFromFile(polylinePos polylinePosition) (string, error) {
+	fr.polylinesFile.Seek(polylinePos.offset, 0)
+
+	buffer := make([]byte, polylinePos.length)
+	_, err := fr.polylinesFile.Read(buffer)
+	if err != nil {
+		return "", err
+	}
+
+	return string(buffer), nil
+}
+
 func readNextBytes(file *os.File, number int) []byte {
 	byteSeq := make([]byte, number)
 	_, _ = file.Read(byteSeq)
@@ -151,4 +152,8 @@ func readNextBytes(file *os.File, number int) []byte {
 	return byteSeq
 }
 
-
+func (fr *fileRead) close() {
+	fr.edgeFromFile.Close()
+	fr.edgeToFile.Close()
+	fr.polylinesFile.Close()
+}
