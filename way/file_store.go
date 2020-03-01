@@ -13,16 +13,28 @@ import (
 
 type fileStore struct {
 	storageDir string
+	polylinesFile *os.File
+	edgeFromFile *os.File
+	edgeToFile *os.File
 }
 
 func NewFileStore(storageDir string) *fileStore {
+	efF, _ := os.Create(fmt.Sprintf("%s/%s", storageDir, edgeStartFilename))
+	etF, _ := os.Create(fmt.Sprintf("%s/%s", storageDir, edgeToFilename))
+	plF, _ := os.Create(fmt.Sprintf("%s/%s", storageDir, polylinesFilename))
+
 	return &fileStore{
 		storageDir: storageDir,
+		edgeFromFile: efF,
+		edgeToFile: etF,
+		polylinesFile: plF,
 	}
 }
 
-type polylineLookupRecord struct {
+type edgeToRecord struct {
 	nodeTo int32
+	wayType int8
+	grade float32
 	polylineLen int32
 	polylineOffset int64
 }
@@ -34,24 +46,6 @@ func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 	}
 	sort.Ints(gmNodeIdsSorted)
 
-	esFl, err := os.Create(fmt.Sprintf("%s/%s", fs.storageDir, edgeStartFilename))
-	defer esFl.Close()
-	if err != nil {
-		return err
-	}
-
-	plLkFl, err := os.Create(fmt.Sprintf("%s/%s", fs.storageDir, edgeToFilename))
-	defer plLkFl.Close()
-	if err != nil {
-		return err
-	}
-
-	plFl, err := os.Create(fmt.Sprintf("%s/%s", fs.storageDir, polylinesFilename))
-	defer plFl.Close()
-	if err != nil {
-		return err
-	}
-
 	var offset int64 = 0
 	var polylineOffset int64 = 0
 
@@ -59,55 +53,63 @@ func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 		way := ways[gmNdID]
 
 		var polylines []string
-		var wayToPolylineLookups []polylineLookupRecord
+		var edgeToRecords []edgeToRecord
 
 		for i := 0; i < len(way); i++ {
 			polylineLen := int32(len(way[i].Polyline))
 
-			polylineLookupRec := polylineLookupRecord{int32(way[i].NdTo), polylineLen, polylineOffset}
-			wayToPolylineLookups = append(wayToPolylineLookups, polylineLookupRec)
+			edgeToRec := edgeToRecord{
+				nodeTo: int32(way[i].NdTo),
+				wayType: gravelmap.WayTypeUnaved,
+				grade: 5.0,
+				polylineLen: polylineLen,
+				polylineOffset: polylineOffset,
+			}
+			edgeToRecords = append(edgeToRecords, edgeToRec)
 
 			polylineOffset += int64(polylineLen)
 
 			polylines = append(polylines, way[i].Polyline)
 		}
-		err = fs.writePolylinesFile(plFl, polylines)
+		err := fs.writePolylinesFile(polylines)
 		if err != nil {
 			return err
 		}
 
-		err = fs.writePolylinesLookupFile(plLkFl, wayToPolylineLookups)
+		err = fs.writeEdgeToFile(edgeToRecords)
 		if err != nil {
 			return err
 		}
 
 		edgeStart := edgeStartRecord{int32(len(way)), offset}
 
-		err = fs.writeEdgeFromFile(esFl, gmNdID, edgeStart)
+		err = fs.writeEdgeFromFile(gmNdID, edgeStart)
 		if err != nil {
 			return err
 		}
 
-		offset += 4*int64(len(way))*2+int64(len(way))*8
+		offset += int64(len(way))*edgeToIndividualRecordSize
 	}
+
+	fs.close()
 
 	return nil
 }
 
-func (fs *fileStore) writePolylinesLookupFile(f *os.File, plsLookup []polylineLookupRecord) error {
+func (fs *fileStore) writeEdgeToFile(plsLookup []edgeToRecord) error {
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, plsLookup)
 	if err != nil {
 		return err
 	}
 
-	_, err = f.Write(buf.Bytes())
+	_, err = fs.edgeToFile.Write(buf.Bytes())
 	return err
 }
 
-func (fs *fileStore) writePolylinesFile(f *os.File, pls []string) error {
+func (fs *fileStore) writePolylinesFile(pls []string) error {
 	for _, pl := range pls {
-		_, err := f.WriteString(pl)
+		_, err := fs.polylinesFile.WriteString(pl)
 		if err != nil {
 			return err
 		}
@@ -116,8 +118,8 @@ func (fs *fileStore) writePolylinesFile(f *os.File, pls []string) error {
 	return nil
 }
 
-func (fs *fileStore) writeEdgeFromFile(f *os.File, edgeStartId int, edgeStart edgeStartRecord) error {
-	f.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
+func (fs *fileStore) writeEdgeFromFile(edgeStartId int, edgeStart edgeStartRecord) error {
+	fs.edgeFromFile.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
 
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, edgeStart)
@@ -125,7 +127,13 @@ func (fs *fileStore) writeEdgeFromFile(f *os.File, edgeStartId int, edgeStart ed
 		return err
 	}
 
-	_, err = f.Write(buf.Bytes())
+	_, err = fs.edgeFromFile.Write(buf.Bytes())
 
 	return err
+}
+
+func (fs *fileStore) close() {
+	fs.edgeFromFile.Close()
+	fs.edgeToFile.Close()
+	fs.polylinesFile.Close()
 }

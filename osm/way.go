@@ -16,6 +16,7 @@ type osmFileRead struct {
 	nodeDB gravelmap.Osm2GmNodeReaderWriter
 	gmNodeRd gravelmap.GmNodeReader
 	wayStorer gravelmap.WayStorer
+	graphWayAdder gravelmap.GraphWayAdder
 }
 
 func NewOsmWayFileRead(
@@ -23,12 +24,14 @@ func NewOsmWayFileRead(
 	nodeDB gravelmap.Osm2GmNodeReaderWriter,
 	gmNodeRd gravelmap.GmNodeReader,
 	wayStorer gravelmap.WayStorer,
+	graphWayAdder gravelmap.GraphWayAdder,
 	) *osmFileRead {
 	return &osmFileRead{
 		osmFilename: osmFilename,
 		nodeDB: nodeDB,
 		gmNodeRd: gmNodeRd,
 		wayStorer: wayStorer,
+		graphWayAdder: graphWayAdder,
 	}
 }
 
@@ -51,6 +54,7 @@ func (fs *osmFileRead) Process() error {
 	}
 
 	wayNds := make(map[int][]gravelmap.WayTo)
+	var lastAddedVertex = 0
 	for {
 		if v, err := d.Decode(); err == io.EOF {
 			break
@@ -61,26 +65,34 @@ func (fs *osmFileRead) Process() error {
 			case *osmpbf.Way:
 				prevEdge := 0
 				var wayGmNds []int
+				var osm2gms []gravelmap.NodeOsm2GM
 				for i, osmNdID := range v.NodeIDs {
 					osm2gm := fs.nodeDB.Read(osmNdID)
+					osm2gms = append(osm2gms, *osm2gm)
+
 					wayGmNds = append(wayGmNds, osm2gm.GmID)
 
 					if i == 0 {
 						prevEdge = osm2gm.GmID
 					} else if i == len(v.NodeIDs) - 1 {
-						wayNds[osm2gm.GmID] = append(wayNds[osm2gm.GmID], gravelmap.WayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
-						wayNds[prevEdge] = append(wayNds[prevEdge], gravelmap.WayTo{osm2gm.GmID, fs.getWayPolyline(wayGmNds, false)})
+						wayNds[osm2gm.GmID] = append(wayNds[osm2gm.GmID], gravelmap.WayTo{NdTo: prevEdge, Polyline: fs.getWayPolyline(wayGmNds, true)})
+						wayNds[prevEdge] = append(wayNds[prevEdge], gravelmap.WayTo{NdTo: osm2gm.GmID, Polyline: fs.getWayPolyline(wayGmNds, false)})
 
 						wayGmNds = []int{prevEdge}
 					} else {
 						if osm2gm.Occurrences > 1 {
-							wayNds[osm2gm.GmID] = append(wayNds[osm2gm.GmID], gravelmap.WayTo{prevEdge, fs.getWayPolyline(wayGmNds, true)})
-							wayNds[prevEdge] = append(wayNds[prevEdge], gravelmap.WayTo{osm2gm.GmID, fs.getWayPolyline(wayGmNds, false)})
+							wayNds[osm2gm.GmID] = append(wayNds[osm2gm.GmID], gravelmap.WayTo{NdTo: prevEdge, Polyline: fs.getWayPolyline(wayGmNds, true)})
+							wayNds[prevEdge] = append(wayNds[prevEdge], gravelmap.WayTo{NdTo: osm2gm.GmID, Polyline: fs.getWayPolyline(wayGmNds, false)})
 
 							prevEdge = osm2gm.GmID
 							wayGmNds = []int{prevEdge}
 						}
 					}
+				}
+
+				vtx := fs.graphWayAdder.AddWays(osm2gms, v.Tags, lastAddedVertex)
+				if vtx != -1 {
+					lastAddedVertex = vtx
 				}
 			default:
 				break

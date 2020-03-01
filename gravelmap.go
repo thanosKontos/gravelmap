@@ -3,6 +3,12 @@ package gravelmap
 // MinRoutingDistance defines the minimum distance from our start/end points to some point in our route engine
 const MinRoutingDistance = 2000
 
+const (
+	WayTypePaved = iota
+	WayTypeUnaved
+	WayTypePath
+)
+
 type NodeOsm2GM struct {
 	OsmID int64
 	GmID int
@@ -17,6 +23,8 @@ type Way struct {
 
 type WayTo struct {
 	NdTo int
+	WayType int8
+	Grade float32
 	Polyline string
 }
 
@@ -24,7 +32,9 @@ type WayStorer interface {
 	Store(ways map[int][]WayTo) error
 }
 
-//type WayInfo struct
+type GraphWayAdder interface {
+	AddWays(wayNdsOsm2GM []NodeOsm2GM, tags map[string]string, previousLastAddedVertex int) int
+}
 
 type WayElevation struct {
 	Elevations []int32

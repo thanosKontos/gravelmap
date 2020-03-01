@@ -43,7 +43,7 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 	var incline int32 = 0
 
 	if distance <= 10 {
-		h.logger.Warning("Could not grade (small distance)")
+		h.logger.Debug("Could not grade (small distance)")
 		return nil, errorCannotGradeWay
 	}
 
@@ -75,7 +75,7 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 
 		ele := int32(binary.BigEndian.Uint16(d))
 		if ele > 60000 {
-			h.logger.Warning("Could not grade (void elevation)")
+			h.logger.Debug("Could not grade (void elevation)")
 			return nil, errorCannotGradeWay
 		}
 

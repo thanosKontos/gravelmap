@@ -9,6 +9,7 @@ import (
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/elevation"
+	graph2 "github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/prepare"
@@ -54,42 +55,33 @@ func dijkstraPocCommand() *cobra.Command {
 			}
 			logger.Info("Node file written")
 
-			// TODO: here we need to pass to the graph preperator
 
-
-
-
-
-			// ## 3. Create the dijkstra graph that we will use to do the actual routing ##
+			// ## 3. Process OSM ways (store way info and create graph)
 			elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 			distanceCalculator := distance.NewHaversine()
 			costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser)
-			gmGraph := prepare.NewGraph(OSMFilename, osm2GmStore, costEvaluator)
-			gmGraph.Prepare()
+			graph := graph2.NewDijkstra(costEvaluator)
+			wayStorer := way.NewFileStore("_files")
+
+			osmWayFileRead := osm.NewOsmWayFileRead(OSMFilename, osm2GmStore, ndFileStore, wayStorer, graph)
+			err = osmWayFileRead.Process()
+			if err != nil {
+				logger.Error(err)
+				os.Exit(0)
+			}
+			logger.Info("Ways processed")
 
 			elevationGetterCloser.Close()
 
 			// also persist it to file
 			graphFile, _ := os.Create("_files/graph.gob")
 			dataEncoder := gob.NewEncoder(graphFile)
-			dataEncoder.Encode(gmGraph.GetGraph())
+			dataEncoder.Encode(graph.Get())
 			graphFile.Close()
 			logger.Info("Graph created")
 
-			// ## 4. Store polylines for ways
-			wayStorer := way.NewFileStore("_files")
-			osmWayFileRead := osm.NewOsmWayFileRead(OSMFilename, osm2GmStore, ndFileStore, wayStorer)
-			err = osmWayFileRead.Process()
-			if err != nil {
-				logger.Error("Way files written")
-				os.Exit(0)
-			}
-			logger.Info("Way files written")
 
-
-
-			dGraph := gmGraph.GetGraph()
-			//best, _ := dGraph.Shortest(1, 2173)
+			dGraph := graph.Get()
 			best, _ := dGraph.Shortest(14827, 1037)
 
 			logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))

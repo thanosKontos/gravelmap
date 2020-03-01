@@ -6,6 +6,9 @@ const (
 	polylinesFilename   = "polylines.bin"
 
 	edgeStartRecordSize = 12
+
+	// Each individual record has 2 int32s, 1 int64, 1 int8 and 1 float32
+	edgeToIndividualRecordSize = 21
 )
 
 type edgeStartRecord struct {

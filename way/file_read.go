@@ -69,6 +69,8 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 	readOffset := edgeStart.NodeToOffset
 	var polylineLength int32
 	var polylineOffset int64
+	var wayType int8
+	var grade float32
 	found := false
 
 	for i := 0; int32(i) < edgeStart.ConnectionsCnt; i++ {
@@ -81,8 +83,16 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 		binary.Read(buffer, binary.BigEndian, &storedEdgeTo)
 
 		if storedEdgeTo == edgeToId {
-			data := readNextBytes(f, 4)
+			data := readNextBytes(f, 1)
 			buffer := bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &wayType)
+
+			data = readNextBytes(f, 4)
+			buffer = bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &grade)
+
+			data = readNextBytes(f, 4)
+			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &polylineLength)
 
 			data = readNextBytes(f, 8)
@@ -93,7 +103,7 @@ func (fr *fileRead) readEdgeToFile(f *os.File, edgeStart edgeStartRecord, edgeTo
 			break
 		}
 
-		readOffset = readOffset + 2*4 + 8
+		readOffset = readOffset + edgeToIndividualRecordSize
 	}
 
 	if !found {
