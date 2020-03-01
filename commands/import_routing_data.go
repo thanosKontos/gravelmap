@@ -12,7 +12,6 @@ import (
 	graph2 "github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/osm"
-	"github.com/thanosKontos/gravelmap/prepare"
 	"github.com/thanosKontos/gravelmap/way"
 )
 
@@ -40,8 +39,8 @@ func importRoutingDataCommand() *cobra.Command {
 
 			// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
 			osm2GmStore := node.NewOsm2GmNodeMemoryStore()
-			osm2GmNode:= prepare.NewOsm2GmNode(OSMFilename, osm2GmStore)
-			osm2GmNode.Extract()
+			osm2GmNode:= osm.NewOsmNodeFileRead(OSMFilename, osm2GmStore)
+			osm2GmNode.Process()
 
 			logger.Info("Done preparing node in-memory DB")
 

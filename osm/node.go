@@ -1,4 +1,4 @@
-package prepare
+package osm
 
 import (
 	"io"
@@ -15,14 +15,14 @@ type osm2GmEdge struct {
 	osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter
 }
 
-func NewOsm2GmNode(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *osm2GmEdge {
+func NewOsmNodeFileRead(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *osm2GmEdge {
 	return &osm2GmEdge{
 		osmFilename:  osmFilename,
 		osm2GmNodeRw: osm2GmNodeRw,
 	}
 }
 
-func (n *osm2GmEdge) Extract() error {
+func (n *osm2GmEdge) Process() error {
 	f, err := os.Open(n.osmFilename)
 	if err != nil {
 		log.Fatal(err)
