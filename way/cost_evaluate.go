@@ -49,6 +49,7 @@ func NewCostEvaluate(distanceCalc gravelmap.DistanceCalculator, elevationGetterC
 func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]string) gravelmap.WayEvaluation {
 	var distance = 0.0
 	prevPoint := gravelmap.Point{}
+
 	for i, pt := range points {
 		if i == 0 {
 			prevPoint = pt
@@ -56,6 +57,7 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 		}
 
 		distance += float64(ce.distanceCalc.Calculate(pt, prevPoint))
+		prevPoint = pt
 	}
 
 	wayAcceptance := getWayAcceptance(tags)

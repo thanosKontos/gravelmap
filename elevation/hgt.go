@@ -5,8 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-
-	"log"
 	"math"
 
 	"os"
@@ -63,7 +61,10 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 
 		file.Seek(position*2, 0)
 
-		data := readNextBytes(file, 2)
+		data, err := readNextBytes(file, 2)
+		if err != nil {
+			return nil, err
+		}
 		buffer := bytes.NewBuffer(data)
 		d := make([]byte, 2)
 
@@ -92,27 +93,27 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 	return &gravelmap.WayElevation{
 		Elevations: ptElevations,
 		ElevationInfo: gravelmap.ElevationInfo{
-			Grade: float32((elevationEnd - elevationStart)/100)/float32(distance),
+			Grade: float32((elevationEnd - elevationStart)*100)/float32(distance),
 			From: elevationStart,
 			To: elevationEnd,
 		},
 	}, nil
 }
 
-func readNextBytes(file *os.File, number int) []byte {
+func readNextBytes(file *os.File, number int) ([]byte, error) {
 	bytes := make([]byte, number)
 
 	_, err := file.Read(bytes)
 	if err != nil {
-		log.Fatal(err)
+		return []byte{}, err
 	}
 
-	return bytes
+	return bytes, nil
 }
 
 // TODO: replace the real wget and tar commands with net/http and archive/zip in order to be testable and less dependent
 func (h *hgt) downloadFile(dms string) error {
-	h.logger.Debug(fmt.Sprintf("Start downloading file: %s", dms))
+	h.logger.Info(fmt.Sprintf("Start downloading file: %s", dms))
 
 	url := fmt.Sprintf("http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/%s.SRTMGL1.hgt.zip", dms)
 	out, err := exec.Command("wget", url, fmt.Sprintf("--http-user=%s", h.nasaUsername), fmt.Sprintf("--http-password=%s", h.nasaPassword), "-P", h.destinationDir).Output()
@@ -132,7 +133,7 @@ func (h *hgt) downloadFile(dms string) error {
 		return err
 	}
 
-	h.logger.Debug(fmt.Sprintf("Done downloading file: %s", dms))
+	h.logger.Info(fmt.Sprintf("Done downloading file: %s", dms))
 
 	return nil
 }
