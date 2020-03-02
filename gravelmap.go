@@ -20,16 +20,19 @@ type Way struct {
 	EdgeTo int32
 }
 
+type ElevationInfo struct {
+	Grade float32
+	From int16
+	To int16
+}
+
 type WayTo struct {
 	NdTo int
 	Points []Point
 	Tags map[string]string
-
 	Distance int32
 	WayType int8
-	Grade float32
-	ElevationStart int16
-	ElevationEnd int16
+	ElevationInfo
 	Cost int64
 }
 
@@ -38,9 +41,7 @@ type WayEvaluation struct {
 	ReverseCost int64
 	Distance int32
 	WayType int8
-	Grade float32
-	ElevationStart int16
-	ElevationEnd int16
+	ElevationInfo
 }
 
 type WayStorer interface {
@@ -53,9 +54,7 @@ type GraphWayAdder interface {
 
 type WayElevation struct {
 	Elevations []int32
-	Grade float64
-	ElevationStart int16
-	ElevationEnd int16
+	ElevationInfo
 }
 
 // EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
@@ -162,9 +161,7 @@ type PresentableWay struct {
 	Distance int32
 	Polyline string
 	SurfaceType int8
-	ElevationGrade float32
-	ElevationStart int16
-	ElevationEnd int16
+	ElevationInfo
 }
 
 type Encoder interface {

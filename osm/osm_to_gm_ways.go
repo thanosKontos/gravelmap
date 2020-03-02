@@ -45,9 +45,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 				Tags: tags,
 				Distance: evaluation.Distance,
 				WayType: evaluation.WayType,
-				Grade: evaluation.Grade,
-				ElevationStart: evaluation.ElevationStart,
-				ElevationEnd: evaluation.ElevationEnd,
+				ElevationInfo: evaluation.ElevationInfo,
 				Cost: evaluation.Cost,
 			})
 
@@ -57,9 +55,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 				Tags: tags,
 				Distance: evaluation.Distance,
 				WayType: evaluation.WayType,
-				Grade: evaluation.Grade,
-				ElevationStart: evaluation.ElevationStart,
-				ElevationEnd: evaluation.ElevationEnd,
+				ElevationInfo: evaluation.ElevationInfo,
 				Cost: evaluation.ReverseCost,
 			})
 
@@ -76,9 +72,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 					Tags: tags,
 					Distance: evaluation.Distance,
 					WayType: evaluation.WayType,
-					Grade: evaluation.Grade,
-					ElevationStart: evaluation.ElevationStart,
-					ElevationEnd: evaluation.ElevationEnd,
+					ElevationInfo: evaluation.ElevationInfo,
 					Cost: evaluation.Cost,
 				})
 
@@ -87,9 +81,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 					Points: reversePoints,
 					Tags: tags,
 					WayType: evaluation.WayType,
-					Grade: evaluation.Grade,
-					ElevationStart: evaluation.ElevationStart,
-					ElevationEnd: evaluation.ElevationEnd,
+					ElevationInfo: evaluation.ElevationInfo,
 					Cost: evaluation.ReverseCost,
 				})
 

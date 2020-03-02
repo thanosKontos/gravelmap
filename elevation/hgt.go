@@ -91,9 +91,11 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 
 	return &gravelmap.WayElevation{
 		Elevations: ptElevations,
-		Grade: float64(elevationEnd - elevationStart*100)/distance,
-		ElevationStart: elevationStart,
-		ElevationEnd: elevationEnd,
+		ElevationInfo: gravelmap.ElevationInfo{
+			Grade: float32((elevationEnd - elevationStart)/100)/float32(distance),
+			From: elevationStart,
+			To: elevationEnd,
+		},
 	}, nil
 }
 

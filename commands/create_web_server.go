@@ -128,9 +128,9 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 			Length: float64(pWay.Distance),
 			Paved: pWay.SurfaceType == gravelmap.WayTypePaved,
 			Elevation: &gravelmap.RoutingLegElevation{
-				Grade: float64(pWay.ElevationGrade),
-				Start: float64(pWay.ElevationStart),
-				End: float64(pWay.ElevationEnd),
+				Grade: float64(pWay.ElevationInfo.Grade),
+				Start: float64(pWay.ElevationInfo.From),
+				End: float64(pWay.ElevationInfo.To),
 			},
 		}
 
