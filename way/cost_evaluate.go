@@ -93,8 +93,10 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 
 	elevation, err := ce.elevationGetterCloser.Get(points, distance)
 	elevationInfo := gravelmap.ElevationInfo{}
+	reverseElevationInfo := gravelmap.ElevationInfo{}
 	if elevation != nil {
 		elevationInfo = elevation.ElevationInfo
+		reverseElevationInfo = elevation.ReverseElevationInfo
 	}
 
 	elevationWeight := elevationWeight{1, 1}
@@ -108,6 +110,7 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 		Distance: int32(distance),
 		WayType: wayType,
 		ElevationInfo: elevationInfo,
+		ReverseElevationInfo: reverseElevationInfo,
 	}
 }
 
@@ -222,27 +225,27 @@ type elevationWeight struct {
 //16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
 func getElevationWeight(elevation gravelmap.WayElevation) elevationWeight {
 	switch {
-	case elevation.Grade < -15:
+	case elevation.ElevationInfo.Grade < -15:
 		return elevationWeight{1, 15}
-	case elevation.Grade < -10:
+	case elevation.ElevationInfo.Grade < -10:
 		return elevationWeight{1, 10}
-	case elevation.Grade < -7:
+	case elevation.ElevationInfo.Grade < -7:
 		return elevationWeight{1, 7}
-	case elevation.Grade < -4:
+	case elevation.ElevationInfo.Grade < -4:
 		return elevationWeight{0.8, 3}
-	case elevation.Grade < -2:
+	case elevation.ElevationInfo.Grade < -2:
 		return elevationWeight{0.8, 1.2}
-	case elevation.Grade < 0:
+	case elevation.ElevationInfo.Grade < 0:
 		return elevationWeight{0.8, 1}
-	case elevation.Grade < 2:
+	case elevation.ElevationInfo.Grade < 2:
 		return elevationWeight{1, 0.8}
-	case elevation.Grade < 4:
+	case elevation.ElevationInfo.Grade < 4:
 		return elevationWeight{1.2, 0.8}
-	case elevation.Grade < 7:
+	case elevation.ElevationInfo.Grade < 7:
 		return elevationWeight{3, 0.8}
-	case elevation.Grade < 10:
+	case elevation.ElevationInfo.Grade < 10:
 		return elevationWeight{7, 1}
-	case elevation.Grade < 15:
+	case elevation.ElevationInfo.Grade < 15:
 		return elevationWeight{10, 1}
 	default:
 		return elevationWeight{15, 1}

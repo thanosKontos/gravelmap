@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/gob"
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,8 +34,9 @@ func importRoutingDataCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			os.Mkdir("_files", 0777)
 
-			//OSMFilename := "/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
-			OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
+			OSMFilename := "/Users/thanoskontos/Downloads/greece_for_routing.osm.pbf"
+			//OSMFilename := "/Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf"
+			//OSMFilename := "/Users/thanoskontos/Downloads/evzonas_for_routing.osm.pbf"
 
 			// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
 			osm2GmStore := node.NewOsm2GmNodeMemoryStore()
@@ -83,10 +83,10 @@ func importRoutingDataCommand() *cobra.Command {
 			logger.Info("Graph created")
 
 
-			dGraph := graph.Get()
-			best, _ := dGraph.Shortest(14827, 1037)
-
-			logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))
+			//dGraph := graph.Get()
+			//best, _ := dGraph.Shortest(14827, 1037)
+			//
+			//logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))
 		},
 	}
 }

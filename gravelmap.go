@@ -41,7 +41,8 @@ type WayEvaluation struct {
 	ReverseCost int64
 	Distance int32
 	WayType int8
-	ElevationInfo
+	ElevationInfo ElevationInfo
+	ReverseElevationInfo ElevationInfo
 }
 
 type WayStorer interface {
@@ -54,7 +55,8 @@ type GraphWayAdder interface {
 
 type WayElevation struct {
 	Elevations []int32
-	ElevationInfo
+	ElevationInfo ElevationInfo
+	ReverseElevationInfo ElevationInfo
 }
 
 // EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
