@@ -175,3 +175,15 @@ type PresentableWay struct {
 type Encoder interface {
 	Encode(points []Point) string
 }
+
+type Weight struct {
+	Normal float64
+	Reverse float64
+}
+
+type Weighter interface {
+	WeightOffRoad(wayType int8) float64
+	WeightWayAcceptance (tags map[string]string) Weight
+	WeightVehicleAcceptance(tags map[string]string) float64
+	WeightElevation(elevation *WayElevation) Weight
+}

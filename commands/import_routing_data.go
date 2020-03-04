@@ -60,7 +60,9 @@ func importRoutingDataCommand() *cobra.Command {
 			// ## 3. Process OSM ways (store way info and create graph)
 			elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 			distanceCalculator := distance.NewHaversine()
-			costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser)
+			weighter := way.NewBicycleWeight()
+
+			costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, weighter)
 			pointEncoder := encode.NewGooglemaps()
 
 			graph := graph2.NewDijkstra()
