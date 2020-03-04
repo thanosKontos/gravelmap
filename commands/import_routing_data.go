@@ -41,7 +41,7 @@ func importRoutingDataCommand() *cobra.Command {
 
 			// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
 			osm2GmStore := node.NewOsm2GmNodeMemoryStore()
-			osm2GmNode:= osm.NewOsmNodeFileRead(OSMFilename, osm2GmStore)
+			osm2GmNode := osm.NewOsmNodeFileRead(OSMFilename, osm2GmStore)
 			osm2GmNode.Process()
 
 			logger.Info("Done preparing node in-memory DB")
@@ -55,7 +55,6 @@ func importRoutingDataCommand() *cobra.Command {
 				os.Exit(0)
 			}
 			logger.Info("Node file written")
-
 
 			// ## 3. Process OSM ways (store way info and create graph)
 			elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
@@ -85,7 +84,6 @@ func importRoutingDataCommand() *cobra.Command {
 			dataEncoder.Encode(graph.Get())
 			graphFile.Close()
 			logger.Info("Graph created")
-
 
 			dGraph := graph.Get()
 			best, _ := dGraph.Shortest(14827, 1037)

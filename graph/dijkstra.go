@@ -19,7 +19,6 @@ func (d *dijkstra) Get() *dijkstra2.Graph {
 	return d.graph
 }
 
-
 var alreadyAddedNodes = map[int]struct{}{}
 
 func (d *dijkstra) AddWays(ways map[int][]gravelmap.WayTo) {

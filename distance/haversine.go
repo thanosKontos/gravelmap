@@ -30,7 +30,7 @@ func (h *haversine) Calculate(x, y gravelmap.Point) int64 {
 	diffLat := lat2 - lat1
 	diffLon := lng2 - lng1
 
-	a := math.Pow(math.Sin(diffLat/2), 2) + math.Cos(lat1)*math.Cos(lat2) * math.Pow(math.Sin(diffLon/2), 2)
+	a := math.Pow(math.Sin(diffLat/2), 2) + math.Cos(lat1)*math.Cos(lat2)*math.Pow(math.Sin(diffLon/2), 2)
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	return int64(c * earthRadius)

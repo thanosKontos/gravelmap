@@ -15,8 +15,6 @@ type bboxFileStore struct {
 	storageDir string
 }
 
-
-
 func NewBBoxFileStore(storageDir string) *bboxFileStore {
 	os.RemoveAll(fmt.Sprintf("%s/%s", storageDir, bBoxDir))
 	os.Mkdir(fmt.Sprintf("%s/%s", storageDir, bBoxDir), 0777)
@@ -78,8 +76,7 @@ func findBBoxFileFromPoint(p gravelmap.Point) string {
 	e := math.Floor(p.Lng)
 
 	// Level 2 bbox
-	l2 := math.Floor((p.Lat-n)*10)
+	l2 := math.Floor((p.Lat - n) * 10)
 
 	return fmt.Sprintf("N%.0fE%.0f_%.0f.bin", n, e, l2)
 }
-

@@ -17,7 +17,7 @@ func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
 	return 1.0
 }
 
-func (b *bicycleWeight) WeightWayAcceptance (tags map[string]string) gravelmap.Weight {
+func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.Weight {
 	wayAcceptance := getWayAcceptance(tags)
 	wayAcceptanceWeight := gravelmap.Weight{1.0, 1.0}
 	if wayAcceptance.normal == wayAcceptanceNo {

@@ -77,7 +77,6 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	graph := dijkstra.NewGraph()
 	dataFile, err := os.Open("_files/graph.gob")
 	if err != nil {
@@ -125,12 +124,12 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 
 		routingLeg := gravelmap.RoutingLeg{
 			Coordinates: latLngs,
-			Length: float64(pWay.Distance),
-			Paved: pWay.SurfaceType == gravelmap.WayTypePaved,
+			Length:      float64(pWay.Distance),
+			Paved:       pWay.SurfaceType == gravelmap.WayTypePaved,
 			Elevation: &gravelmap.RoutingLegElevation{
 				Grade: float64(pWay.ElevationInfo.Grade),
 				Start: float64(pWay.ElevationInfo.From),
-				End: float64(pWay.ElevationInfo.To),
+				End:   float64(pWay.ElevationInfo.To),
 			},
 		}
 

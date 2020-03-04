@@ -13,9 +13,9 @@ import (
 
 type fileStore struct {
 	polylinesFile *os.File
-	edgeFromFile *os.File
-	edgeToFile *os.File
-	pointEncoder gravelmap.Encoder
+	edgeFromFile  *os.File
+	edgeToFile    *os.File
+	pointEncoder  gravelmap.Encoder
 }
 
 func NewFileStore(storageDir string, pointEncoder gravelmap.Encoder) *fileStore {
@@ -24,10 +24,10 @@ func NewFileStore(storageDir string, pointEncoder gravelmap.Encoder) *fileStore 
 	plF, _ := os.Create(fmt.Sprintf("%s/%s", storageDir, polylinesFilename))
 
 	return &fileStore{
-		edgeFromFile: efF,
-		edgeToFile: etF,
+		edgeFromFile:  efF,
+		edgeToFile:    etF,
 		polylinesFile: plF,
-		pointEncoder: pointEncoder,
+		pointEncoder:  pointEncoder,
 	}
 }
 
@@ -52,11 +52,11 @@ func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 			polylineLen := int32(len(polyline))
 
 			edgeToRec := edgeToRecord{
-				nodeTo: int32(way[i].NdTo),
-				distance: way[i].Distance,
-				wayType: way[i].WayType,
-				ElevationInfo: way[i].ElevationInfo,
-				polylinePosition: polylinePosition{length:polylineLen, offset:polylineOffset},
+				nodeTo:           int32(way[i].NdTo),
+				distance:         way[i].Distance,
+				wayType:          way[i].WayType,
+				ElevationInfo:    way[i].ElevationInfo,
+				polylinePosition: polylinePosition{length: polylineLen, offset: polylineOffset},
 			}
 			edgeToRecords = append(edgeToRecords, edgeToRec)
 

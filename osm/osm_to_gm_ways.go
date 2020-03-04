@@ -5,9 +5,9 @@ import (
 )
 
 type osm2GmWays struct {
-	ways map[int][]gravelmap.WayTo
-	nodeDB gravelmap.Osm2GmNodeReaderWriter
-	gmNodeRd gravelmap.GmNodeReader
+	ways          map[int][]gravelmap.WayTo
+	nodeDB        gravelmap.Osm2GmNodeReaderWriter
+	gmNodeRd      gravelmap.GmNodeReader
 	costEvaluator gravelmap.CostEvaluator
 }
 
@@ -15,9 +15,9 @@ func NewOsm2GmWays(nodeDB gravelmap.Osm2GmNodeReaderWriter, gmNodeRd gravelmap.G
 	ways := make(map[int][]gravelmap.WayTo)
 
 	return &osm2GmWays{
-		nodeDB: nodeDB,
-		gmNodeRd: gmNodeRd,
-		ways: ways,
+		nodeDB:        nodeDB,
+		gmNodeRd:      gmNodeRd,
+		ways:          ways,
 		costEvaluator: costEvaluator,
 	}
 }
@@ -34,28 +34,28 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 
 		if i == 0 {
 			prevEdge = node.Id
-		} else if i == len(osmNodeIds) - 1 {
+		} else if i == len(osmNodeIds)-1 {
 			points := o.getWayPoints(wayNodeIds)
 			evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
 			o.ways[prevEdge] = append(o.ways[prevEdge], gravelmap.WayTo{
-				NdTo: node.Id,
-				Points: points.points,
-				Tags: tags,
-				Distance: evaluation.Distance,
-				WayType: evaluation.WayType,
+				NdTo:          node.Id,
+				Points:        points.points,
+				Tags:          tags,
+				Distance:      evaluation.Distance,
+				WayType:       evaluation.WayType,
 				ElevationInfo: evaluation.ElevationEvaluation.Normal,
-				Cost: evaluation.WayCost.Normal,
+				Cost:          evaluation.WayCost.Normal,
 			})
 
 			o.ways[node.Id] = append(o.ways[node.Id], gravelmap.WayTo{
-				NdTo: prevEdge,
-				Points: points.reverse,
-				Tags: tags,
-				Distance: evaluation.Distance,
-				WayType: evaluation.WayType,
+				NdTo:          prevEdge,
+				Points:        points.reverse,
+				Tags:          tags,
+				Distance:      evaluation.Distance,
+				WayType:       evaluation.WayType,
 				ElevationInfo: evaluation.ElevationEvaluation.Reverse,
-				Cost: evaluation.WayCost.Reverse,
+				Cost:          evaluation.WayCost.Reverse,
 			})
 
 			wayNodeIds = []int{prevEdge}
@@ -65,22 +65,22 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 				evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
 				o.ways[prevEdge] = append(o.ways[prevEdge], gravelmap.WayTo{
-					NdTo: node.Id,
-					Points: points.points,
-					Tags: tags,
-					Distance: evaluation.Distance,
-					WayType: evaluation.WayType,
+					NdTo:          node.Id,
+					Points:        points.points,
+					Tags:          tags,
+					Distance:      evaluation.Distance,
+					WayType:       evaluation.WayType,
 					ElevationInfo: evaluation.ElevationEvaluation.Normal,
-					Cost: evaluation.WayCost.Normal,
+					Cost:          evaluation.WayCost.Normal,
 				})
 
 				o.ways[node.Id] = append(o.ways[node.Id], gravelmap.WayTo{
-					NdTo: prevEdge,
-					Points: points.reverse,
-					Tags: tags,
-					WayType: evaluation.WayType,
+					NdTo:          prevEdge,
+					Points:        points.reverse,
+					Tags:          tags,
+					WayType:       evaluation.WayType,
 					ElevationInfo: evaluation.ElevationEvaluation.Reverse,
-					Cost: evaluation.WayCost.Reverse,
+					Cost:          evaluation.WayCost.Reverse,
 				})
 
 				prevEdge = node.Id
@@ -95,7 +95,7 @@ func (o *osm2GmWays) Get() map[int][]gravelmap.WayTo {
 }
 
 type wayPoints struct {
-	points []gravelmap.Point
+	points  []gravelmap.Point
 	reverse []gravelmap.Point
 }
 

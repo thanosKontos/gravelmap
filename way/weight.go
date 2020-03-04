@@ -26,6 +26,6 @@ const (
 )
 
 type wayAcceptance struct {
-	normal int32
+	normal  int32
 	reverse int32
 }

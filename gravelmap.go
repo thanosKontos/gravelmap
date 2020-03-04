@@ -17,38 +17,38 @@ type Node struct {
 
 type Way struct {
 	EdgeFrom int32
-	EdgeTo int32
+	EdgeTo   int32
 }
 
 type ElevationInfo struct {
 	Grade float32
-	From int16
-	To int16
+	From  int16
+	To    int16
 }
 
 type WayTo struct {
-	NdTo int
-	Points []Point
-	Tags map[string]string
+	NdTo     int
+	Points   []Point
+	Tags     map[string]string
 	Distance int32
-	WayType int8
+	WayType  int8
 	ElevationInfo
 	Cost int64
 }
 
 type ElevationEvaluation struct {
-	Normal ElevationInfo
+	Normal  ElevationInfo
 	Reverse ElevationInfo
 }
 
 type WayCost struct {
-	Normal int64
+	Normal  int64
 	Reverse int64
 }
 
 type WayEvaluation struct {
 	Distance int32
-	WayType int8
+	WayType  int8
 	ElevationEvaluation
 	WayCost
 }
@@ -73,7 +73,7 @@ type WayElevation struct {
 
 // EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
 type EvaluativeWay struct {
-	Tags map[string]string
+	Tags   map[string]string
 	Points []Point
 }
 
@@ -166,8 +166,8 @@ type Logger interface {
 
 // PresentableWay describes a way with all information presentable to a client
 type PresentableWay struct {
-	Distance int32
-	Polyline string
+	Distance    int32
+	Polyline    string
 	SurfaceType int8
 	ElevationInfo
 }
@@ -177,13 +177,13 @@ type Encoder interface {
 }
 
 type Weight struct {
-	Normal float64
+	Normal  float64
 	Reverse float64
 }
 
 type Weighter interface {
 	WeightOffRoad(wayType int8) float64
-	WeightWayAcceptance (tags map[string]string) Weight
+	WeightWayAcceptance(tags map[string]string) Weight
 	WeightVehicleAcceptance(tags map[string]string) float64
 	WeightElevation(elevation *WayElevation) Weight
 }

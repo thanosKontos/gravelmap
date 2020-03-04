@@ -11,13 +11,13 @@ import (
 )
 
 type bboxFileRead struct {
-	storageDir string
+	storageDir   string
 	distanceCalc gravelmap.DistanceCalculator
 }
 
 func NewBBoxFileRead(storageDir string, dc gravelmap.DistanceCalculator) *bboxFileRead {
 	return &bboxFileRead{
-		storageDir: storageDir,
+		storageDir:   storageDir,
 		distanceCalc: dc,
 	}
 }
@@ -68,4 +68,3 @@ func readNextBytes(file *os.File, number int) []byte {
 
 	return byteSeq
 }
-

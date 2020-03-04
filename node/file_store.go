@@ -15,13 +15,13 @@ import (
 
 const (
 	recordSize = 16
-	filename = "node_positions.bin"
+	filename   = "node_positions.bin"
 )
 
 type fileStore struct {
-	destinationDir string
-	osmFilename string
-	osm2GmStore gravelmap.Osm2GmNodeReaderWriter
+	destinationDir  string
+	osmFilename     string
+	osm2GmStore     gravelmap.Osm2GmNodeReaderWriter
 	edgeBatchStorer gravelmap.EdgeBatchStorer
 }
 
@@ -32,9 +32,9 @@ func NewNodeFileStore(
 	edgeBatchStorer gravelmap.EdgeBatchStorer,
 ) *fileStore {
 	return &fileStore{
-		destinationDir: destinationDir,
-		osmFilename: osmFilename,
-		osm2GmStore: osm2GmStore,
+		destinationDir:  destinationDir,
+		osmFilename:     osmFilename,
+		osm2GmStore:     osm2GmStore,
 		edgeBatchStorer: edgeBatchStorer,
 	}
 }
@@ -89,8 +89,6 @@ func (fs *fileStore) Persist() error {
 				// Write nodes in file in order to be able to find lat long per id
 				writeGmNode(f, gmNd)
 
-
-
 				// Write edge in bounding boxes in order to be able to find closest edge per lat/lng
 				if gm2OsmNode.Occurrences > 1 {
 					gmNdBatch = append(gmNdBatch, gmNd)
@@ -115,7 +113,7 @@ func (fs *fileStore) Persist() error {
 }
 
 func writeGmNode(f *os.File, gmNd gravelmap.Node) {
-	_, err := f.Seek(int64(gmNd.Id* recordSize), 0)
+	_, err := f.Seek(int64(gmNd.Id*recordSize), 0)
 	if err != nil {
 		fmt.Println(err)
 	}

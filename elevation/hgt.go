@@ -18,20 +18,20 @@ const oneArcSecondRowColCount = 3601
 var errorCannotGradeWay = errors.New("could not grade way")
 
 type hgt struct {
-	files map[string]*os.File
+	files          map[string]*os.File
 	destinationDir string
-	nasaUsername string
-	nasaPassword string
-	logger gravelmap.Logger
+	nasaUsername   string
+	nasaPassword   string
+	logger         gravelmap.Logger
 }
 
 func NewHgt(destinationDir, nasaUsername, nasaPassword string, logger gravelmap.Logger) *hgt {
 	return &hgt{
-		files: make(map[string]*os.File),
+		files:          make(map[string]*os.File),
 		destinationDir: destinationDir,
-		nasaUsername: nasaUsername,
-		nasaPassword: nasaPassword,
-		logger: logger,
+		nasaUsername:   nasaUsername,
+		nasaPassword:   nasaPassword,
+		logger:         logger,
 	}
 }
 
@@ -51,10 +51,10 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 			return nil, err
 		}
 
-		latDiff := pt.Lat-math.Floor(pt.Lat)
-		lngDiff := pt.Lng-math.Floor(pt.Lng)
+		latDiff := pt.Lat - math.Floor(pt.Lat)
+		lngDiff := pt.Lng - math.Floor(pt.Lng)
 
-		row := oneArcSecondRowColCount-int64(math.Round(latDiff * oneArcSecondRowColCount))
+		row := oneArcSecondRowColCount - int64(math.Round(latDiff*oneArcSecondRowColCount))
 		col := int64(math.Round(lngDiff * oneArcSecondRowColCount))
 
 		position := row*oneArcSecondRowColCount + col
@@ -83,19 +83,19 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 			elevationStart = int16(ele)
 		}
 
-		if i == len(points) - 1 {
+		if i == len(points)-1 {
 			elevationEnd = int16(ele)
 		}
 
 		ptElevations = append(ptElevations, ele)
 	}
 
-	grade := float32((elevationEnd - elevationStart)*100)/float32(distance)
+	grade := float32((elevationEnd-elevationStart)*100) / float32(distance)
 	return &gravelmap.WayElevation{
 		Elevations: ptElevations,
-		ElevationEvaluation: gravelmap.ElevationEvaluation {
-			Normal: gravelmap.ElevationInfo{ Grade: grade, From: elevationStart, To: elevationEnd },
-			Reverse: gravelmap.ElevationInfo{ Grade: (-1)*grade, From: elevationEnd,To: elevationStart },
+		ElevationEvaluation: gravelmap.ElevationEvaluation{
+			Normal:  gravelmap.ElevationInfo{Grade: grade, From: elevationStart, To: elevationEnd},
+			Reverse: gravelmap.ElevationInfo{Grade: (-1) * grade, From: elevationEnd, To: elevationStart},
 		},
 	}, nil
 }
@@ -176,7 +176,7 @@ func getDMSFromPoint(pt gravelmap.Point) string {
 	return fmt.Sprintf("%s%02d%s%03d", latPfx, int8(math.Floor(pt.Lat)), lngPfx, int8(math.Floor(pt.Lng)))
 }
 
-func (h *hgt) Close () {
+func (h *hgt) Close() {
 	for _, f := range h.files {
 		f.Close()
 	}
