@@ -23,10 +23,9 @@ func Execute() {
 
 	rootCommand := rootCommand()
 	rootCommand.AddCommand(versionCommand())
-	rootCommand.AddCommand(createWebServerNewCommand())
+	rootCommand.AddCommand(createWebServerCommand())
 	rootCommand.AddCommand(createFilterOSMCommand())
 	rootCommand.AddCommand(importRoutingDataCommand())
-	rootCommand.AddCommand(searchCommand())
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

@@ -20,23 +20,23 @@ import (
 	"net/http"
 )
 
-// createWebServerNewCommand defines the create server command.
-func createWebServerNewCommand() *cobra.Command {
-	createWebServerNewCmd := &cobra.Command{
+// createWebServerCommand creates a web server for testing purposes.
+func createWebServerCommand() *cobra.Command {
+	createWebServerCmd := &cobra.Command{
 		Use:   "create-web-server",
 		Short: "create a simple server to host a test route website",
 		Long:  "create a simple server to host a test route website",
 	}
 
-	createWebServerNewCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return createWebServerNewCmdRun()
+	createWebServerCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return createWebServerCmdRun()
 	}
 
-	return createWebServerNewCmd
+	return createWebServerCmd
 }
 
 // createRoutingDataCmdRun defines the command run actions.
-func createWebServerNewCmdRun() error {
+func createWebServerCmdRun() error {
 	http.HandleFunc("/route", routeNewHandler)
 
 	http.ListenAndServe(":8000", nil)

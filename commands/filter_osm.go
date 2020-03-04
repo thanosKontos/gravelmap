@@ -7,7 +7,7 @@ import (
 	"github.com/thanosKontos/gravelmap/osm"
 )
 
-// createRoutingDBCommand defines the create route command.
+// createFilterOSMCommand filters useful routing data in an OSM file.
 func createFilterOSMCommand() *cobra.Command {
 	var (
 		inputFilename  string
