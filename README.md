@@ -16,10 +16,12 @@ env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/grave
 
 ## Import OSM data
 
-The command below will use osm2pgrouting in order to add ways to the DB. It reads only extracted OSM XML files at the moment.
+The command below will extract the osm data and create all the routing files needed.
+
+At the moment the graph is created using plain dijkstra.
 
 ```bash
-env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap import-routing-data --tag-cost-config profiles/pgrouting_mt_bike.xml --input /path/to/osm/greece_E21N37.osm
+go run cmd/main.go import-routing-data -v info --input /Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf
 ```
 
 ## Create web-server
@@ -38,4 +40,4 @@ Open example_website.html to test routing
 
 ## Special thanks
 
-To Ryan Carrier for the initial version of the dijkstra implementation (taken from here: https://github.com/RyanCarrier/dijkstra). Deleted the longest path implementation, will probably change a bit in the future to suit my needs better.
+To Ryan Carrier for the dijkstra implementation (taken from here: https://github.com/RyanCarrier/dijkstra).
