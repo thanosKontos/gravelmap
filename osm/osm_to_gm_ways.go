@@ -35,13 +35,12 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 		if i == 0 {
 			prevEdge = node.Id
 		} else if i == len(osmNodeIds) - 1 {
-			points := o.getWayPoints(wayNodeIds, false)
-			reversePoints := o.getWayPoints(wayNodeIds, true)
-			evaluation := o.costEvaluator.Evaluate(points, tags)
+			points := o.getWayPoints(wayNodeIds)
+			evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
 			o.ways[prevEdge] = append(o.ways[prevEdge], gravelmap.WayTo{
 				NdTo: node.Id,
-				Points: points,
+				Points: points.points,
 				Tags: tags,
 				Distance: evaluation.Distance,
 				WayType: evaluation.WayType,
@@ -51,7 +50,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 
 			o.ways[node.Id] = append(o.ways[node.Id], gravelmap.WayTo{
 				NdTo: prevEdge,
-				Points: reversePoints,
+				Points: points.reverse,
 				Tags: tags,
 				Distance: evaluation.Distance,
 				WayType: evaluation.WayType,
@@ -62,13 +61,12 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 			wayNodeIds = []int{prevEdge}
 		} else {
 			if node.Occurrences > 1 {
-				points := o.getWayPoints(wayNodeIds, false)
-				reversePoints := o.getWayPoints(wayNodeIds, true)
-				evaluation := o.costEvaluator.Evaluate(points, tags)
+				points := o.getWayPoints(wayNodeIds)
+				evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
 				o.ways[prevEdge] = append(o.ways[prevEdge], gravelmap.WayTo{
 					NdTo: node.Id,
-					Points: points,
+					Points: points.points,
 					Tags: tags,
 					Distance: evaluation.Distance,
 					WayType: evaluation.WayType,
@@ -78,7 +76,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 
 				o.ways[node.Id] = append(o.ways[node.Id], gravelmap.WayTo{
 					NdTo: prevEdge,
-					Points: reversePoints,
+					Points: points.reverse,
 					Tags: tags,
 					WayType: evaluation.WayType,
 					ElevationInfo: evaluation.ReverseElevationInfo,
@@ -96,20 +94,24 @@ func (o *osm2GmWays) Get() map[int][]gravelmap.WayTo {
 	return o.ways
 }
 
-func (o *osm2GmWays) getWayPoints(wayGmNds []int, reverse bool) []gravelmap.Point {
-	var points []gravelmap.Point
+type wayPoints struct {
+	points []gravelmap.Point
+	reverse []gravelmap.Point
+}
 
-	if reverse {
-		for i := len(wayGmNds)-1; i >= 0; i-- {
-			gmNode, _ := o.gmNodeRd.Read(wayGmNds[i])
-			points = append(points, gmNode.Point)
-		}
-	} else {
-		for _, gmNdID := range wayGmNds {
-			gmNode, _ := o.gmNodeRd.Read(gmNdID)
-			points = append(points, gmNode.Point)
-		}
+func (o *osm2GmWays) getWayPoints(wayGmNds []int) wayPoints {
+	var pts []gravelmap.Point
+	var revPts []gravelmap.Point
+
+	for i := len(wayGmNds) - 1; i >= 0; i-- {
+		node, _ := o.gmNodeRd.Read(wayGmNds[i])
+		revPts = append(revPts, node.Point)
 	}
 
-	return points
+	for _, ndID := range wayGmNds {
+		node, _ := o.gmNodeRd.Read(ndID)
+		pts = append(pts, node.Point)
+	}
+
+	return wayPoints{pts, revPts}
 }

@@ -12,28 +12,22 @@ import (
 
 type osmFileRead struct {
 	osmFilename string
-	nodeDB gravelmap.Osm2GmNodeReaderWriter
-	gmNodeRd gravelmap.GmNodeReader
 	wayStorer gravelmap.WayStorer
 	graphWayAdder gravelmap.GraphWayAdder
-	costEvaluator gravelmap.CostEvaluator
+	wayAdderGetter gravelmap.WayAdderGetter
 }
 
 func NewOsmWayFileRead(
 	osmFilename string,
-	nodeDB gravelmap.Osm2GmNodeReaderWriter,
-	gmNodeRd gravelmap.GmNodeReader,
 	wayStorer gravelmap.WayStorer,
 	graphWayAdder gravelmap.GraphWayAdder,
-	costEvaluator gravelmap.CostEvaluator,
+	wayAdderGetter gravelmap.WayAdderGetter,
 	) *osmFileRead {
 	return &osmFileRead{
 		osmFilename: osmFilename,
-		nodeDB: nodeDB,
-		gmNodeRd: gmNodeRd,
 		wayStorer: wayStorer,
 		graphWayAdder: graphWayAdder,
-		costEvaluator: costEvaluator,
+		wayAdderGetter: wayAdderGetter,
 	}
 }
 
@@ -55,9 +49,6 @@ func (fs *osmFileRead) Process() error {
 		return err
 	}
 
-	// TODO: inject this to the constructor
-	osm2GmWays := NewOsm2GmWays(fs.nodeDB, fs.gmNodeRd, fs.costEvaluator)
-
 	for {
 		if v, err := d.Decode(); err == io.EOF {
 			break
@@ -66,13 +57,13 @@ func (fs *osmFileRead) Process() error {
 		} else {
 			switch v := v.(type) {
 			case *osmpbf.Way:
-				osm2GmWays.Add(v.NodeIDs, v.Tags)
+				fs.wayAdderGetter.Add(v.NodeIDs, v.Tags)
 			default:
 				break
 			}
 		}
 	}
 
-	fs.graphWayAdder.AddWays(osm2GmWays.Get())
-	return fs.wayStorer.Store(osm2GmWays.Get())
+	fs.graphWayAdder.AddWays(fs.wayAdderGetter.Get())
+	return fs.wayStorer.Store(fs.wayAdderGetter.Get())
 }

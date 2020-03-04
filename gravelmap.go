@@ -45,6 +45,11 @@ type WayEvaluation struct {
 	ReverseElevationInfo ElevationInfo
 }
 
+type WayAdderGetter interface {
+	Add(osmNodeIds []int64, tags map[string]string)
+	Get() map[int][]WayTo
+}
+
 type WayStorer interface {
 	Store(ways map[int][]WayTo) error
 }
