@@ -36,13 +36,21 @@ type WayTo struct {
 	Cost int64
 }
 
+type ElevationEvaluation struct {
+	Normal ElevationInfo
+	Reverse ElevationInfo
+}
+
+type WayCost struct {
+	Normal int64
+	Reverse int64
+}
+
 type WayEvaluation struct {
-	Cost int64
-	ReverseCost int64
 	Distance int32
 	WayType int8
-	ElevationInfo ElevationInfo
-	ReverseElevationInfo ElevationInfo
+	ElevationEvaluation
+	WayCost
 }
 
 type WayAdderGetter interface {
@@ -60,20 +68,13 @@ type GraphWayAdder interface {
 
 type WayElevation struct {
 	Elevations []int32
-	ElevationInfo ElevationInfo
-	ReverseElevationInfo ElevationInfo
+	ElevationEvaluation
 }
 
 // EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
 type EvaluativeWay struct {
 	Tags map[string]string
 	Points []Point
-}
-
-// TODO delete
-type WayCost struct {
-	Cost int64
-	ReverseCost int64
 }
 
 type ElevationGetterCloser interface {

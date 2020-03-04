@@ -44,8 +44,8 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 				Tags: tags,
 				Distance: evaluation.Distance,
 				WayType: evaluation.WayType,
-				ElevationInfo: evaluation.ElevationInfo,
-				Cost: evaluation.Cost,
+				ElevationInfo: evaluation.ElevationEvaluation.Normal,
+				Cost: evaluation.WayCost.Normal,
 			})
 
 			o.ways[node.Id] = append(o.ways[node.Id], gravelmap.WayTo{
@@ -54,8 +54,8 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 				Tags: tags,
 				Distance: evaluation.Distance,
 				WayType: evaluation.WayType,
-				ElevationInfo: evaluation.ReverseElevationInfo,
-				Cost: evaluation.ReverseCost,
+				ElevationInfo: evaluation.ElevationEvaluation.Reverse,
+				Cost: evaluation.WayCost.Reverse,
 			})
 
 			wayNodeIds = []int{prevEdge}
@@ -70,8 +70,8 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 					Tags: tags,
 					Distance: evaluation.Distance,
 					WayType: evaluation.WayType,
-					ElevationInfo: evaluation.ElevationInfo,
-					Cost: evaluation.Cost,
+					ElevationInfo: evaluation.ElevationEvaluation.Normal,
+					Cost: evaluation.WayCost.Normal,
 				})
 
 				o.ways[node.Id] = append(o.ways[node.Id], gravelmap.WayTo{
@@ -79,8 +79,8 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 					Points: points.reverse,
 					Tags: tags,
 					WayType: evaluation.WayType,
-					ElevationInfo: evaluation.ReverseElevationInfo,
-					Cost: evaluation.ReverseCost,
+					ElevationInfo: evaluation.ElevationEvaluation.Reverse,
+					Cost: evaluation.WayCost.Reverse,
 				})
 
 				prevEdge = node.Id

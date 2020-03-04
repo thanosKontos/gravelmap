@@ -92,25 +92,21 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 	}
 
 	elevation, err := ce.elevationGetterCloser.Get(points, distance)
-	elevationInfo := gravelmap.ElevationInfo{}
-	reverseElevationInfo := gravelmap.ElevationInfo{}
-	if elevation != nil {
-		elevationInfo = elevation.ElevationInfo
-		reverseElevationInfo = elevation.ReverseElevationInfo
-	}
-
 	elevationWeight := elevationWeight{1, 1}
+	elevationEval := gravelmap.ElevationEvaluation{}
 	if err == nil {
 		elevationWeight = getElevationWeight(*elevation)
+		elevationEval = elevation.ElevationEvaluation
 	}
 
 	return gravelmap.WayEvaluation{
-		Cost: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightNormal * offRoadWeight * elevationWeight.weight),
-		ReverseCost: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightReverse * offRoadWeight * elevationWeight.reverse),
+		WayCost: gravelmap.WayCost{
+			Normal: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightNormal * offRoadWeight * elevationWeight.normal),
+			Reverse: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeightReverse * offRoadWeight * elevationWeight.reverse),
+		},
 		Distance: int32(distance),
 		WayType: wayType,
-		ElevationInfo: elevationInfo,
-		ReverseElevationInfo: reverseElevationInfo,
+		ElevationEvaluation: elevationEval,
 	}
 }
 
@@ -213,7 +209,7 @@ func isOffRoadWay(tags map[string]string) bool {
 }
 
 type elevationWeight struct {
-	weight float64
+	normal float64
 	reverse float64
 }
 
@@ -225,27 +221,27 @@ type elevationWeight struct {
 //16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
 func getElevationWeight(elevation gravelmap.WayElevation) elevationWeight {
 	switch {
-	case elevation.ElevationInfo.Grade < -15:
+	case elevation.ElevationEvaluation.Normal.Grade < -15:
 		return elevationWeight{1, 15}
-	case elevation.ElevationInfo.Grade < -10:
+	case elevation.ElevationEvaluation.Normal.Grade < -10:
 		return elevationWeight{1, 10}
-	case elevation.ElevationInfo.Grade < -7:
+	case elevation.ElevationEvaluation.Normal.Grade < -7:
 		return elevationWeight{1, 7}
-	case elevation.ElevationInfo.Grade < -4:
+	case elevation.ElevationEvaluation.Normal.Grade < -4:
 		return elevationWeight{0.8, 3}
-	case elevation.ElevationInfo.Grade < -2:
+	case elevation.ElevationEvaluation.Normal.Grade < -2:
 		return elevationWeight{0.8, 1.2}
-	case elevation.ElevationInfo.Grade < 0:
+	case elevation.ElevationEvaluation.Normal.Grade < 0:
 		return elevationWeight{0.8, 1}
-	case elevation.ElevationInfo.Grade < 2:
+	case elevation.ElevationEvaluation.Normal.Grade < 2:
 		return elevationWeight{1, 0.8}
-	case elevation.ElevationInfo.Grade < 4:
+	case elevation.ElevationEvaluation.Normal.Grade < 4:
 		return elevationWeight{1.2, 0.8}
-	case elevation.ElevationInfo.Grade < 7:
+	case elevation.ElevationEvaluation.Normal.Grade < 7:
 		return elevationWeight{3, 0.8}
-	case elevation.ElevationInfo.Grade < 10:
+	case elevation.ElevationEvaluation.Normal.Grade < 10:
 		return elevationWeight{7, 1}
-	case elevation.ElevationInfo.Grade < 15:
+	case elevation.ElevationEvaluation.Normal.Grade < 15:
 		return elevationWeight{10, 1}
 	default:
 		return elevationWeight{15, 1}
