@@ -7,7 +7,7 @@ func TestNewVertex(t *testing.T) {
 	if v.ID != 10 {
 		t.Error("NewVertex ID not set")
 	}
-	if v.arcs == nil {
+	if v.Arcs == nil {
 		t.Error("NewVertex arcs map not initialised")
 	}
 }

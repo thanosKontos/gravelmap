@@ -1,12 +1,13 @@
 package commands
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/thanosKontos/gravelmap/osmfilter"
 	"log"
+
+	"github.com/spf13/cobra"
+	"github.com/thanosKontos/gravelmap/osm"
 )
 
-// createRoutingDBCommand defines the create route command.
+// createFilterOSMCommand filters useful routing data in an OSM file.
 func createFilterOSMCommand() *cobra.Command {
 	var (
 		inputFilename  string
@@ -34,7 +35,7 @@ func createfilterOSMCmdRun(inputFilename, outputFilename string) error {
 		log.Fatalln("please specify input and output files")
 	}
 
-	osmium := osmfitler.NewOsmium(inputFilename, outputFilename)
+	osmium := osm.NewOsmium(inputFilename, outputFilename)
 	err := osmium.Filter()
 	if err != nil {
 		log.Fatal(err)
