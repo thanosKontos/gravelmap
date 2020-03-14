@@ -122,15 +122,20 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 			latLngs = append(latLngs, gravelmap.Point{Lat: latlng.Lat, Lng: latlng.Lng})
 		}
 
+		var rlEle *gravelmap.RoutingLegElevation
+		if pWay.ElevationInfo.Grade != 0.0 && pWay.ElevationInfo.From != 0 && pWay.ElevationInfo.To != 0 {
+			rlEle = &gravelmap.RoutingLegElevation{
+				Grade: float64(pWay.ElevationInfo.Grade),
+				Start: float64(pWay.ElevationInfo.From),
+				End:   float64(pWay.ElevationInfo.To),
+			}
+		}
+
 		routingLeg := gravelmap.RoutingLeg{
 			Coordinates: latLngs,
 			Length:      float64(pWay.Distance),
 			Paved:       pWay.SurfaceType == gravelmap.WayTypePaved,
-			Elevation: &gravelmap.RoutingLegElevation{
-				Grade: float64(pWay.ElevationInfo.Grade),
-				Start: float64(pWay.ElevationInfo.From),
-				End:   float64(pWay.ElevationInfo.To),
-			},
+			Elevation:   rlEle,
 		}
 
 		routingData = append(routingData, routingLeg)

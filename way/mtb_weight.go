@@ -35,6 +35,7 @@ func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.We
 func getWayAcceptance(tags map[string]string) wayAcceptance {
 	if val, ok := tags["oneway"]; ok {
 		if val == "yes" {
+			// TODO test these special cases with real world example
 			if val, ok := tags["cycleway"]; ok {
 				if val == "opposite" || val == "opposite_lane" {
 					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
@@ -58,9 +59,11 @@ func getWayAcceptance(tags map[string]string) wayAcceptance {
 					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 				}
 			}
+
+			return wayAcceptance{wayAcceptanceYes, wayAcceptanceNo}
 		}
 
-		return wayAcceptance{wayAcceptanceNo, wayAcceptanceYes}
+		return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 	}
 
 	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
