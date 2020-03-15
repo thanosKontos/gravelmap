@@ -95,23 +95,23 @@ type WayPolylineReader interface {
 
 // Point represents a single point on earth
 type Point struct {
-	Lat float64
-	Lng float64
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
 // RoutingLegElevation represents the elevation routing leg
 type RoutingLegElevation struct {
-	Grade float64
-	Start float64
-	End   float64
+	Grade float64 `json:"grd"`
+	Start float64 `json:"str"`
+	End   float64 `json:"end"`
 }
 
 // RoutingLeg represents individual parts of a route
 type RoutingLeg struct {
-	Coordinates []Point
-	Length      float64
-	Paved       bool
-	Elevation   *RoutingLegElevation
+	Points    []Point              `json:"points"`
+	Length    float64              `json:"dist"`
+	Paved     bool                 `json:"pvd"`
+	Elevation *RoutingLegElevation `json:"elev"`
 }
 
 // DistanceCalculator describes implementations of finding the distance between 2 points
