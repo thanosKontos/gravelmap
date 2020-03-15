@@ -14,6 +14,7 @@ import (
 	"github.com/thanosKontos/gravelmap/dijkstra"
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
+	"github.com/thanosKontos/gravelmap/log"
 	"github.com/thanosKontos/gravelmap/way"
 	"googlemaps.github.io/maps"
 
@@ -37,14 +38,29 @@ func createWebServerCommand() *cobra.Command {
 
 // createRoutingDataCmdRun defines the command run actions.
 func createWebServerCmdRun() error {
-	http.HandleFunc("/route", routeNewHandler)
+	graph := dijkstra.NewGraph()
+	dataFile, err := os.Open("_files/graph.gob")
+	if err != nil {
+		return err
+	}
+
+	dataDecoder := gob.NewDecoder(dataFile)
+	err = dataDecoder.Decode(&graph)
+	if err != nil {
+		return err
+	}
+	dataFile.Close()
+
+	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {
+		routeHandler(w, r, graph)
+	})
 
 	http.ListenAndServe(":8000", nil)
 
 	return nil
 }
 
-func routeNewHandler(w http.ResponseWriter, r *http.Request) {
+func routeHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	distanceCalc := distance.NewHaversine()
@@ -59,6 +75,9 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger := log.NewStdout("info")
+	logger.Info("start routing")
+
 	edgeFrom, err := bboxFr.FindClosest(*pointFrom)
 	if err != nil {
 		w.WriteHeader(400)
@@ -67,6 +86,7 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	logger.Info(fmt.Sprintf("found edge from %d", edgeFrom))
 
 	edgeTo, err := bboxFr.FindClosest(*pointTo)
 	if err != nil {
@@ -76,23 +96,11 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	graph := dijkstra.NewGraph()
-	dataFile, err := os.Open("_files/graph.gob")
-	if err != nil {
-		fmt.Fprintf(w, `{"message": "Cannot open graph file"}`)
-	}
-
-	dataDecoder := gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&graph)
-	if err != nil {
-		w.WriteHeader(400)
-		fmt.Fprintf(w, `{"message": "Cannot open graph file"}`)
-	}
-
-	dataFile.Close()
+	logger.Info(fmt.Sprintf("found edge to %d", edgeTo))
 
 	best, err := graph.Shortest(int(edgeFrom), int(edgeTo))
+
+	logger.Info(fmt.Sprintf("path found"))
 
 	var resultEdgePairs []gravelmap.Way
 	var prevEdge = 0
@@ -111,6 +119,8 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
 	}
 
+	logger.Info(fmt.Sprintf("started reading ways"))
+
 	var routingData []gravelmap.RoutingLeg
 	presentableWays, _ := wayFile.Read(resultEdgePairs)
 
@@ -122,15 +132,20 @@ func routeNewHandler(w http.ResponseWriter, r *http.Request) {
 			latLngs = append(latLngs, gravelmap.Point{Lat: latlng.Lat, Lng: latlng.Lng})
 		}
 
+		var rlEle *gravelmap.RoutingLegElevation
+		if pWay.ElevationInfo.Grade != 0.0 && pWay.ElevationInfo.From != 0 && pWay.ElevationInfo.To != 0 {
+			rlEle = &gravelmap.RoutingLegElevation{
+				Grade: float64(pWay.ElevationInfo.Grade),
+				Start: float64(pWay.ElevationInfo.From),
+				End:   float64(pWay.ElevationInfo.To),
+			}
+		}
+
 		routingLeg := gravelmap.RoutingLeg{
 			Coordinates: latLngs,
 			Length:      float64(pWay.Distance),
 			Paved:       pWay.SurfaceType == gravelmap.WayTypePaved,
-			Elevation: &gravelmap.RoutingLegElevation{
-				Grade: float64(pWay.ElevationInfo.Grade),
-				Start: float64(pWay.ElevationInfo.From),
-				End:   float64(pWay.ElevationInfo.To),
-			},
+			Elevation:   rlEle,
 		}
 
 		routingData = append(routingData, routingLeg)
