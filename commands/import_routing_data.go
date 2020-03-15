@@ -13,6 +13,7 @@ import (
 	graph2 "github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/osm"
+	"github.com/thanosKontos/gravelmap/path"
 	"github.com/thanosKontos/gravelmap/way"
 )
 
@@ -64,10 +65,11 @@ func importRoutingDataCmdRun(inputFilename string) error {
 
 	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, weighter)
 	pointEncoder := encode.NewGooglemaps()
+	pathSimplifier := path.NewSimplifiedDouglasPeucker(distanceCalculator)
 
 	graph := graph2.NewDijkstra()
 	wayStorer := way.NewFileStore("_files", pointEncoder)
-	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, ndFileStore, costEvaluator)
+	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, ndFileStore, costEvaluator, pathSimplifier)
 
 	osmWayFileRead := osm.NewOsmWayFileRead(inputFilename, wayStorer, graph, wayAdderGetter)
 	err = osmWayFileRead.Process()

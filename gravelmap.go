@@ -1,8 +1,5 @@
 package gravelmap
 
-// MinRoutingDistance defines the minimum distance from our start/end points to some point in our route engine
-const MinRoutingDistance = 2000
-
 const (
 	WayTypePaved int8 = iota
 	WayTypeUnaved
@@ -65,6 +62,10 @@ type GraphWayAdder interface {
 	AddWays(ways map[int]map[int]EvaluatedWay)
 }
 
+type PathSimplifier interface {
+	Simplify(points []Point) []Point
+}
+
 type WayElevation struct {
 	Elevations []int32
 	ElevationEvaluation
@@ -113,18 +114,6 @@ type RoutingLeg struct {
 	Elevation   *RoutingLegElevation
 }
 
-// RoutingMode is a lookup value of the different routing modes
-type RoutingMode int
-
-const (
-	Normal RoutingMode = iota
-	OnlyUnpavedAccountElevation
-	OnlyUnpavedHardcore
-	NoLengthCareEasiest
-	NoLengthCareNormal
-	NoLengthOnlyUnpavedHardcore
-)
-
 // DistanceCalculator describes implementations of finding the distance between 2 points
 type DistanceCalculator interface {
 	Calculate(x, y Point) int64
@@ -136,12 +125,6 @@ type EdgeBatchStorer interface {
 
 type EdgeFinder interface {
 	FindClosest(point Point) (int32, error)
-}
-
-// Router describes implementations of routing between points
-type Router interface {
-	Route(pointFrom, pointTo Point, mode RoutingMode) ([]RoutingLeg, error)
-	Close() error
 }
 
 // OsmFilter describes implementations of filtering the useless OSM data

@@ -118,7 +118,7 @@ func getVehicleWayAcceptance(tags map[string]string) int32 {
 			}
 		}
 
-		if val == "motorway" {
+		if val == "motorway" || val == "steps" {
 			return vehicleAcceptanceNo
 		}
 
