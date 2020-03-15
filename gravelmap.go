@@ -97,7 +97,6 @@ type Point struct {
 
 // RoutingLegElevation represents the elevation routing leg
 type RoutingLegElevation struct {
-	Grade float64
 	Start float64
 	End   float64
 }
@@ -141,7 +140,9 @@ type PresentableWay struct {
 	Distance    int32
 	Polyline    string
 	SurfaceType int8
-	ElevationInfo
+	ElevFrom    int16
+	ElevTo      int16
+
 }
 
 type Encoder interface {

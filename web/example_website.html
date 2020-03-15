@@ -101,11 +101,12 @@
                             if (feature.Elevation != null) {
                                 chartData.push([distance, feature.Elevation.Start]);
 
-                                if (feature.Elevation.Grade < 1) {
+                                let grade = (feature.Elevation.End - feature.Elevation.Start) * 100 / feature.Length;
+                                if (grade < 1) {
                                     lineColor = '#236b31';
-                                } else if (feature.Elevation.Grade <= 1.3) {
+                                } else if (grade <= 1.3) {
                                     lineColor = '#424a9e';
-                                } else if (feature.Elevation.Grade <= 3) {
+                                } else if (grade <= 3) {
                                     lineColor = '#ff63e8';
                                 } else {
                                     lineColor = '#ff0207';

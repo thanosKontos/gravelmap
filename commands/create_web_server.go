@@ -133,11 +133,10 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph)
 		}
 
 		var rlEle *gravelmap.RoutingLegElevation
-		if pWay.ElevationInfo.Grade != 0.0 && pWay.ElevationInfo.From != 0 && pWay.ElevationInfo.To != 0 {
+		if pWay.ElevFrom != 0 && pWay.ElevTo != 0 {
 			rlEle = &gravelmap.RoutingLegElevation{
-				Grade: float64(pWay.ElevationInfo.Grade),
-				Start: float64(pWay.ElevationInfo.From),
-				End:   float64(pWay.ElevationInfo.To),
+				Start: float64(pWay.ElevFrom),
+				End:   float64(pWay.ElevTo),
 			}
 		}
 

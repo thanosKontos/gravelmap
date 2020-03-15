@@ -59,7 +59,8 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, erro
 		presentableWays = append(presentableWays, gravelmap.PresentableWay{
 			Polyline:      pl,
 			SurfaceType:   edgeToRec.wayType,
-			ElevationInfo: edgeToRec.ElevationInfo,
+			ElevFrom:    edgeToRec.elevFrom,
+			ElevTo:      edgeToRec.elevTo,
 			Distance:      edgeToRec.distance,
 		})
 	}
@@ -74,7 +75,6 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 	var distance, polylineLength int32
 	var polylineOffset int64
 	var wayType int8
-	var grade float32
 	var elevationStart, elevationEnd int16
 	found := false
 
@@ -95,10 +95,6 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 			data = readNextBytes(fr.edgeToFile, 1)
 			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &wayType)
-
-			data = readNextBytes(fr.edgeToFile, 4)
-			buffer = bytes.NewBuffer(data)
-			binary.Read(buffer, binary.BigEndian, &grade)
 
 			data = readNextBytes(fr.edgeToFile, 2)
 			buffer = bytes.NewBuffer(data)
@@ -131,11 +127,8 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 		nodeTo:   edgeToId,
 		distance: distance,
 		wayType:  wayType,
-		ElevationInfo: gravelmap.ElevationInfo{
-			Grade: grade,
-			From:  elevationStart,
-			To:    elevationEnd,
-		},
+		elevFrom:  elevationStart,
+		elevTo:    elevationEnd,
 		polylinePosition: polylinePosition{length: polylineLength, offset: polylineOffset},
 	}
 

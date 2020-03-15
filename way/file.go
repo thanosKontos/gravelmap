@@ -1,7 +1,5 @@
 package way
 
-import "github.com/thanosKontos/gravelmap"
-
 const (
 	edgeStartFilename = "edge_start.bin"
 	edgeToFilename    = "edge_to_polylines_lookup.bin"
@@ -9,8 +7,8 @@ const (
 
 	edgeStartRecordSize = 12
 
-	// Each individual record has 3 int32s, 1 int64, 1 int8 and 1 float32
-	edgeToIndividualRecordSize = 29
+	// Each individual record has 3 int32s, 1 int64 and 1 int8
+	edgeToIndividualRecordSize = 25
 )
 
 type edgeStartRecord struct {
@@ -27,6 +25,7 @@ type edgeToRecord struct {
 	nodeTo   int32
 	distance int32
 	wayType  int8
-	gravelmap.ElevationInfo
+	elevFrom int16
+	elevTo   int16
 	polylinePosition
 }
