@@ -23,8 +23,7 @@ type ElevationInfo struct {
 	To    int16
 }
 
-type WayTo struct {
-	NdTo     int
+type EvaluatedWay struct {
 	Points   []Point
 	Tags     map[string]string
 	Distance int32
@@ -52,15 +51,15 @@ type WayEvaluation struct {
 
 type WayAdderGetter interface {
 	Add(osmNodeIds []int64, tags map[string]string)
-	Get() map[int][]WayTo
+	Get() map[int]map[int]EvaluatedWay
 }
 
 type WayStorer interface {
-	Store(ways map[int][]WayTo) error
+	Store(ways map[int]map[int]EvaluatedWay) error
 }
 
 type GraphWayAdder interface {
-	AddWays(ways map[int][]WayTo)
+	AddWays(ways map[int]map[int]EvaluatedWay)
 }
 
 type WayElevation struct {
