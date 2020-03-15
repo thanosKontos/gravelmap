@@ -31,7 +31,7 @@ func NewFileStore(storageDir string, pointEncoder gravelmap.Encoder) *fileStore 
 	}
 }
 
-func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
+func (fs *fileStore) Store(ways map[int]map[int]gravelmap.EvaluatedWay) error {
 	var gmNodeIdsSorted []int
 	for k := range ways {
 		gmNodeIdsSorted = append(gmNodeIdsSorted, k)
@@ -42,20 +42,20 @@ func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 	var polylineOffset int64 = 0
 
 	for _, gmNdID := range gmNodeIdsSorted {
-		way := ways[gmNdID]
+		waysFrom := ways[gmNdID]
 
 		var polylines []string
 		var edgeToRecords []edgeToRecord
 
-		for i := 0; i < len(way); i++ {
-			polyline := fs.pointEncoder.Encode(way[i].Points)
+		for edgeTo, v := range waysFrom {
+			polyline := fs.pointEncoder.Encode(v.Points)
 			polylineLen := int32(len(polyline))
 
 			edgeToRec := edgeToRecord{
-				nodeTo:           int32(way[i].NdTo),
-				distance:         way[i].Distance,
-				wayType:          way[i].WayType,
-				ElevationInfo:    way[i].ElevationInfo,
+				nodeTo:           int32(edgeTo),
+				distance:         v.Distance,
+				wayType:          v.WayType,
+				ElevationInfo:    v.ElevationInfo,
 				polylinePosition: polylinePosition{length: polylineLen, offset: polylineOffset},
 			}
 			edgeToRecords = append(edgeToRecords, edgeToRec)
@@ -74,14 +74,13 @@ func (fs *fileStore) Store(ways map[int][]gravelmap.WayTo) error {
 			return err
 		}
 
-		edgeStart := edgeStartRecord{int32(len(way)), offset}
-
+		edgeStart := edgeStartRecord{int32(len(waysFrom)), offset}
 		err = fs.writeEdgeFromFile(gmNdID, edgeStart)
 		if err != nil {
 			return err
 		}
 
-		offset += int64(len(way)) * edgeToIndividualRecordSize
+		offset += int64(len(waysFrom)) * edgeToIndividualRecordSize
 	}
 
 	fs.close()

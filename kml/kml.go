@@ -101,7 +101,7 @@ func (k *kml) CreateFromRoute(routingLegs []gravelmap.RoutingLeg) (string, error
 	placemarks := ""
 	for _, leg := range routingLegs {
 		pointsSl := make([]string, 0)
-		for _, point := range leg.Coordinates {
+		for _, point := range leg.Points {
 			pointsSl = append(pointsSl, fmt.Sprintf("%f,%f,0", point.Lng, point.Lat))
 		}
 
