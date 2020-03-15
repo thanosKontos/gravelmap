@@ -21,21 +21,21 @@ func (d *dijkstra) Get() *dijkstra2.Graph {
 
 var alreadyAddedNodes = map[int]struct{}{}
 
-func (d *dijkstra) AddWays(ways map[int]map[int]gravelmap.EvaluatedWay) {
-	for edgeFromId, edgeFromWays := range ways {
-		for edgeToId, way := range edgeFromWays {
+func (d *dijkstra) AddWays(ways map[int][]gravelmap.WayTo) {
+	for edgeFromId, waysTo := range ways {
+		for _, way := range waysTo {
 			if _, ok := alreadyAddedNodes[edgeFromId]; !ok {
 				d.graph.AddVertex(edgeFromId)
 			}
 
-			if _, ok := alreadyAddedNodes[edgeToId]; !ok {
-				d.graph.AddVertex(edgeToId)
+			if _, ok := alreadyAddedNodes[way.NdTo]; !ok {
+				d.graph.AddVertex(way.NdTo)
 			}
 
 			alreadyAddedNodes[edgeFromId] = struct{}{}
-			alreadyAddedNodes[edgeToId] = struct{}{}
+			alreadyAddedNodes[way.NdTo] = struct{}{}
 
-			d.graph.AddArc(edgeFromId, edgeToId, way.Cost)
+			d.graph.AddArc(edgeFromId, way.NdTo, way.Cost)
 		}
 	}
 }

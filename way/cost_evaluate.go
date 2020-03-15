@@ -72,12 +72,6 @@ func isOffRoadWay(tags map[string]string) bool {
 
 	if val, ok := tags["highway"]; ok {
 		if val == "track" {
-			if val, ok := tags["surface"]; ok {
-				if val == "paved" {
-					return false
-				}
-			}
-
 			return true
 		}
 	}

@@ -98,33 +98,33 @@
 
                         routeFeatures.forEach(function(feature) {
                             let lineColor = '#000000';
-                            if (feature.elev != null) {
-                                chartData.push([distance, feature.elev.str]);
+                            if (feature.Elevation != null) {
+                                chartData.push([distance, feature.Elevation.Start]);
 
-                                if (feature.elev.drd < 1) {
+                                if (feature.Elevation.Grade < 1) {
                                     lineColor = '#236b31';
-                                } else if (feature.elev.drd <= 1.3) {
+                                } else if (feature.Elevation.Grade <= 1.3) {
                                     lineColor = '#424a9e';
-                                } else if (feature.elev.drd <= 3) {
+                                } else if (feature.Elevation.Grade <= 3) {
                                     lineColor = '#ff63e8';
                                 } else {
                                     lineColor = '#ff0207';
                                 }
 
-                                if (feature.elev.str < feature.elev.end) {
-                                    elevationIncline += feature.elev.end - feature.elev.str
+                                if (feature.Elevation.Start < feature.Elevation.End) {
+                                    elevationIncline += feature.Elevation.End - feature.Elevation.Start
                                 }
                             }
 
                             let strokeWidth = 2;
-                            if (feature.pvd) {
+                            if (feature.Paved) {
                                 strokeWidth = 3;
-                                pavedDistance += feature.dist;
+                                pavedDistance += feature.Length;
                             }
 
                             let points = [];
-                            feature.points.forEach(function(point) {
-                                points.push(new OpenLayers.Geometry.Point(point.lng, point.lng).transform(epsg4326, projectTo));
+                            feature.Coordinates.forEach(function(point) {
+                                points.push(new OpenLayers.Geometry.Point(point.Lng, point.Lat).transform(epsg4326, projectTo));
                             });
 
                             let vector = new OpenLayers.Feature.Vector(
@@ -138,15 +138,15 @@
                             vectorLayer.addFeatures(vector);
 
                             map.addLayer(vectorLayer);
-                            distance += feature.dist;
+                            distance += feature.Length;
 
-                            if (feature.elev != null) {
-                                endElevation = feature.elev.end
+                            if (feature.Elevation != null) {
+                                endElevation = feature.Elevation.End
                             }
                         });
 
                         chartData.push([distance, endElevation]);
-                        updateChartData(chart, chartData);
+                        updateChartData(chart, chartData)
 
                         let pavedPercentage = Math.round(pavedDistance/distance*100*100)/100;
                         $('#overall-length').text(Math.round(distance/1000 * 100) / 100 + " km");

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <tag_name name="highway" id="1">
+        <tag_value name="track" priority="1.0" id="101" maxspeed="20" />
+        <tag_value name="unclassified" priority="2.0" id="102" maxspeed="20" />
+        <tag_value name="residential" priority="5.0" id="103" maxspeed="20" />
+        <tag_value name="tertiary" priority="5.0" id="104" maxspeed="20" />
+        <tag_value name="secondary" priority="5.0" id="105" maxspeed="20" />
+        <tag_value name="primary" priority="5.0" id="106" maxspeed="20" />
+    </tag_name>
+
+    <tag_name name="mtb:scale" id="2">
+        <tag_value name="0" priority="1.0" id="201" maxspeed="20" />
+        <tag_value name="1" priority="1.0" id="202" maxspeed="20" />
+        <tag_value name="2" priority="3.0" id="203" maxspeed="20" />
+    </tag_name>
+</configuration>

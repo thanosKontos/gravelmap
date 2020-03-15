@@ -1,5 +1,8 @@
 package gravelmap
 
+// MinRoutingDistance defines the minimum distance from our start/end points to some point in our route engine
+const MinRoutingDistance = 2000
+
 const (
 	WayTypePaved int8 = iota
 	WayTypeUnaved
@@ -23,7 +26,8 @@ type ElevationInfo struct {
 	To    int16
 }
 
-type EvaluatedWay struct {
+type WayTo struct {
+	NdTo     int
 	Points   []Point
 	Tags     map[string]string
 	Distance int32
@@ -51,24 +55,26 @@ type WayEvaluation struct {
 
 type WayAdderGetter interface {
 	Add(osmNodeIds []int64, tags map[string]string)
-	Get() map[int]map[int]EvaluatedWay
+	Get() map[int][]WayTo
 }
 
 type WayStorer interface {
-	Store(ways map[int]map[int]EvaluatedWay) error
+	Store(ways map[int][]WayTo) error
 }
 
 type GraphWayAdder interface {
-	AddWays(ways map[int]map[int]EvaluatedWay)
-}
-
-type PathSimplifier interface {
-	Simplify(points []Point) []Point
+	AddWays(ways map[int][]WayTo)
 }
 
 type WayElevation struct {
 	Elevations []int32
 	ElevationEvaluation
+}
+
+// EvaluativeWay holds info for a way to be evaluated (distance, elevation, road)
+type EvaluativeWay struct {
+	Tags   map[string]string
+	Points []Point
 }
 
 type ElevationGetterCloser interface {
@@ -95,24 +101,36 @@ type WayPolylineReader interface {
 
 // Point represents a single point on earth
 type Point struct {
-	Lat float64 `json:"lat"`
-	Lng float64 `json:"lng"`
+	Lat float64
+	Lng float64
 }
 
 // RoutingLegElevation represents the elevation routing leg
 type RoutingLegElevation struct {
-	Grade float64 `json:"grd"`
-	Start float64 `json:"str"`
-	End   float64 `json:"end"`
+	Grade float64
+	Start float64
+	End   float64
 }
 
 // RoutingLeg represents individual parts of a route
 type RoutingLeg struct {
-	Points    []Point              `json:"points"`
-	Length    float64              `json:"dist"`
-	Paved     bool                 `json:"pvd"`
-	Elevation *RoutingLegElevation `json:"elev"`
+	Coordinates []Point
+	Length      float64
+	Paved       bool
+	Elevation   *RoutingLegElevation
 }
+
+// RoutingMode is a lookup value of the different routing modes
+type RoutingMode int
+
+const (
+	Normal RoutingMode = iota
+	OnlyUnpavedAccountElevation
+	OnlyUnpavedHardcore
+	NoLengthCareEasiest
+	NoLengthCareNormal
+	NoLengthOnlyUnpavedHardcore
+)
 
 // DistanceCalculator describes implementations of finding the distance between 2 points
 type DistanceCalculator interface {
@@ -125,6 +143,12 @@ type EdgeBatchStorer interface {
 
 type EdgeFinder interface {
 	FindClosest(point Point) (int32, error)
+}
+
+// Router describes implementations of routing between points
+type Router interface {
+	Route(pointFrom, pointTo Point, mode RoutingMode) ([]RoutingLeg, error)
+	Close() error
 }
 
 // OsmFilter describes implementations of filtering the useless OSM data

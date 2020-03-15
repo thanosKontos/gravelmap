@@ -1,8 +1,6 @@
 package way
 
-import (
-	"github.com/thanosKontos/gravelmap"
-)
+import "github.com/thanosKontos/gravelmap"
 
 type bicycleWeight struct {
 }
@@ -21,12 +19,12 @@ func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
 
 func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.Weight {
 	wayAcceptance := getWayAcceptance(tags)
-	wayAcceptanceWeight := gravelmap.Weight{Normal: 1.0, Reverse: 1.0}
+	wayAcceptanceWeight := gravelmap.Weight{1.0, 1.0}
 	if wayAcceptance.normal == wayAcceptanceNo {
-		wayAcceptanceWeight.Normal = 10000000
+		wayAcceptanceWeight.Normal = 10000
 	}
 	if wayAcceptance.reverse == wayAcceptanceNo {
-		wayAcceptanceWeight.Reverse = 10000000
+		wayAcceptanceWeight.Reverse = 10000
 	}
 
 	return wayAcceptanceWeight
@@ -35,7 +33,6 @@ func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.We
 func getWayAcceptance(tags map[string]string) wayAcceptance {
 	if val, ok := tags["oneway"]; ok {
 		if val == "yes" {
-			// TODO test these special cases with real world example
 			if val, ok := tags["cycleway"]; ok {
 				if val == "opposite" || val == "opposite_lane" {
 					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
@@ -59,11 +56,9 @@ func getWayAcceptance(tags map[string]string) wayAcceptance {
 					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 				}
 			}
-
-			return wayAcceptance{wayAcceptanceYes, wayAcceptanceNo}
 		}
 
-		return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
+		return wayAcceptance{wayAcceptanceNo, wayAcceptanceYes}
 	}
 
 	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
@@ -76,9 +71,8 @@ func (b *bicycleWeight) WeightVehicleAcceptance(tags map[string]string) float64 
 	case vehicleAcceptancePartially:
 		return 2.0
 	case vehicleAcceptanceMaybe:
-		return 10000000.0
 	case vehicleAcceptanceNo:
-		return 10000000.0
+		return 10000.0
 	}
 
 	return 1.0
@@ -118,7 +112,7 @@ func getVehicleWayAcceptance(tags map[string]string) int32 {
 			}
 		}
 
-		if val == "motorway" || val == "steps" {
+		if val == "motorway" {
 			return vehicleAcceptanceNo
 		}
 
@@ -129,7 +123,7 @@ func getVehicleWayAcceptance(tags map[string]string) int32 {
 		return vehicleAcceptanceYes
 	}
 
-	return vehicleAcceptanceYes
+	return vehicleAcceptanceMaybe
 }
 
 //0%: A flat road
@@ -140,33 +134,33 @@ func getVehicleWayAcceptance(tags map[string]string) int32 {
 //16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
 func (b *bicycleWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.Weight {
 	if elevation == nil {
-		return gravelmap.Weight{Normal: 1, Reverse: 15}
+		return gravelmap.Weight{1, 15}
 	}
 
 	switch {
 	case elevation.ElevationEvaluation.Normal.Grade < -15:
-		return gravelmap.Weight{Normal: 1, Reverse: 15}
+		return gravelmap.Weight{1, 15}
 	case elevation.ElevationEvaluation.Normal.Grade < -10:
-		return gravelmap.Weight{Normal: 1, Reverse: 10}
+		return gravelmap.Weight{1, 10}
 	case elevation.ElevationEvaluation.Normal.Grade < -7:
-		return gravelmap.Weight{Normal: 1, Reverse: 7}
+		return gravelmap.Weight{1, 7}
 	case elevation.ElevationEvaluation.Normal.Grade < -4:
-		return gravelmap.Weight{Normal: 0.8, Reverse: 3}
+		return gravelmap.Weight{0.8, 3}
 	case elevation.ElevationEvaluation.Normal.Grade < -2:
-		return gravelmap.Weight{Normal: 0.8, Reverse: 1.2}
+		return gravelmap.Weight{0.8, 1.2}
 	case elevation.ElevationEvaluation.Normal.Grade < 0:
-		return gravelmap.Weight{Normal: 0.8, Reverse: 1}
+		return gravelmap.Weight{0.8, 1}
 	case elevation.ElevationEvaluation.Normal.Grade < 2:
-		return gravelmap.Weight{Normal: 1, Reverse: 0.8}
+		return gravelmap.Weight{1, 0.8}
 	case elevation.ElevationEvaluation.Normal.Grade < 4:
-		return gravelmap.Weight{Normal: 1.2, Reverse: 0.8}
+		return gravelmap.Weight{1.2, 0.8}
 	case elevation.ElevationEvaluation.Normal.Grade < 7:
-		return gravelmap.Weight{Normal: 3, Reverse: 0.8}
+		return gravelmap.Weight{3, 0.8}
 	case elevation.ElevationEvaluation.Normal.Grade < 10:
-		return gravelmap.Weight{Normal: 7, Reverse: 1}
+		return gravelmap.Weight{7, 1}
 	case elevation.ElevationEvaluation.Normal.Grade < 15:
-		return gravelmap.Weight{Normal: 10, Reverse: 1}
+		return gravelmap.Weight{10, 1}
 	default:
-		return gravelmap.Weight{Normal: 15, Reverse: 1}
+		return gravelmap.Weight{15, 1}
 	}
 }
