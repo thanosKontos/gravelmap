@@ -17,7 +17,7 @@ func TestGetWeightWayAcceptance(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		gravelmap.Weight{10000000, 1},
+		gravelmap.Weight{1, 10000000},
 		weight.WeightWayAcceptance(map[string]string{"oneway": "yes", "surface": "asphalt"}),
 	)
 	assert.Equal(
@@ -27,7 +27,7 @@ func TestGetWeightWayAcceptance(t *testing.T) {
 	)
 	assert.Equal(
 		t,
-		gravelmap.Weight{10000000, 1},
+		gravelmap.Weight{1, 10000000},
 		weight.WeightWayAcceptance(map[string]string{"oneway": "yes", "cycleway": "opposite-lane"}),
 	)
 }
