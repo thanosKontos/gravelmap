@@ -9,9 +9,15 @@ type osm2GmWays struct {
 	nodeDB        gravelmap.Osm2GmNodeReaderWriter
 	gmNodeRd      gravelmap.GmNodeReader
 	costEvaluator gravelmap.CostEvaluator
+	pathSimplifier gravelmap.PathSimplifier
 }
 
-func NewOsm2GmWays(nodeDB gravelmap.Osm2GmNodeReaderWriter, gmNodeRd gravelmap.GmNodeReader, costEvaluator gravelmap.CostEvaluator) *osm2GmWays {
+func NewOsm2GmWays(
+	nodeDB gravelmap.Osm2GmNodeReaderWriter,
+	gmNodeRd gravelmap.GmNodeReader,
+	costEvaluator gravelmap.CostEvaluator,
+	pathSimplifier gravelmap.PathSimplifier,
+	) *osm2GmWays {
 	ways := make(map[int][]gravelmap.WayTo)
 
 	return &osm2GmWays{
@@ -19,6 +25,7 @@ func NewOsm2GmWays(nodeDB gravelmap.Osm2GmNodeReaderWriter, gmNodeRd gravelmap.G
 		gmNodeRd:      gmNodeRd,
 		ways:          ways,
 		costEvaluator: costEvaluator,
+		pathSimplifier: pathSimplifier,
 	}
 }
 
@@ -103,14 +110,15 @@ func (o *osm2GmWays) getWayPoints(wayGmNds []int) wayPoints {
 	var pts []gravelmap.Point
 	var revPts []gravelmap.Point
 
-	for i := len(wayGmNds) - 1; i >= 0; i-- {
-		node, _ := o.gmNodeRd.Read(wayGmNds[i])
-		revPts = append(revPts, node.Point)
-	}
-
 	for _, ndID := range wayGmNds {
 		node, _ := o.gmNodeRd.Read(ndID)
 		pts = append(pts, node.Point)
+	}
+
+	pts = o.pathSimplifier.Simplify(pts)
+
+	for i := len(pts) - 1; i >= 0; i-- {
+		revPts = append(revPts, pts[i])
 	}
 
 	return wayPoints{pts, revPts}

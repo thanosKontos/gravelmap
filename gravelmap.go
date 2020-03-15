@@ -176,6 +176,10 @@ type Encoder interface {
 	Encode(points []Point) string
 }
 
+type PathSimplifier interface {
+	Simplify(points []Point) []Point
+}
+
 type Weight struct {
 	Normal  float64
 	Reverse float64
