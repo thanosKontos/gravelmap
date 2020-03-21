@@ -10,16 +10,6 @@ type dijkstraList interface {
 	Len() int
 }
 
-//PriorityQueueNewShort creates a new priority queue for short solving
-func priorityQueueNewShort() dijkstraList {
-	l := &priorityQueueWrapper{new(priorityQueueShort)}
-	n := l.Len()
-	for i := n/2 - 1; i >= 0; i-- {
-		l.down(i, n)
-	}
-	return l
-}
-
 //PriorityQueueNewLong creates a new priority queue for long solving
 func priorityQueueNewLong() dijkstraList {
 	l := &priorityQueueWrapper{new(priorityQueueLong)}
@@ -30,7 +20,6 @@ func priorityQueueNewLong() dijkstraList {
 	return l
 }
 
-type priorityQueueShort struct{ priorityQueueBase }
 type priorityQueueLong struct{ priorityQueueBase }
 type priorityQueueInterface interface {
 	sort.Interface
@@ -38,11 +27,6 @@ type priorityQueueInterface interface {
 	Pop() *Vertex
 }
 type priorityQueueWrapper struct{ priorityQueueInterface }
-
-func (pq priorityQueueShort) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq.priorityQueueBase[i].value.distance > pq.priorityQueueBase[j].value.distance
-}
 
 func (pq priorityQueueLong) Less(i, j int) bool {
 	// We want Pop to give us the highest, not lowest, priority so we use greater than here.

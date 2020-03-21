@@ -6,15 +6,12 @@ import (
 
 //Shortest calculates the shortest path from src to dest
 func (g *Graph) Shortest(src, dest int) (BestPath, error) {
-	//Setup graph
 	g.setup(src)
 	return g.postSetupEvaluate(src, dest)
 }
 
 func (g *Graph) setup(src int) {
-	//-1 auto list
-	//Get a new list regardless
-	g.forceList(-1)
+	g.setupList()
 
 	//Reset state
 	g.visitedDest = false
@@ -28,41 +25,17 @@ func (g *Graph) setup(src int) {
 	//Set the distance of initial vertex 0
 	g.Verticies[src].distance = 0
 	//Add the source vertex to the list
-	g.visiting.PushOrdered(&g.Verticies[src])
+	g.list.PushOrdered(&g.Verticies[src])
 }
 
-func (g *Graph) forceList(i int) {
-	//-2 long auto
-	//-1 short auto
-	//0 short pq
-	//1 long pq
-	//2 short ll
-	//3 long ll
-	switch i {
-	case -1:
-		if len(g.Verticies) < 800 {
-			g.visiting = linkedListNewLong()
-			break
-		} else {
-			g.visiting = priorityQueueNewLong()
-			break
-		}
-		break
-	case 0:
-		g.visiting = priorityQueueNewShort()
-		break
-	case 1:
-		g.visiting = priorityQueueNewLong()
-		break
-	case 2:
-		g.visiting = linkedListNewShort()
-		break
-	case 3:
-		g.visiting = linkedListNewLong()
-		break
-	default:
-		panic(i)
+func (g *Graph) setupList() {
+	if len(g.Verticies) < 800 {
+		g.list = linkedListNewLong()
+		return
 	}
+
+	g.list = priorityQueueNewLong()
+	return
 }
 
 func (g *Graph) bestPath(src, dest int) BestPath {
@@ -80,10 +53,10 @@ func (g *Graph) bestPath(src, dest int) BestPath {
 func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
 	var current *Vertex
 	oldCurrent := -1
-	for g.visiting.Len() > 0 {
+	for g.list.Len() > 0 {
 		//Visit the current lowest distanced Vertex
 		//TODO WTF
-		current = g.visiting.PopOrdered()
+		current = g.list.PopOrdered()
 		if oldCurrent == current.ID {
 			continue
 		}
@@ -111,7 +84,7 @@ func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
 				}
 				//Push this updated Vertex into the list to be evaluated, pushes in
 				// sorted form
-				g.visiting.PushOrdered(&g.Verticies[v])
+				g.list.PushOrdered(&g.Verticies[v])
 			}
 		}
 	}

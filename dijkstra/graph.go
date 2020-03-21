@@ -11,17 +11,13 @@ type Graph struct {
 	visitedDest bool
 	//slice of all verticies available
 	Verticies       []Vertex
-	visiting        dijkstraList
-	mapping         map[string]int
-	usingMap        bool
+	list            dijkstraList
 	highestMapIndex int
 }
 
 //NewGraph creates a new empty graph
 func NewGraph() *Graph {
-	new := &Graph{}
-	new.mapping = map[string]int{}
-	return new
+	return &Graph{}
 }
 
 //AddNewVertex adds a new vertex at the next available index
@@ -45,9 +41,18 @@ func (g *Graph) AddVertex(ID int) *Vertex {
 // there is no vertex with that index/ID.
 func (g *Graph) GetVertex(ID int) (*Vertex, error) {
 	if ID >= len(g.Verticies) {
-		return nil, errors.New("Vertex not found")
+		return nil, errors.New("vertex not found")
 	}
 	return &g.Verticies[ID], nil
+}
+
+//AddArc is the default method for adding an arc from a Source Vertex to a Destination Vertex
+func (g *Graph) AddArc(Source, Destination int, Distance int64) error {
+	if len(g.Verticies) <= Source || len(g.Verticies) <= Destination {
+		return errors.New("Source/Destination not found")
+	}
+	g.Verticies[Source].AddArc(Destination, Distance)
+	return nil
 }
 
 func (g Graph) validate() error {
