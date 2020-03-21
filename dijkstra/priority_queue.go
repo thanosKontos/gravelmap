@@ -26,7 +26,9 @@ type priorityQueueInterface interface {
 	Push(x *Vertex)
 	Pop() *Vertex
 }
-type priorityQueueWrapper struct{ priorityQueueInterface }
+type priorityQueueWrapper struct{
+	priorityQueueInterface
+}
 
 func (pq priorityQueueLong) Less(i, j int) bool {
 	// We want Pop to give us the highest, not lowest, priority so we use greater than here.

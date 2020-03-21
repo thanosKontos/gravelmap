@@ -4,6 +4,12 @@ import (
 	"math"
 )
 
+//BestPath contains the solution of the most optimal path
+type BestPath struct {
+	Distance int64
+	Path     []int
+}
+
 //Shortest calculates the shortest path from src to dest
 func (g *Graph) Shortest(src, dest int) (BestPath, error) {
 	g.setup(src)
@@ -36,18 +42,6 @@ func (g *Graph) setupList() {
 
 	g.list = priorityQueueNewLong()
 	return
-}
-
-func (g *Graph) bestPath(src, dest int) BestPath {
-	var path []int
-	for c := g.Verticies[dest]; c.ID != src; c = g.Verticies[c.bestVerticies[0]] {
-		path = append(path, c.ID)
-	}
-	path = append(path, src)
-	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
-		path[i], path[j] = path[j], path[i]
-	}
-	return BestPath{g.Verticies[dest].distance, path}
 }
 
 func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
@@ -98,11 +92,22 @@ func (g *Graph) finally(src, dest int) (BestPath, error) {
 	return g.bestPath(src, dest), nil
 }
 
-//BestPath contains the solution of the most optimal path
-type BestPath struct {
-	Distance int64
-	Path     []int
+func (g *Graph) bestPath(src, dest int) BestPath {
+	var path []int
+	for c := g.Verticies[dest]; c.ID != src; c = g.Verticies[c.bestVerticies[0]] {
+		path = append(path, c.ID)
+	}
+	path = append(path, src)
+	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+		path[i], path[j] = path[j], path[i]
+	}
+	return BestPath{g.Verticies[dest].distance, path}
 }
 
-//BestPaths contains the list of best solutions
-type BestPaths []BestPath
+//SetDefaults sets the distance and best node to that specified
+func (g *Graph) setDefaults(Distance int64, BestNode int) {
+	for i := range g.Verticies {
+		g.Verticies[i].bestVerticies = []int{BestNode}
+		g.Verticies[i].distance = Distance
+	}
+}

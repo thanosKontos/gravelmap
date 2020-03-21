@@ -17,28 +17,6 @@ func NewVertex(ID int) *Vertex {
 	return &Vertex{ID: ID, bestVerticies: []int{-1}, Arcs: map[int]int64{}}
 }
 
-//AddVerticies adds the listed verticies to the graph, overwrites any existing
-// Vertex with the same ID.
-func (g *Graph) AddVerticies(verticies ...Vertex) {
-	for _, v := range verticies {
-		v.bestVerticies = []int{-1}
-		if v.ID >= len(g.Verticies) {
-			newV := make([]Vertex, v.ID+1-len(g.Verticies))
-			g.Verticies = append(g.Verticies, newV...)
-		}
-		g.Verticies[v.ID] = v
-	}
-}
-
-func (v *Vertex) containsBest(id int) bool {
-	for _, bestVertex := range v.bestVerticies {
-		if bestVertex == id {
-			return true
-		}
-	}
-	return false
-}
-
 //AddArc adds an arc to the vertex, it's up to the user to make sure this is used
 // correctly, firstly ensuring to use before adding to graph, or to use referenced
 // of the Vertex instead of a copy. Secondly, to ensure the destination is a valid
@@ -49,22 +27,4 @@ func (v *Vertex) AddArc(Destination int, Distance int64) {
 		v.Arcs = map[int]int64{}
 	}
 	v.Arcs[Destination] = Distance
-}
-
-/*
-I decided you don't get that kind of privelage
-#checkyourprivelage
-//RemoveArc completely removes the arc to Destination (if it exists)
-func (v *Vertex) RemoveArc(Destination int) {
-	delete(v.arcs, Destination)
-}*/
-
-//GetArc gets the specified arc to Destination, bool is false if no arc found
-func (v *Vertex) GetArc(Destination int) (distance int64, ok bool) {
-	if v.Arcs == nil {
-		return 0, false
-	}
-	//idk why but doesn't work on one line?
-	distance, ok = v.Arcs[Destination]
-	return
 }
