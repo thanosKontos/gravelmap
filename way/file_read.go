@@ -57,11 +57,11 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, erro
 		}
 
 		presentableWays = append(presentableWays, gravelmap.PresentableWay{
-			Polyline:      pl,
-			SurfaceType:   edgeToRec.wayType,
+			Polyline:    pl,
+			SurfaceType: edgeToRec.wayType,
 			ElevFrom:    edgeToRec.elevFrom,
 			ElevTo:      edgeToRec.elevTo,
-			Distance:      edgeToRec.distance,
+			Distance:    edgeToRec.distance,
 		})
 	}
 
@@ -124,11 +124,11 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 	}
 
 	edgeToRecord := edgeToRecord{
-		nodeTo:   edgeToId,
-		distance: distance,
-		wayType:  wayType,
-		elevFrom:  elevationStart,
-		elevTo:    elevationEnd,
+		nodeTo:           edgeToId,
+		distance:         distance,
+		wayType:          wayType,
+		elevFrom:         elevationStart,
+		elevTo:           elevationEnd,
 		polylinePosition: polylinePosition{length: polylineLength, offset: polylineOffset},
 	}
 

@@ -17,11 +17,10 @@ import (
 	"github.com/thanosKontos/gravelmap/way"
 )
 
-
 // importRoutingDataCommand imports data from an OSM file.
 func importRoutingDataCommand() *cobra.Command {
 	var (
-		inputFilename  string
+		inputFilename string
 	)
 
 	importRoutingDataCmd := &cobra.Command{

@@ -24,8 +24,8 @@ type element struct {
 // linkedList represents a doubly linked list.
 // The zero value for linkedList is an empty list ready to use.
 type linkedList struct {
-	root  element // sentinel list element, only &root, root.prev, and root.next are used
-	len   int     // current list length excluding (this) sentinel element
+	root element // sentinel list element, only &root, root.prev, and root.next are used
+	len  int     // current list length excluding (this) sentinel element
 }
 
 // Init initializes or clears list l.

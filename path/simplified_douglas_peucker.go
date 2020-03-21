@@ -27,7 +27,7 @@ func (dp *simplifiedDouglasPeuker) Simplify(points []gravelmap.Point) []gravelma
 
 	for {
 		if toIdx == len(points) {
-			simplifiedPoints = append(simplifiedPoints, points[toIdx - 1])
+			simplifiedPoints = append(simplifiedPoints, points[toIdx-1])
 
 			break
 		}
@@ -36,7 +36,7 @@ func (dp *simplifiedDouglasPeuker) Simplify(points []gravelmap.Point) []gravelma
 		d2 := dp.distanceCalc.Calculate(points[throughIdx], points[toIdx])
 		d3 := dp.distanceCalc.Calculate(points[fromIdx], points[toIdx])
 
-		e := float64(d1+d2)/float64(d3)
+		e := float64(d1+d2) / float64(d3)
 
 		if e == 1 {
 			throughIdx = toIdx

@@ -26,7 +26,7 @@ type priorityQueueInterface interface {
 	Push(x *Vertex)
 	Pop() *Vertex
 }
-type priorityQueueWrapper struct{
+type priorityQueueWrapper struct {
 	priorityQueueInterface
 }
 

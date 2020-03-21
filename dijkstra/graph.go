@@ -9,8 +9,8 @@ type Graph struct {
 	best        int64
 	visitedDest bool
 	//slice of all verticies available
-	Verticies       []Vertex
-	list            dijkstraList
+	Verticies []Vertex
+	list      dijkstraList
 }
 
 //NewGraph creates a new empty graph
