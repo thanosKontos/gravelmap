@@ -39,18 +39,13 @@ func (g *Graph) forceList(i int) {
 	//2 short ll
 	//3 long ll
 	switch i {
-	case -2:
-		if len(g.Verticies) < 800 {
-			g.forceList(2)
-		} else {
-			g.forceList(0)
-		}
-		break
 	case -1:
 		if len(g.Verticies) < 800 {
-			g.forceList(3)
+			g.visiting = linkedListNewLong()
+			break
 		} else {
-			g.forceList(1)
+			g.visiting = priorityQueueNewLong()
+			break
 		}
 		break
 	case 0:

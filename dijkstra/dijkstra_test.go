@@ -15,7 +15,7 @@ func TestCorrectSmallGraphFindShortest(t *testing.T) {
 	graph.AddVertex(3)
 	graph.AddVertex(4)
 
-	graph.AddArc(0, 1, 1)
+	graph.AddArc(0, 1, 2)
 	graph.AddArc(0, 2, 1)
 	graph.AddArc(1, 3, 0)
 	graph.AddArc(2, 3, 0)
