@@ -106,7 +106,7 @@ func (k *kml) CreateFromRoute(routingLegs []gravelmap.RoutingLeg) (string, error
 		}
 
 		placemarkCoords := strings.Join(pointsSl, "\n")
-		placemark := fmt.Sprintf(placeMarkBase, getToKmlLineColor(leg.Elevation, leg.Paved), placemarkCoords)
+		placemark := fmt.Sprintf(placeMarkBase, getToKmlLineColor(leg.Elevation, leg.Length, leg.Paved), placemarkCoords)
 
 		placemarks += placemark
 	}
@@ -114,7 +114,7 @@ func (k *kml) CreateFromRoute(routingLegs []gravelmap.RoutingLeg) (string, error
 	return fmt.Sprintf(kmlBase, placemarks), nil
 }
 
-func getToKmlLineColor(elevation *gravelmap.RoutingLegElevation, paved bool) string {
+func getToKmlLineColor(elevation *gravelmap.RoutingLegElevation, distance float64, paved bool) string {
 	surfaceStyle := "upvd"
 	if paved {
 		surfaceStyle = "pvd"
@@ -124,15 +124,16 @@ func getToKmlLineColor(elevation *gravelmap.RoutingLegElevation, paved bool) str
 		return "black-" + surfaceStyle
 	}
 
-	if elevation.Grade < 1 {
+	grade := (elevation.End - elevation.Start) * 100 / distance
+	if grade < 1 {
 		return "green-" + surfaceStyle
 	}
 
-	if elevation.Grade < 1.3 {
+	if grade < 1.3 {
 		return "blue-" + surfaceStyle
 	}
 
-	if elevation.Grade < 3 {
+	if grade < 3 {
 		return "pink-" + surfaceStyle
 	}
 

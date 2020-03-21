@@ -7,18 +7,15 @@ import (
 //Shortest calculates the shortest path from src to dest
 func (g *Graph) Shortest(src, dest int) (BestPath, error) {
 	//Setup graph
-	g.setup(src, -1)
+	g.setup(src)
 	return g.postSetupEvaluate(src, dest)
 }
 
-func (g *Graph) setup(src int, list int) {
+func (g *Graph) setup(src int) {
 	//-1 auto list
 	//Get a new list regardless
-	if list >= 0 {
-		g.forceList(list)
-	} else {
-		g.forceList(-1)
-	}
+	g.forceList(-1)
+
 	//Reset state
 	g.visitedDest = false
 	//Reset the best current value (worst so it gets overwritten)
