@@ -6,11 +6,12 @@ import (
 
 //Graph contains all the graph details
 type Graph struct {
-	best        int64
-	visitedDest bool
 	//slice of all verticies available
 	Verticies []Vertex
-	list      dijkstraList
+
+	costToDest int64
+	destFound  bool
+	list       dijkstraList
 }
 
 //NewGraph creates a new empty graph
