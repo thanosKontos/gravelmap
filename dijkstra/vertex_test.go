@@ -1,13 +1,14 @@
 package dijkstra
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestNewVertex(t *testing.T) {
 	v := NewVertex(10)
-	if v.ID != 10 {
-		t.Error("NewVertex ID not set")
-	}
-	if v.Arcs == nil {
-		t.Error("NewVertex arcs map not initialised")
-	}
+
+	assert.Equal(t, 10, v.ID)
+	assert.NotNil(t, v.Arcs)
 }

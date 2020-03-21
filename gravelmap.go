@@ -142,7 +142,6 @@ type PresentableWay struct {
 	SurfaceType int8
 	ElevFrom    int16
 	ElevTo      int16
-
 }
 
 type Encoder interface {

@@ -24,19 +24,13 @@ type element struct {
 // linkedList represents a doubly linked list.
 // The zero value for linkedList is an empty list ready to use.
 type linkedList struct {
-	root  element // sentinel list element, only &root, root.prev, and root.next are used
-	len   int     // current list length excluding (this) sentinel element
-	short bool
-}
-
-// Init initializes or clears list l.
-func linkedListNewShort() dijkstraList {
-	return dijkstraList(new(linkedList).init(true))
+	root element // sentinel list element, only &root, root.prev, and root.next are used
+	len  int     // current list length excluding (this) sentinel element
 }
 
 // Init initializes or clears list l.
 func linkedListNewLong() dijkstraList {
-	return dijkstraList(new(linkedList).init(false))
+	return dijkstraList(new(linkedList).init())
 }
 
 // Init initializes or clears list l.
@@ -46,9 +40,6 @@ func (l *linkedList) PushOrdered(v *Vertex) {
 
 // Init initializes or clears list l.
 func (l *linkedList) PopOrdered() *Vertex {
-	if l.short {
-		return l.popBack()
-	}
 	return l.popFront()
 }
 
@@ -58,11 +49,10 @@ func (l *linkedList) Len() int {
 }
 
 // Init initializes or clears list l.
-func (l *linkedList) init(short bool) *linkedList {
+func (l *linkedList) init() *linkedList {
 	l.root.next = &l.root
 	l.root.prev = &l.root
 	l.len = 0
-	l.short = short
 	return l
 }
 
@@ -85,17 +75,6 @@ func (l *linkedList) popFront() *Vertex {
 	return e.Value
 }
 
-//popFront pops the Vertex off the front of the list
-func (l *linkedList) popBack() *Vertex {
-	e := l.back()
-	if e.list == l {
-		// if e.list == l, l must have been initialized when e was inserted
-		// in l or l == nil (e is a zero element) and l.remove will crash
-		l.remove(e)
-	}
-	return e.Value
-}
-
 // back returns the last element of list l or nil.
 func (l *linkedList) back() *element {
 	if l.len == 0 {
@@ -107,7 +86,7 @@ func (l *linkedList) back() *element {
 // lazyInit lazily initializes a zero linkedList value.
 func (l *linkedList) lazyinit() {
 	if l.root.next == nil {
-		l.init(l.short)
+		l.init()
 	}
 }
 
