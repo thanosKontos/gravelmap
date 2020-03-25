@@ -13,6 +13,7 @@ import (
 type osmFileRead struct {
 	osmFilename    string
 	wayStorer      gravelmap.WayStorer
+	graphWayStorer gravelmap.GraphWayStorer
 	graphWayAdder  gravelmap.GraphWayAdder
 	wayAdderGetter gravelmap.WayAdderGetter
 }
@@ -20,6 +21,7 @@ type osmFileRead struct {
 func NewOsmWayFileRead(
 	osmFilename string,
 	wayStorer gravelmap.WayStorer,
+	graphWayStorer gravelmap.GraphWayStorer,
 	graphWayAdder gravelmap.GraphWayAdder,
 	wayAdderGetter gravelmap.WayAdderGetter,
 ) *osmFileRead {
@@ -27,6 +29,7 @@ func NewOsmWayFileRead(
 		osmFilename:    osmFilename,
 		wayStorer:      wayStorer,
 		graphWayAdder:  graphWayAdder,
+		graphWayStorer: graphWayStorer,
 		wayAdderGetter: wayAdderGetter,
 	}
 }
@@ -64,6 +67,10 @@ func (fs *osmFileRead) Process() error {
 		}
 	}
 
+	err = fs.graphWayStorer.Store(fs.wayAdderGetter.Get())
+	if err != nil {
+		return err
+	}
 	fs.graphWayAdder.AddWays(fs.wayAdderGetter.Get())
 	return fs.wayStorer.Store(fs.wayAdderGetter.Get())
 }
