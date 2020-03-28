@@ -11,9 +11,9 @@ import (
 )
 
 type osmNodeProcess struct {
-	osmFilename     string
-	osm2GmStore     gravelmap.Osm2GmNodeReaderWriter
-	edgeBatchStorer gravelmap.EdgeBatchStorer
+	osmFilename      string
+	osm2GmStore      gravelmap.Osm2GmNodeReaderWriter
+	edgeBatchStorer  gravelmap.EdgeBatchStorer
 	osm2LatLngWriter gravelmap.Osm2LatLngWriter
 }
 
@@ -24,9 +24,9 @@ func NewOsmNodeProcessor(
 	osm2LatLngWriter gravelmap.Osm2LatLngWriter,
 ) *osmNodeProcess {
 	return &osmNodeProcess{
-		osmFilename:     osmFilename,
-		osm2GmStore:     osm2GmStore,
-		edgeBatchStorer: edgeBatchStorer,
+		osmFilename:      osmFilename,
+		osm2GmStore:      osm2GmStore,
+		edgeBatchStorer:  edgeBatchStorer,
 		osm2LatLngWriter: osm2LatLngWriter,
 	}
 }

@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	filename   = "graph_edges.bin"
+	filename = "graph_edges.bin"
 )
 
 type record struct {
 	edgeFrom int32
-	edgeTo int32
-	cost int64
+	edgeTo   int32
+	cost     int64
 }
 
 type fileStore struct {

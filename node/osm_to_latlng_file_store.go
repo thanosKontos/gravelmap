@@ -12,7 +12,7 @@ import (
 
 const (
 	recordSize = 16
-	filename = "node_positions.bin"
+	filename   = "node_positions.bin"
 )
 
 type fileStore struct {

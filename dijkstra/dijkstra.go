@@ -103,6 +103,6 @@ func (g *Graph) setDefaults() {
 
 	for i := range g.Verticies {
 		g.Verticies[i].bestVerticies = []int{-1}
-		g.Verticies[i].cost = int64(math.MaxInt64)-2
+		g.Verticies[i].cost = int64(math.MaxInt64) - 2
 	}
 }

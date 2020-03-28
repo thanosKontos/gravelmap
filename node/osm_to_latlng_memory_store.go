@@ -23,4 +23,3 @@ func (ms NodeLatLngMap) Read(ndID int) (gravelmap.Point, error) {
 		return gravelmap.Point{}, errors.New("could not find latlng")
 	}
 }
-
