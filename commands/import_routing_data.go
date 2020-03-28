@@ -42,15 +42,19 @@ func importRoutingDataCmdRun(inputFilename string) error {
 
 	// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
 	osm2GmStore := node.NewOsm2GmNodeMemoryStore()
-	osm2GmNode := osm.NewOsmNodeFileRead(inputFilename, osm2GmStore)
-	osm2GmNode.Process()
-
+	osm2GmNode := osm.NewOsmWayProcessor(inputFilename, osm2GmStore)
+	err := osm2GmNode.Process()
+	if err != nil {
+		logger.Error(err)
+		os.Exit(0)
+	}
 	logger.Info("Done preparing node in-memory DB")
 
 	// ## 2. Store nodes to lookup files (nodeId -> lat/lon and lat/lon to closest nodeId)
 	bboxFS := edge.NewBBoxFileStore("_files")
-	ndFileStore := node.NewNodeFileStore("_files", inputFilename, osm2GmStore, bboxFS)
-	err := ndFileStore.Persist()
+	osm2LatLngStore := node.NewOsm2LatLngMemoryStore()
+	ndFileStore := node.NewOsmNodeProcessor(inputFilename, osm2GmStore, bboxFS, osm2LatLngStore)
+	err = ndFileStore.Process()
 	if err != nil {
 		logger.Error(err)
 		os.Exit(0)
@@ -68,9 +72,10 @@ func importRoutingDataCmdRun(inputFilename string) error {
 
 	graph := graph2.NewDijkstra()
 	wayStorer := way.NewFileStore("_files", pointEncoder)
-	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, ndFileStore, costEvaluator, pathSimplifier)
+	graphWayStorer := graph2.NewGraphEdgeFileStore("_files")
+	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
-	osmWayFileRead := osm.NewOsmWayFileRead(inputFilename, wayStorer, graph, wayAdderGetter)
+	osmWayFileRead := osm.NewOsmWayFileRead(inputFilename, wayStorer, graphWayStorer, graph, wayAdderGetter)
 	err = osmWayFileRead.Process()
 	if err != nil {
 		logger.Error(err)

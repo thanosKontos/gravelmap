@@ -18,19 +18,10 @@ func (g *Graph) Shortest(src, dest int) (BestPath, error) {
 
 func (g *Graph) setup(src int) {
 	g.setupList()
+	g.setDefaults()
 
-	//Reset state
-	g.visitedDest = false
-	//Reset the best current value (worst so it gets overwritten)
-	// and set the defaults *almost* as bad
-	// set all best verticies to -1 (unused)
-
-	g.setDefaults(int64(math.MaxInt64)-2, -1)
-	g.best = int64(math.MaxInt64)
-
-	//Set the distance of initial vertex 0
-	g.Verticies[src].distance = 0
-	//Add the source vertex to the list
+	//Set the cost of initial vertex 0 and add it to the list
+	g.Verticies[src].cost = 0
 	g.list.PushOrdered(&g.Verticies[src])
 }
 
@@ -55,29 +46,28 @@ func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
 			continue
 		}
 		oldCurrent = current.ID
-		//If the current distance is already worse than the best try another Vertex
-		if current.distance >= g.best {
+		//If the current cost is already worse than the best one try another Vertex
+		if current.cost >= g.costToDest {
 			continue
 		}
 		for v, dist := range current.Arcs {
-			//If the arc has better access, than the current best, update the Vertex being touched
-			if current.distance+dist < g.Verticies[v].distance {
+			//If the arc has better access, than the current costToDest, update the Vertex being touched
+			if current.cost+dist < g.Verticies[v].cost {
 				if current.bestVerticies[0] == v && g.Verticies[v].ID != dest {
-					//also only do this if we aren't checkout out the best distance again
+					//also only do this if we aren't checkout out the best cost again
 					//This seems familiar 8^)
 					return BestPath{}, newErrLoop(current.ID, v)
 				}
-				g.Verticies[v].distance = current.distance + dist
+				g.Verticies[v].cost = current.cost + dist
 				g.Verticies[v].bestVerticies[0] = current.ID
 				if v == dest {
-					//If this is the destination update best, so we can stop looking at
-					// useless Verticies
-					g.best = current.distance + dist
-					g.visitedDest = true
+					//If this is the destination update costToDest, so we can stop looking at useless Verticies
+					g.costToDest = current.cost + dist
+					g.destFound = true
 					continue // Do not push if dest
 				}
-				//Push this updated Vertex into the list to be evaluated, pushes in
-				// sorted form
+
+				//Push this updated Vertex into the list to be evaluated, pushes in sorted form
 				g.list.PushOrdered(&g.Verticies[v])
 			}
 		}
@@ -86,7 +76,7 @@ func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
 }
 
 func (g *Graph) finally(src, dest int) (BestPath, error) {
-	if !g.visitedDest {
+	if !g.destFound {
 		return BestPath{}, ErrNoPath
 	}
 	return g.bestPath(src, dest), nil
@@ -101,13 +91,18 @@ func (g *Graph) bestPath(src, dest int) BestPath {
 	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
 		path[i], path[j] = path[j], path[i]
 	}
-	return BestPath{g.Verticies[dest].distance, path}
+	return BestPath{g.Verticies[dest].cost, path}
 }
 
-//SetDefaults sets the distance and best node to that specified
-func (g *Graph) setDefaults(Distance int64, BestNode int) {
+// 1. Reset state
+// 2. Reset the cost to destination
+// set all best verticies to -1 (unused) and set the defaults *almost* as bad
+func (g *Graph) setDefaults() {
+	g.destFound = false
+	g.costToDest = int64(math.MaxInt64)
+
 	for i := range g.Verticies {
-		g.Verticies[i].bestVerticies = []int{BestNode}
-		g.Verticies[i].distance = Distance
+		g.Verticies[i].bestVerticies = []int{-1}
+		g.Verticies[i].cost = int64(math.MaxInt64) - 2
 	}
 }

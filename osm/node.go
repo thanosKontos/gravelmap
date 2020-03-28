@@ -15,7 +15,7 @@ type osm2GmEdge struct {
 	osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter
 }
 
-func NewOsmNodeFileRead(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *osm2GmEdge {
+func NewOsmWayProcessor(osmFilename string, osm2GmNodeRw gravelmap.Osm2GmNodeReaderWriter) *osm2GmEdge {
 	return &osm2GmEdge{
 		osmFilename:  osmFilename,
 		osm2GmNodeRw: osm2GmNodeRw,
