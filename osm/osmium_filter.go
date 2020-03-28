@@ -25,7 +25,7 @@ func (o *osmium) Filter() error {
 		return errors.New(fmt.Sprintf("%s : %s", err, out))
 	}
 
-	cmd = exec.Command("osmium", "tags-filter", "-i", "/tmp/filtered_tmp.osm.pbf", "w/highway=motorway,trunk,motorway_link,trunk_link,raceway", "w/service=parking_aisle,drive-through,driveway", "w/access=private,customers,no", "-o", o.outputFilename, "--overwrite")
+	cmd = exec.Command("osmium", "tags-filter", "-i", "/tmp/filtered_tmp.osm.pbf", "w/highway=motorway,trunk,motorway_link,trunk_link,raceway", "w/service=parking_aisle,drive-through,driveway", "w/access=private,customers", "-o", o.outputFilename, "--overwrite")
 	out, err = cmd.CombinedOutput()
 
 	if err != nil {

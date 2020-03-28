@@ -85,12 +85,16 @@ type Osm2GmNodeReaderWriter interface {
 	Read(osmNdID int64) *Node
 }
 
-type GmNodeReader interface {
-	Read(ndID int) (*Node, error)
-}
-
 type WayPolylineReader interface {
 	Read(ways []Way) []string
+}
+
+type Osm2LatLngWriter interface {
+	Write(osmID int, point Point)
+}
+
+type Osm2LatLngReader interface {
+	Read(ndID int) (Point, error)
 }
 
 // Point represents a single point on earth

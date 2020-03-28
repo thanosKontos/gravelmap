@@ -7,14 +7,14 @@ import (
 type osm2GmWays struct {
 	ways           map[int]map[int]gravelmap.EvaluatedWay
 	nodeDB         gravelmap.Osm2GmNodeReaderWriter
-	gmNodeRd       gravelmap.GmNodeReader
+	gmNodeRd       gravelmap.Osm2LatLngReader
 	costEvaluator  gravelmap.CostEvaluator
 	pathSimplifier gravelmap.PathSimplifier
 }
 
 func NewOsm2GmWays(
 	nodeDB gravelmap.Osm2GmNodeReaderWriter,
-	gmNodeRd gravelmap.GmNodeReader,
+	gmNodeRd gravelmap.Osm2LatLngReader,
 	costEvaluator gravelmap.CostEvaluator,
 	pathSimplifier gravelmap.PathSimplifier,
 ) *osm2GmWays {
@@ -196,8 +196,8 @@ func (o *osm2GmWays) getWayPoints(wayGmNds []int) wayPoints {
 	var revPts []gravelmap.Point
 
 	for _, ndID := range wayGmNds {
-		node, _ := o.gmNodeRd.Read(ndID)
-		pts = append(pts, node.Point)
+		pt, _ := o.gmNodeRd.Read(ndID)
+		pts = append(pts, pt)
 	}
 
 	pts = o.pathSimplifier.Simplify(pts)
