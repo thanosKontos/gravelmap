@@ -49,7 +49,7 @@ func (fs *osmNodeProcess) Process() error {
 		return err
 	}
 
-	var gmNdBatch []gravelmap.Node
+	var gmNdBatch []gravelmap.ConnectionNode
 
 	for {
 		if v, err := d.Decode(); err == io.EOF {
@@ -67,18 +67,18 @@ func (fs *osmNodeProcess) Process() error {
 				gm2OsmNode.Point = gravelmap.Point{Lat: v.Lat, Lng: v.Lon}
 				_ = fs.osm2GmStore.Write(v.ID, gm2OsmNode)
 
-				gmNd := gravelmap.Node{Id: gm2OsmNode.Id, Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
+				gmNd := gravelmap.ConnectionNode{ID: gm2OsmNode.ID, Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
 
 				// Write nodes in file in order to be able to find lat long per id
-				fs.osm2LatLngWriter.Write(gmNd.Id, gmNd.Point)
+				fs.osm2LatLngWriter.Write(gmNd.ID, gmNd.Point)
 
 				// Write edge in bounding boxes in order to be able to find closest edge per lat/lng
-				if gm2OsmNode.Occurrences > 1 {
+				if gm2OsmNode.ConnectionCnt > 1 {
 					gmNdBatch = append(gmNdBatch, gmNd)
 
 					if len(gmNdBatch) >= 10000 {
 						fs.edgeBatchStorer.BatchStore(gmNdBatch)
-						gmNdBatch = []gravelmap.Node{}
+						gmNdBatch = []gravelmap.ConnectionNode{}
 					}
 				}
 

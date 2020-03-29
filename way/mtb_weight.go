@@ -17,9 +17,9 @@ func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
 	return 1.0
 }
 
-func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.Weight {
+func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.BidirectionalWeight {
 	wayAcceptance := getWayAcceptance(tags)
-	wayAcceptanceWeight := gravelmap.Weight{Normal: 1.0, Reverse: 1.0}
+	wayAcceptanceWeight := gravelmap.BidirectionalWeight{Normal: 1.0, Reverse: 1.0}
 	if wayAcceptance.normal == wayAcceptanceNo {
 		wayAcceptanceWeight.Normal = 10000000
 	}
@@ -135,35 +135,35 @@ func getVehicleWayAcceptance(tags map[string]string) int32 {
 //7-9%: Starting to become uncomfortable for seasoned riders, and very challenging for new climbers.
 //10%-15%: A painful gradient, especially if maintained for any length of time
 //16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
-func (b *bicycleWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.Weight {
+func (b *bicycleWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
 	if elevation == nil {
-		return gravelmap.Weight{Normal: 1, Reverse: 15}
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
 	}
 
 	switch {
-	case elevation.ElevationEvaluation.Normal.Grade < -15:
-		return gravelmap.Weight{Normal: 1, Reverse: 15}
-	case elevation.ElevationEvaluation.Normal.Grade < -10:
-		return gravelmap.Weight{Normal: 1, Reverse: 10}
-	case elevation.ElevationEvaluation.Normal.Grade < -7:
-		return gravelmap.Weight{Normal: 1, Reverse: 7}
-	case elevation.ElevationEvaluation.Normal.Grade < -4:
-		return gravelmap.Weight{Normal: 0.8, Reverse: 3}
-	case elevation.ElevationEvaluation.Normal.Grade < -2:
-		return gravelmap.Weight{Normal: 0.8, Reverse: 1.2}
-	case elevation.ElevationEvaluation.Normal.Grade < 0:
-		return gravelmap.Weight{Normal: 0.8, Reverse: 1}
-	case elevation.ElevationEvaluation.Normal.Grade < 2:
-		return gravelmap.Weight{Normal: 1, Reverse: 0.8}
-	case elevation.ElevationEvaluation.Normal.Grade < 4:
-		return gravelmap.Weight{Normal: 1.2, Reverse: 0.8}
-	case elevation.ElevationEvaluation.Normal.Grade < 7:
-		return gravelmap.Weight{Normal: 3, Reverse: 0.8}
-	case elevation.ElevationEvaluation.Normal.Grade < 10:
-		return gravelmap.Weight{Normal: 7, Reverse: 1}
-	case elevation.ElevationEvaluation.Normal.Grade < 15:
-		return gravelmap.Weight{Normal: 10, Reverse: 1}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < -15:
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < -10:
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 10}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < -7:
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 7}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < -4:
+		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 3}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < -2:
+		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1.2}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < 0:
+		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < 2:
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 0.8}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < 4:
+		return gravelmap.BidirectionalWeight{Normal: 1.2, Reverse: 0.8}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < 7:
+		return gravelmap.BidirectionalWeight{Normal: 3, Reverse: 0.8}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < 10:
+		return gravelmap.BidirectionalWeight{Normal: 7, Reverse: 1}
+	case elevation.BidirectionalElevationInfo.Normal.Grade < 15:
+		return gravelmap.BidirectionalWeight{Normal: 10, Reverse: 1}
 	default:
-		return gravelmap.Weight{Normal: 15, Reverse: 1}
+		return gravelmap.BidirectionalWeight{Normal: 15, Reverse: 1}
 	}
 }
