@@ -75,7 +75,7 @@ func (fs *fileStore) Store(ways map[int]map[int]gravelmap.EvaluatedWay) error {
 			return err
 		}
 
-		edgeStart := edgeStartRecord{int32(len(waysFrom)), offset}
+		edgeStart := edgeStartRecord{int8(len(waysFrom)), offset}
 		err = fs.writeEdgeFromFile(gmNdID, edgeStart)
 		if err != nil {
 			return err

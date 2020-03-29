@@ -5,14 +5,14 @@ const (
 	edgeToFilename    = "edge_to_polylines_lookup.bin"
 	polylinesFilename = "polylines.bin"
 
-	edgeStartRecordSize = 12
+	edgeStartRecordSize = 9
 
 	// Each individual record has 3 int32s, 1 int64 and 1 int8
 	edgeToIndividualRecordSize = 25
 )
 
 type edgeStartRecord struct {
-	ConnectionsCnt int32
+	ConnectionsCnt int8
 	NodeToOffset   int64
 }
 

@@ -9,16 +9,16 @@ import (
 	"strconv"
 	"strings"
 
+	"net/http"
+
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/dijkstra"
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
-	"github.com/thanosKontos/gravelmap/log"
+	"github.com/thanosKontos/gravelmap/kml"
+	"github.com/thanosKontos/gravelmap/route"
 	"github.com/thanosKontos/gravelmap/way"
-	"googlemaps.github.io/maps"
-
-	"net/http"
 )
 
 // createWebServerCommand creates a web server for testing purposes.
@@ -54,6 +54,9 @@ func createWebServerCmdRun() error {
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {
 		routeHandler(w, r, graph)
 	})
+	http.HandleFunc("/create-kml", func(w http.ResponseWriter, r *http.Request) {
+		createKmlHandler(w, r, graph)
+	})
 
 	http.ListenAndServe(":8000", nil)
 
@@ -63,11 +66,8 @@ func createWebServerCmdRun() error {
 func routeHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	distanceCalc := distance.NewHaversine()
-	bboxFr := edge.NewBBoxFileRead("_files", distanceCalc)
-
-	pointFrom, err := getPointFromParamsNew("from", r)
-	pointTo, err2 := getPointFromParamsNew("to", r)
+	pointFrom, err := getPointFromParams("from", r)
+	pointTo, err2 := getPointFromParams("to", r)
 	if err != nil || err2 != nil {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
@@ -75,86 +75,77 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph)
 		return
 	}
 
-	logger := log.NewStdout("info")
-	logger.Info("start routing")
+	distanceCalc := distance.NewHaversine()
+	edgeFinder := edge.NewBBoxFileRead("_files", distanceCalc)
 
-	edgeFrom, err := bboxFr.FindClosest(*pointFrom)
-	if err != nil {
-		w.WriteHeader(400)
-		json, _ := json.Marshal(err)
-		fmt.Fprintf(w, string(json))
-
-		return
-	}
-	logger.Info(fmt.Sprintf("found edge from %d", edgeFrom))
-
-	edgeTo, err := bboxFr.FindClosest(*pointTo)
-	if err != nil {
-		w.WriteHeader(400)
-		json, _ := json.Marshal(err)
-		fmt.Fprintf(w, string(json))
-
-		return
-	}
-	logger.Info(fmt.Sprintf("found edge to %d", edgeTo))
-
-	best, err := graph.Shortest(int(edgeFrom), int(edgeTo))
-
-	logger.Info(fmt.Sprintf("path found"))
-
-	var resultEdgePairs []gravelmap.Way
-	var prevEdge = 0
-	for i, curEdge := range best.Path {
-		if i == 0 {
-			prevEdge = curEdge
-			continue
-		}
-
-		resultEdgePairs = append(resultEdgePairs, gravelmap.Way{EdgeFrom: int32(prevEdge), EdgeTo: int32(curEdge)})
-		prevEdge = curEdge
-	}
-
-	wayFile, err := way.NewWayFileRead("_files")
+	edgeReader, err := way.NewWayFileRead("_files")
 	if err != nil {
 		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
+
+		return
 	}
 
-	logger.Info(fmt.Sprintf("started reading ways"))
+	router := route.NewGmRouter(edgeFinder, graph, edgeReader)
+	routingData, err := router.Route(*pointFrom, *pointTo)
+	if err != nil {
+		w.WriteHeader(500)
+		json, _ := json.Marshal(err)
+		fmt.Fprintf(w, string(json))
 
-	var routingData []gravelmap.RoutingLeg
-	presentableWays, _ := wayFile.Read(resultEdgePairs)
-
-	for _, pWay := range presentableWays {
-		var latLngs []gravelmap.Point
-		tmpLatLngs, _ := maps.DecodePolyline(pWay.Polyline)
-
-		for _, latlng := range tmpLatLngs {
-			latLngs = append(latLngs, gravelmap.Point{Lat: latlng.Lat, Lng: latlng.Lng})
-		}
-
-		var rlEle *gravelmap.RoutingLegElevation
-		if pWay.ElevFrom != 0 && pWay.ElevTo != 0 {
-			rlEle = &gravelmap.RoutingLegElevation{
-				Start: float64(pWay.ElevFrom),
-				End:   float64(pWay.ElevTo),
-			}
-		}
-
-		routingLeg := gravelmap.RoutingLeg{
-			Coordinates: latLngs,
-			Length:      float64(pWay.Distance),
-			Paved:       pWay.SurfaceType == gravelmap.WayTypePaved,
-			Elevation:   rlEle,
-		}
-
-		routingData = append(routingData, routingLeg)
+		return
 	}
 
 	json, _ := json.Marshal(routingData)
 	fmt.Fprintf(w, string(json))
 }
 
-func getPointFromParamsNew(param string, r *http.Request) (*gravelmap.Point, error) {
+func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	pointFrom, err := getPointFromParams("from", r)
+	pointTo, err2 := getPointFromParams("to", r)
+	if err != nil || err2 != nil {
+		w.WriteHeader(400)
+		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
+
+		return
+	}
+
+	distanceCalc := distance.NewHaversine()
+	edgeFinder := edge.NewBBoxFileRead("_files", distanceCalc)
+
+	edgeReader, err := way.NewWayFileRead("_files")
+	if err != nil {
+		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
+
+		return
+	}
+
+	router := route.NewGmRouter(edgeFinder, graph, edgeReader)
+	routingData, err := router.Route(*pointFrom, *pointTo)
+	if err != nil {
+		w.WriteHeader(500)
+		json, _ := json.Marshal(err)
+		fmt.Fprintf(w, string(json))
+
+		return
+	}
+
+	kml := kml.NewKml()
+	kmlString, err := kml.CreateFromRoute(routingData)
+	if err != nil {
+		w.WriteHeader(500)
+		fmt.Fprintf(w, `{"message": "%s"}`, err)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/vnd.google-earth.kml+xml")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"test.kml\"")
+	fmt.Fprintf(w, kmlString)
+}
+
+func getPointFromParams(param string, r *http.Request) (*gravelmap.Point, error) {
 	fromKeys, ok := r.URL.Query()[param]
 	if !ok || len(fromKeys[0]) < 1 {
 		return nil, errors.New("non existing param")

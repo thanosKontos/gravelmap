@@ -93,7 +93,7 @@ func importRoutingDataCmdRun(inputFilename string) error {
 	logger.Info("Graph created")
 
 	dGraph := graph.Get()
-	best, _ := dGraph.Shortest(14827, 1037)
+	best, _ := dGraph.FindShortest(14827, 1037)
 
 	logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))
 

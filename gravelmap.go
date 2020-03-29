@@ -171,3 +171,17 @@ type Weighter interface {
 	WeightVehicleAcceptance(tags map[string]string) float64
 	WeightElevation(elevation *WayElevation) Weight
 }
+
+//BestPath contains the solution of the most optimal path
+type BestPath struct {
+	Distance int64
+	Path     []int
+}
+
+type ShortestFinder interface {
+	FindShortest(src, dest int) (BestPath, error)
+}
+
+type EdgeReader interface {
+	Read(ways []Way) ([]PresentableWay, error)
+}

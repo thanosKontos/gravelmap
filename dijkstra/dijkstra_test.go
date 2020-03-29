@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/thanosKontos/gravelmap"
 )
 
 func TestCorrectSmallGraphFindShortest(t *testing.T) {
@@ -22,13 +23,13 @@ func TestCorrectSmallGraphFindShortest(t *testing.T) {
 	graph.AddArc(0, 4, 10)
 	graph.AddArc(2, 4, 5)
 
-	bp, err := graph.Shortest(0, 3)
+	bp, err := graph.FindShortest(0, 3)
 	assert.Nil(t, err)
-	assert.Equal(t, BestPath{1, []int{0, 2, 3}}, bp)
+	assert.Equal(t, gravelmap.BestPath{Distance: 1, Path: []int{0, 2, 3}}, bp)
 
-	bp, err = graph.Shortest(0, 4)
+	bp, err = graph.FindShortest(0, 4)
 	assert.Nil(t, err)
-	assert.Equal(t, BestPath{6, []int{0, 2, 4}}, bp)
+	assert.Equal(t, gravelmap.BestPath{Distance: 6, Path: []int{0, 2, 4}}, bp)
 }
 
 func TestCorrectLargeGraphFindShortest(t *testing.T) {
@@ -38,7 +39,7 @@ func TestCorrectLargeGraphFindShortest(t *testing.T) {
 		v.AddArc(i+1, 1)
 	}
 	g.AddNewVertex()
-	bp, err := g.Shortest(0, 2000)
+	bp, err := g.FindShortest(0, 2000)
 
 	assert.Nil(t, err)
 	assert.Equal(t, int64(2000), bp.Distance)

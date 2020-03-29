@@ -2,16 +2,14 @@ package dijkstra
 
 import (
 	"math"
+
+	"github.com/thanosKontos/gravelmap"
 )
 
-//BestPath contains the solution of the most optimal path
-type BestPath struct {
-	Distance int64
-	Path     []int
-}
+
 
 //Shortest calculates the shortest path from src to dest
-func (g *Graph) Shortest(src, dest int) (BestPath, error) {
+func (g *Graph) FindShortest(src, dest int) (gravelmap.BestPath, error) {
 	g.setup(src)
 	return g.postSetupEvaluate(src, dest)
 }
@@ -35,7 +33,7 @@ func (g *Graph) setupList() {
 	return
 }
 
-func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
+func (g *Graph) postSetupEvaluate(src, dest int) (gravelmap.BestPath, error) {
 	var current *Vertex
 	oldCurrent := -1
 	for g.list.Len() > 0 {
@@ -56,7 +54,7 @@ func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
 				if current.bestVerticies[0] == v && g.Verticies[v].ID != dest {
 					//also only do this if we aren't checkout out the best cost again
 					//This seems familiar 8^)
-					return BestPath{}, newErrLoop(current.ID, v)
+					return gravelmap.BestPath{}, newErrLoop(current.ID, v)
 				}
 				g.Verticies[v].cost = current.cost + dist
 				g.Verticies[v].bestVerticies[0] = current.ID
@@ -75,14 +73,14 @@ func (g *Graph) postSetupEvaluate(src, dest int) (BestPath, error) {
 	return g.finally(src, dest)
 }
 
-func (g *Graph) finally(src, dest int) (BestPath, error) {
+func (g *Graph) finally(src, dest int) (gravelmap.BestPath, error) {
 	if !g.destFound {
-		return BestPath{}, ErrNoPath
+		return gravelmap.BestPath{}, ErrNoPath
 	}
 	return g.bestPath(src, dest), nil
 }
 
-func (g *Graph) bestPath(src, dest int) BestPath {
+func (g *Graph) bestPath(src, dest int) gravelmap.BestPath {
 	var path []int
 	for c := g.Verticies[dest]; c.ID != src; c = g.Verticies[c.bestVerticies[0]] {
 		path = append(path, c.ID)
@@ -91,7 +89,7 @@ func (g *Graph) bestPath(src, dest int) BestPath {
 	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
 		path[i], path[j] = path[j], path[i]
 	}
-	return BestPath{g.Verticies[dest].cost, path}
+	return gravelmap.BestPath{Distance: g.Verticies[dest].cost, Path: path}
 }
 
 // 1. Reset state

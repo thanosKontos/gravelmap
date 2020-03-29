@@ -32,152 +32,92 @@ func NewOsm2GmWays(
 func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 	prevEdge := 0
 	var wayNodeIds []int
-	var nodes []gravelmap.Node
 	for i, osmNdID := range osmNodeIds {
 		node := o.nodeDB.Read(osmNdID)
-		nodes = append(nodes, *node)
-
 		wayNodeIds = append(wayNodeIds, node.Id)
 
+		// First way node
 		if i == 0 {
 			prevEdge = node.Id
-		} else if i == len(osmNodeIds)-1 {
-			points := o.getWayPoints(wayNodeIds)
-			evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
-			if existingEvaluatedWay, ok := o.ways[prevEdge][node.Id]; ok {
-				if existingEvaluatedWay.Cost > evaluation.WayCost.Normal {
-					if _, ok := o.ways[prevEdge]; !ok {
-						o.ways[prevEdge] = map[int]gravelmap.EvaluatedWay{}
-					}
+			continue
+		}
 
-					// There is another from/to way. Keep only the lower cost one
-					o.ways[prevEdge][node.Id] = gravelmap.EvaluatedWay{
-						Points:        points.points,
-						Tags:          tags,
-						Distance:      evaluation.Distance,
-						WayType:       evaluation.WayType,
-						ElevationInfo: evaluation.ElevationEvaluation.Normal,
-						Cost:          evaluation.WayCost.Normal,
-					}
-				}
-			} else {
-				if _, ok := o.ways[prevEdge]; !ok {
-					o.ways[prevEdge] = map[int]gravelmap.EvaluatedWay{}
-				}
+		// Way node with connection or last node
+		if i == len(osmNodeIds)-1 || node.Occurrences > 1 {
+			o.AddBackAndForthEdgesToWays(prevEdge, node.Id, wayNodeIds, tags)
 
-				o.ways[prevEdge][node.Id] = gravelmap.EvaluatedWay{
-					Points:        points.points,
-					Tags:          tags,
-					Distance:      evaluation.Distance,
-					WayType:       evaluation.WayType,
-					ElevationInfo: evaluation.ElevationEvaluation.Normal,
-					Cost:          evaluation.WayCost.Normal,
-				}
-			}
-
-			if existingEvaluatedWay, ok := o.ways[node.Id][prevEdge]; ok {
-				if existingEvaluatedWay.Cost > evaluation.WayCost.Reverse {
-					if _, ok := o.ways[node.Id]; !ok {
-						o.ways[node.Id] = map[int]gravelmap.EvaluatedWay{}
-					}
-
-					// There is another to/from way. Keep only the lower cost one
-					o.ways[node.Id][prevEdge] = gravelmap.EvaluatedWay{
-						Points:        points.reverse,
-						Tags:          tags,
-						Distance:      evaluation.Distance,
-						WayType:       evaluation.WayType,
-						ElevationInfo: evaluation.ElevationEvaluation.Reverse,
-						Cost:          evaluation.WayCost.Reverse,
-					}
-				}
-			} else {
-				if _, ok := o.ways[node.Id]; !ok {
-					o.ways[node.Id] = map[int]gravelmap.EvaluatedWay{}
-				}
-
-				o.ways[node.Id][prevEdge] = gravelmap.EvaluatedWay{
-					Points:        points.reverse,
-					Tags:          tags,
-					Distance:      evaluation.Distance,
-					WayType:       evaluation.WayType,
-					ElevationInfo: evaluation.ElevationEvaluation.Reverse,
-					Cost:          evaluation.WayCost.Reverse,
-				}
-			}
-
+			prevEdge = node.Id
 			wayNodeIds = []int{prevEdge}
-		} else {
-			if node.Occurrences > 1 {
-				points := o.getWayPoints(wayNodeIds)
-				evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
-				if existingEvaluatedWay, ok := o.ways[prevEdge][node.Id]; ok {
-					if existingEvaluatedWay.Cost > evaluation.WayCost.Normal {
-						if _, ok := o.ways[prevEdge]; !ok {
-							o.ways[prevEdge] = map[int]gravelmap.EvaluatedWay{}
-						}
+			continue
+		}
+	}
+}
 
-						// There is another from/to way. Keep only the lower cost one
-						o.ways[prevEdge][node.Id] = gravelmap.EvaluatedWay{
-							Points:        points.points,
-							Tags:          tags,
-							Distance:      evaluation.Distance,
-							WayType:       evaluation.WayType,
-							ElevationInfo: evaluation.ElevationEvaluation.Normal,
-							Cost:          evaluation.WayCost.Normal,
-						}
-					}
-				} else {
-					if _, ok := o.ways[prevEdge]; !ok {
-						o.ways[prevEdge] = map[int]gravelmap.EvaluatedWay{}
-					}
+func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wayNodeIds []int, tags map[string]string) {
+	points := o.getWayPoints(wayNodeIds)
+	evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
-					o.ways[prevEdge][node.Id] = gravelmap.EvaluatedWay{
-						Points:        points.points,
-						Tags:          tags,
-						Distance:      evaluation.Distance,
-						WayType:       evaluation.WayType,
-						ElevationInfo: evaluation.ElevationEvaluation.Normal,
-						Cost:          evaluation.WayCost.Normal,
-					}
-				}
-
-				if existingEvaluatedWay, ok := o.ways[node.Id][prevEdge]; ok {
-					if existingEvaluatedWay.Cost > evaluation.WayCost.Reverse {
-						if _, ok := o.ways[node.Id]; !ok {
-							o.ways[node.Id] = map[int]gravelmap.EvaluatedWay{}
-						}
-
-						// There is another to/from way. Keep only the lower cost one
-						o.ways[node.Id][prevEdge] = gravelmap.EvaluatedWay{
-							Points:        points.reverse,
-							Tags:          tags,
-							Distance:      evaluation.Distance,
-							WayType:       evaluation.WayType,
-							ElevationInfo: evaluation.ElevationEvaluation.Reverse,
-							Cost:          evaluation.WayCost.Reverse,
-						}
-					}
-				} else {
-					if _, ok := o.ways[node.Id]; !ok {
-						o.ways[node.Id] = map[int]gravelmap.EvaluatedWay{}
-					}
-
-					o.ways[node.Id][prevEdge] = gravelmap.EvaluatedWay{
-						Points:        points.reverse,
-						Tags:          tags,
-						Distance:      evaluation.Distance,
-						WayType:       evaluation.WayType,
-						ElevationInfo: evaluation.ElevationEvaluation.Reverse,
-						Cost:          evaluation.WayCost.Reverse,
-					}
-				}
-
-				prevEdge = node.Id
-				wayNodeIds = []int{prevEdge}
+	if existingEvaluatedWay, ok := o.ways[edgeNodeFrom][edgeNodeTo]; ok {
+		if existingEvaluatedWay.Cost > evaluation.WayCost.Normal {
+			if _, ok := o.ways[edgeNodeFrom]; !ok {
+				o.ways[edgeNodeFrom] = map[int]gravelmap.EvaluatedWay{}
 			}
+
+			// There is another from/to way. Keep only the lower cost one
+			o.ways[edgeNodeFrom][edgeNodeTo] = gravelmap.EvaluatedWay{
+				Points:        points.points,
+				Tags:          tags,
+				Distance:      evaluation.Distance,
+				WayType:       evaluation.WayType,
+				ElevationInfo: evaluation.ElevationEvaluation.Normal,
+				Cost:          evaluation.WayCost.Normal,
+			}
+		}
+	} else {
+		if _, ok := o.ways[edgeNodeFrom]; !ok {
+			o.ways[edgeNodeFrom] = map[int]gravelmap.EvaluatedWay{}
+		}
+
+		o.ways[edgeNodeFrom][edgeNodeTo] = gravelmap.EvaluatedWay{
+			Points:        points.points,
+			Tags:          tags,
+			Distance:      evaluation.Distance,
+			WayType:       evaluation.WayType,
+			ElevationInfo: evaluation.ElevationEvaluation.Normal,
+			Cost:          evaluation.WayCost.Normal,
+		}
+	}
+
+	if existingEvaluatedWay, ok := o.ways[edgeNodeTo][edgeNodeFrom]; ok {
+		if existingEvaluatedWay.Cost > evaluation.WayCost.Reverse {
+			if _, ok := o.ways[edgeNodeTo]; !ok {
+				o.ways[edgeNodeTo] = map[int]gravelmap.EvaluatedWay{}
+			}
+
+			// There is another to/from way. Keep only the lower cost one
+			o.ways[edgeNodeTo][edgeNodeFrom] = gravelmap.EvaluatedWay{
+				Points:        points.reverse,
+				Tags:          tags,
+				Distance:      evaluation.Distance,
+				WayType:       evaluation.WayType,
+				ElevationInfo: evaluation.ElevationEvaluation.Reverse,
+				Cost:          evaluation.WayCost.Reverse,
+			}
+		}
+	} else {
+		if _, ok := o.ways[edgeNodeTo]; !ok {
+			o.ways[edgeNodeTo] = map[int]gravelmap.EvaluatedWay{}
+		}
+
+		o.ways[edgeNodeTo][edgeNodeFrom] = gravelmap.EvaluatedWay{
+			Points:        points.reverse,
+			Tags:          tags,
+			Distance:      evaluation.Distance,
+			WayType:       evaluation.WayType,
+			ElevationInfo: evaluation.ElevationEvaluation.Reverse,
+			Cost:          evaluation.WayCost.Reverse,
 		}
 	}
 }

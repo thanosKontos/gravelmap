@@ -44,7 +44,6 @@ func (fr *fileRead) Read(ways []gravelmap.Way) ([]gravelmap.PresentableWay, erro
 
 	for _, way := range ways {
 		nodeStart, err := fr.readEdgeStartFile(way.EdgeFrom)
-
 		edgeToRec, err := fr.readEdgeToFile(*nodeStart, way.EdgeTo)
 		if err != nil {
 			return []gravelmap.PresentableWay{}, err
@@ -78,7 +77,7 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 	var elevationStart, elevationEnd int16
 	found := false
 
-	for i := 0; int32(i) < edgeStart.ConnectionsCnt; i++ {
+	for i := 0; int8(i) < edgeStart.ConnectionsCnt; i++ {
 		fr.edgeToFile.Seek(readOffset, 0)
 
 		var storedEdgeTo int32
