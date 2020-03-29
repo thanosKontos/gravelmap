@@ -21,7 +21,7 @@ func (d *dijkstra) Get() *dijkstra2.Graph {
 
 var alreadyAddedNodes = map[int]struct{}{}
 
-func (d *dijkstra) AddWays(ways map[int]map[int]gravelmap.EvaluatedWay) {
+func (d *dijkstra) AddWays(ways map[int]map[int]gravelmap.Way) {
 	for edgeFromId, edgeFromWays := range ways {
 		for edgeToId, way := range edgeFromWays {
 			if _, ok := alreadyAddedNodes[edgeFromId]; !ok {

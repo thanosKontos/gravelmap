@@ -6,15 +6,15 @@ const (
 	WayTypePath
 )
 
-type Node struct {
-	Id          int
-	Occurrences int
-	Point       Point
+type ConnectionNode struct {
+	ID            int
+	ConnectionCnt int
+	Point         Point
 }
 
-type Way struct {
-	EdgeFrom int32
-	EdgeTo   int32
+type Edge struct {
+	NodeFrom int32
+	NodeTo   int32
 }
 
 type ElevationInfo struct {
@@ -23,21 +23,21 @@ type ElevationInfo struct {
 	To    int16
 }
 
-type EvaluatedWay struct {
+type Way struct {
 	Points   []Point
 	Tags     map[string]string
 	Distance int32
-	WayType  int8
+	Type     int8
 	ElevationInfo
 	Cost int64
 }
 
-type ElevationEvaluation struct {
+type BidirectionalElevationInfo struct {
 	Normal  ElevationInfo
 	Reverse ElevationInfo
 }
 
-type WayCost struct {
+type BidirectionalCost struct {
 	Normal  int64
 	Reverse int64
 }
@@ -45,30 +45,30 @@ type WayCost struct {
 type WayEvaluation struct {
 	Distance int32
 	WayType  int8
-	ElevationEvaluation
-	WayCost
+	BidirectionalElevationInfo
+	BidirectionalCost
 }
 
 type WayAdderGetter interface {
 	Add(osmNodeIds []int64, tags map[string]string)
-	Get() map[int]map[int]EvaluatedWay
+	Get() map[int]map[int]Way
 }
 
 type WayStorer interface {
-	Store(ways map[int]map[int]EvaluatedWay) error
+	Store(ways map[int]map[int]Way) error
 }
 
 type GraphWayStorer interface {
-	Store(ways map[int]map[int]EvaluatedWay) error
+	Store(ways map[int]map[int]Way) error
 }
 
 type GraphWayAdder interface {
-	AddWays(ways map[int]map[int]EvaluatedWay)
+	AddWays(ways map[int]map[int]Way)
 }
 
 type WayElevation struct {
 	Elevations []int32
-	ElevationEvaluation
+	BidirectionalElevationInfo
 }
 
 type ElevationGetterCloser interface {
@@ -81,12 +81,8 @@ type CostEvaluator interface {
 }
 
 type Osm2GmNodeReaderWriter interface {
-	Write(osmNdID int64, gm *Node) error
-	Read(osmNdID int64) *Node
-}
-
-type WayPolylineReader interface {
-	Read(ways []Way) []string
+	Write(osmNdID int64, gm *ConnectionNode) error
+	Read(osmNdID int64) *ConnectionNode
 }
 
 type Osm2LatLngWriter interface {
@@ -123,7 +119,7 @@ type DistanceCalculator interface {
 }
 
 type EdgeBatchStorer interface {
-	BatchStore(ndBatch []Node) error
+	BatchStore(ndBatch []ConnectionNode) error
 }
 
 type EdgeFinder interface {
@@ -160,16 +156,16 @@ type PathSimplifier interface {
 	Simplify(points []Point) []Point
 }
 
-type Weight struct {
+type BidirectionalWeight struct {
 	Normal  float64
 	Reverse float64
 }
 
 type Weighter interface {
 	WeightOffRoad(wayType int8) float64
-	WeightWayAcceptance(tags map[string]string) Weight
+	WeightWayAcceptance(tags map[string]string) BidirectionalWeight
 	WeightVehicleAcceptance(tags map[string]string) float64
-	WeightElevation(elevation *WayElevation) Weight
+	WeightElevation(elevation *WayElevation) BidirectionalWeight
 }
 
 //BestPath contains the solution of the most optimal path
@@ -183,5 +179,5 @@ type ShortestFinder interface {
 }
 
 type EdgeReader interface {
-	Read(ways []Way) ([]PresentableWay, error)
+	Read(edges []Edge) ([]PresentableWay, error)
 }

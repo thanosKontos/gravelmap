@@ -30,7 +30,7 @@ func NewGraphEdgeFileStore(destinationDir string) *fileStore {
 	}
 }
 
-func (fs *fileStore) Store(ways map[int]map[int]gravelmap.EvaluatedWay) error {
+func (fs *fileStore) Store(ways map[int]map[int]gravelmap.Way) error {
 	for edgeFromId, edgeFromWays := range ways {
 		for edgeToId, way := range edgeFromWays {
 			rec := record{int32(edgeFromId), int32(edgeToId), way.Cost}

@@ -31,21 +31,24 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 	}
 
 	best, err := r.shortestFinder.FindShortest(int(edgeFrom), int(edgeTo))
+	if err != nil {
+		return []gravelmap.RoutingLeg{}, err
+	}
 
-	var resultEdgePairs []gravelmap.Way
-	var prevEdge = 0
-	for i, curEdge := range best.Path {
+	var edges []gravelmap.Edge
+	var prevNodeID = 0
+	for i, curNodeID := range best.Path {
 		if i == 0 {
-			prevEdge = curEdge
+			prevNodeID = curNodeID
 			continue
 		}
 
-		resultEdgePairs = append(resultEdgePairs, gravelmap.Way{EdgeFrom: int32(prevEdge), EdgeTo: int32(curEdge)})
-		prevEdge = curEdge
+		edges = append(edges, gravelmap.Edge{NodeFrom: int32(prevNodeID), NodeTo: int32(curNodeID)})
+		prevNodeID = curNodeID
 	}
 
 	var routingLegs []gravelmap.RoutingLeg
-	presentableWays, _ := r.edgeReader.Read(resultEdgePairs)
+	presentableWays, _ := r.edgeReader.Read(edges)
 	for _, pWay := range presentableWays {
 		var latLngs []gravelmap.Point
 		tmpLatLngs, _ := maps.DecodePolyline(pWay.Polyline)
