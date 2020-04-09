@@ -75,8 +75,9 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 
 		ele := int32(binary.BigEndian.Uint16(d))
 		if ele > 60000 {
-			h.logger.Debug("Could not grade (void elevation)")
-			return nil, errorCannotGradeWay
+			h.logger.Debug("Could not grade (wrong elevation). Probably water, will use 0 instead")
+
+			ele = 0
 		}
 
 		if i == 0 {
