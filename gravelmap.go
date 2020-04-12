@@ -30,6 +30,9 @@ type Way struct {
 	Type     int8
 	ElevationInfo
 	Cost int64
+
+	// for debug reasons not needed really for production code
+	OriginalOsmID int64
 }
 
 type BidirectionalElevationInfo struct {
@@ -50,7 +53,7 @@ type WayEvaluation struct {
 }
 
 type WayAdderGetter interface {
-	Add(osmNodeIds []int64, tags map[string]string)
+	Add(osmNodeIds []int64, tags map[string]string, osmID int64)
 	Get() map[int]map[int]Way
 }
 
@@ -95,22 +98,23 @@ type Osm2LatLngReader interface {
 
 // Point represents a single point on earth
 type Point struct {
-	Lat float64
-	Lng float64
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
 // RoutingLegElevation represents the elevation routing leg
 type RoutingLegElevation struct {
-	Start float64
-	End   float64
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
 }
 
 // RoutingLeg represents individual parts of a route
 type RoutingLeg struct {
-	Coordinates []Point
-	Length      float64
-	Paved       bool
-	Elevation   *RoutingLegElevation
+	Coordinates []Point              `json:"points"`
+	Length      float64              `json:"distance"`
+	WayType     string               `json:"type"`
+	Elevation   *RoutingLegElevation `json:"elev"`
+	OsmID       int64                `json:"osm_id"`
 }
 
 // DistanceCalculator describes implementations of finding the distance between 2 points
@@ -146,6 +150,7 @@ type PresentableWay struct {
 	SurfaceType int8
 	ElevFrom    int16
 	ElevTo      int16
+	OsmID       int64
 }
 
 type Encoder interface {

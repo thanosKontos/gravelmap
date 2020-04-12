@@ -6,8 +6,6 @@ import (
 	"github.com/thanosKontos/gravelmap"
 )
 
-
-
 //Shortest calculates the shortest path from src to dest
 func (g *Graph) FindShortest(src, dest int) (gravelmap.BestPath, error) {
 	g.setup(src)

@@ -40,6 +40,9 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 	if isOffRoadWay(tags) {
 		wayType = gravelmap.WayTypeUnaved
 	}
+	if isPathway(tags) {
+		wayType = gravelmap.WayTypePath
+	}
 
 	elevation, err := ce.elevationGetterCloser.Get(points, distance)
 	elevationEval := gravelmap.BidirectionalElevationInfo{}
@@ -78,6 +81,16 @@ func isOffRoadWay(tags map[string]string) bool {
 				}
 			}
 
+			return true
+		}
+	}
+
+	return false
+}
+
+func isPathway(tags map[string]string) bool {
+	if val, ok := tags["highway"]; ok {
+		if val == "path" {
 			return true
 		}
 	}

@@ -60,7 +60,7 @@ func (fs *osmFileRead) Process() error {
 		} else {
 			switch v := v.(type) {
 			case *osmpbf.Way:
-				fs.wayAdderGetter.Add(v.NodeIDs, v.Tags)
+				fs.wayAdderGetter.Add(v.NodeIDs, v.Tags, v.ID)
 			default:
 				break
 			}

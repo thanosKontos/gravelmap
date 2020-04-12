@@ -7,8 +7,8 @@ const (
 
 	edgeStartRecordSize = 9
 
-	// Each individual record has 3 int32s, 1 int64 and 1 int8
-	edgeToIndividualRecordSize = 25
+	// Each individual record has 3 int32s, 2 int64, 2 int16 and 1 int8
+	edgeToIndividualRecordSize = 33
 )
 
 type edgeStartRecord struct {
@@ -28,4 +28,7 @@ type edgeToRecord struct {
 	elevFrom int16
 	elevTo   int16
 	polylinePosition
+
+	// for debug reasons
+	osmID int64
 }
