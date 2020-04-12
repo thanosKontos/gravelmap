@@ -2,7 +2,7 @@
 <head>
     <title>Gravelmap example</title>
     <style>
-        h1, h2, p, a {
+        h1, h2, p, a, table {
             font-family: Verdana;
         }
         h2 {
@@ -15,6 +15,12 @@
 
         #route-description-container .description a {
             font-size: 0.8em;
+        }
+
+        #route-description-container table, th, td {
+            border: 1px solid #dddddd;
+            border-collapse: collapse;
+            padding: 5px;
         }
     </style>
 </head>
@@ -130,12 +136,13 @@
         let elevationIncline = 0;
         let pavedDistance = 0;
         let endElevation = 0;
-        let routeDescriptionHtml = '';
+        let routeDescriptionRowsHtml = '<tr><th>Distance</th><th>Way type</th><th></th><th>Osm link</th></tr>';
         let elevationDescriptionTxt = '';
         let pavedDescriptionTxt = '';
         let previousPavedDescriptionTxt = '';
         let previousElevationDescriptionTxt = '';
         let previousDistanceDescriptionTxt = 0;
+        let previousDescriptionOsmId = 0;
         let previousOsmDescriptionLink = '';
 
         let routeFeatures = JSON.parse(result);
@@ -162,7 +169,7 @@
             }
 
             let strokeWidth = 2;
-            if (feature.Paved) {
+            if (feature.WayType === 'paved') {
                 strokeWidth = 3;
                 pavedDistance += feature.Length;
             }
@@ -189,38 +196,53 @@
                 endElevation = feature.Elevation.End
             }
 
-            if (feature.Paved) {
-                pavedDescriptionTxt = "Paved";
+            if (feature.WayType === 'paved') {
+                pavedDescriptionTxt = "<img src='car.png' />";
+            } else if (feature.WayType === 'unpaved') {
+                pavedDescriptionTxt = "<img src='jeep.png' />";
             } else {
-                pavedDescriptionTxt = "Unpaved";
+                pavedDescriptionTxt = "<img src='hiking.png' />";
             }
 
             if (grade <= 1.5) {
-                elevationDescriptionTxt = "Easy";
+                elevationDescriptionTxt = "Very Easy";
             } else if (grade <= 4) {
-                elevationDescriptionTxt = "Medium";
+                elevationDescriptionTxt = "Medium incline";
             } else if (grade <= 7) {
-                elevationDescriptionTxt = "Hard";
+                elevationDescriptionTxt = "Hard incline";
             } else {
-                elevationDescriptionTxt = "Very Hard";
+                elevationDescriptionTxt = "Very Hard incline";
             }
 
             if (previousPavedDescriptionTxt !== '' && (previousPavedDescriptionTxt !== pavedDescriptionTxt || previousElevationDescriptionTxt !== elevationDescriptionTxt)) {
-                routeDescriptionHtml += "<p>"+previousPavedDescriptionTxt+" way ("+previousElevationDescriptionTxt+"): "+previousDistanceDescriptionTxt+"m "+previousOsmDescriptionLink+"</p>";
+                routeDescriptionRowsHtml += "<tr>"+
+                    "<td>"+previousDistanceDescriptionTxt+"m</td>"+
+                    "<td>"+previousPavedDescriptionTxt+"</td>"+
+                    "<td>"+previousElevationDescriptionTxt+"</td>" +
+                    "<td>"+previousOsmDescriptionLink+"</td>" +
+                    "</tr>";
 
                 previousDistanceDescriptionTxt = feature.Length;
                 previousOsmDescriptionLink = "<a href='https://www.openstreetmap.org/way/"+feature.OsmID+"'>See in OSM</a> ";
             } else {
                 previousDistanceDescriptionTxt += feature.Length;
-                previousOsmDescriptionLink += "<a href='https://www.openstreetmap.org/way/"+feature.OsmID+"'>See in OSM</a> ";
+                if (previousDescriptionOsmId !== feature.OsmID) {
+                    previousOsmDescriptionLink += "<a href='https://www.openstreetmap.org/way/"+feature.OsmID+"'>See in OSM</a> ";
+                }
             }
 
             previousPavedDescriptionTxt = pavedDescriptionTxt;
             previousElevationDescriptionTxt = elevationDescriptionTxt;
+            previousDescriptionOsmId = feature.OsmID;
         });
 
         // Write (flush) remaining unwritten ways
-        routeDescriptionHtml += "<p>"+previousPavedDescriptionTxt+" way ("+previousElevationDescriptionTxt+"): "+previousDistanceDescriptionTxt+"m "+previousOsmDescriptionLink+"</p>";
+        routeDescriptionRowsHtml += "<tr>"+
+            "<td>"+previousDistanceDescriptionTxt+"m</td>"+
+            "<td>"+previousPavedDescriptionTxt+"</td>"+
+            "<td>"+previousElevationDescriptionTxt+"</td>" +
+            "<td>"+previousOsmDescriptionLink+"</td>" +
+            "</tr>";
 
         chartData.push([distance, endElevation]);
         updateChartData(chart, chartData);
@@ -232,8 +254,7 @@
         $('#incline').text(Math.round(elevationIncline*100)/100 + ' m');
         $('#route-info-container a#download-kml').attr("href", "/create-kml?from="+routeFrom+"&to="+routeTo);
         $('#route-info-container').show();
-
-        $('#route-description-container .description').html(routeDescriptionHtml);
+        $('#route-description-container .description').html("<table>"+routeDescriptionRowsHtml+"</table>");
         $('#route-description-container').show();
     }
 

@@ -112,7 +112,7 @@ type RoutingLegElevation struct {
 type RoutingLeg struct {
 	Coordinates []Point
 	Length      float64
-	Paved       bool
+	WayType     string
 	Elevation   *RoutingLegElevation
 	OsmID       int64
 }

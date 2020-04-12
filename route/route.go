@@ -65,10 +65,18 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 			}
 		}
 
+		wayType := "paved"
+		if pWay.SurfaceType == gravelmap.WayTypeUnaved {
+			wayType = "unpaved"
+		}
+		if pWay.SurfaceType == gravelmap.WayTypePath {
+			wayType = "path"
+		}
+
 		routingLeg := gravelmap.RoutingLeg{
 			Coordinates: latLngs,
 			Length:      float64(pWay.Distance),
-			Paved:       pWay.SurfaceType == gravelmap.WayTypePaved,
+			WayType:     wayType,
 			Elevation:   rlEle,
 			OsmID:       pWay.OsmID,
 		}
