@@ -30,5 +30,5 @@ type edgeToRecord struct {
 	polylinePosition
 
 	// for debug reasons
-	osmID    int64
+	osmID int64
 }

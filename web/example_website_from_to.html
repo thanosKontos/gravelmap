@@ -149,10 +149,10 @@
 
         routeFeatures.forEach(function(feature) {
             let lineColor = '#000000';
-            if (feature.Elevation != null) {
-                chartData.push([distance, feature.Elevation.Start]);
+            if (feature.elev != null) {
+                chartData.push([distance, feature.elev.start]);
 
-                grade = (feature.Elevation.End - feature.Elevation.Start) * 100 / feature.Length;
+                grade = (feature.elev.end - feature.elev.start) * 100 / feature.distance;
                 if (grade < 1) {
                     lineColor = '#236b31';
                 } else if (grade <= 1.3) {
@@ -163,20 +163,20 @@
                     lineColor = '#ff0207';
                 }
 
-                if (feature.Elevation.Start < feature.Elevation.End) {
-                    elevationIncline += feature.Elevation.End - feature.Elevation.Start
+                if (feature.elev.start < feature.elev.end) {
+                    elevationIncline += feature.elev.end - feature.elev.start
                 }
             }
 
             let strokeWidth = 2;
-            if (feature.WayType === 'paved') {
+            if (feature.type === 'paved') {
                 strokeWidth = 3;
-                pavedDistance += feature.Length;
+                pavedDistance += feature.distance;
             }
 
             let points = [];
-            feature.Coordinates.forEach(function(point) {
-                points.push(new OpenLayers.Geometry.Point(point.Lng, point.Lat).transform(epsg4326, projectTo));
+            feature.points.forEach(function(point) {
+                points.push(new OpenLayers.Geometry.Point(point.lng, point.lat).transform(epsg4326, projectTo));
             });
 
             let vector = new OpenLayers.Feature.Vector(
@@ -190,15 +190,15 @@
             vectorLayer.addFeatures(vector);
 
             map.addLayer(vectorLayer);
-            distance += feature.Length;
+            distance += feature.distance;
 
-            if (feature.Elevation != null) {
-                endElevation = feature.Elevation.End
+            if (feature.elev != null) {
+                endElevation = feature.elev.end
             }
 
-            if (feature.WayType === 'paved') {
+            if (feature.type === 'paved') {
                 pavedDescriptionTxt = "<img src='car.png' />";
-            } else if (feature.WayType === 'unpaved') {
+            } else if (feature.type === 'unpaved') {
                 pavedDescriptionTxt = "<img src='jeep.png' />";
             } else {
                 pavedDescriptionTxt = "<img src='hiking.png' />";
@@ -222,18 +222,18 @@
                     "<td>"+previousOsmDescriptionLink+"</td>" +
                     "</tr>";
 
-                previousDistanceDescriptionTxt = feature.Length;
-                previousOsmDescriptionLink = "<a href='https://www.openstreetmap.org/way/"+feature.OsmID+"'>See in OSM</a> ";
+                previousDistanceDescriptionTxt = feature.distance;
+                previousOsmDescriptionLink = "<a href='https://www.openstreetmap.org/way/"+feature.osm_id+"'>See in OSM</a> ";
             } else {
-                previousDistanceDescriptionTxt += feature.Length;
-                if (previousDescriptionOsmId !== feature.OsmID) {
-                    previousOsmDescriptionLink += "<a href='https://www.openstreetmap.org/way/"+feature.OsmID+"'>See in OSM</a> ";
+                previousDistanceDescriptionTxt += feature.distance;
+                if (previousDescriptionOsmId !== feature.osm_id) {
+                    previousOsmDescriptionLink += "<a href='https://www.openstreetmap.org/way/"+feature.osm_id+"'>See in OSM</a> ";
                 }
             }
 
             previousPavedDescriptionTxt = pavedDescriptionTxt;
             previousElevationDescriptionTxt = elevationDescriptionTxt;
-            previousDescriptionOsmId = feature.OsmID;
+            previousDescriptionOsmId = feature.osm_id;
         });
 
         // Write (flush) remaining unwritten ways
@@ -252,7 +252,7 @@
         $('#paved-percentage').text(Math.round(pavedPercentage*100)/100 + '%');
         $('#unpaved-percentage').text(Math.round((100-pavedPercentage)*100)/100 + '%');
         $('#incline').text(Math.round(elevationIncline*100)/100 + ' m');
-        $('#route-info-container a#download-kml').attr("href", "/create-kml?from="+routeFrom+"&to="+routeTo);
+        $('#route-info-container a#download-kml').attr("href", "http://localhost:8000/create-kml?from="+routeFrom+"&to="+routeTo);
         $('#route-info-container').show();
         $('#route-description-container .description').html("<table>"+routeDescriptionRowsHtml+"</table>");
         $('#route-description-container').show();

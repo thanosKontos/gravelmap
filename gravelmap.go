@@ -98,23 +98,23 @@ type Osm2LatLngReader interface {
 
 // Point represents a single point on earth
 type Point struct {
-	Lat float64
-	Lng float64
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
 // RoutingLegElevation represents the elevation routing leg
 type RoutingLegElevation struct {
-	Start float64
-	End   float64
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
 }
 
 // RoutingLeg represents individual parts of a route
 type RoutingLeg struct {
-	Coordinates []Point
-	Length      float64
-	WayType     string
-	Elevation   *RoutingLegElevation
-	OsmID       int64
+	Coordinates []Point              `json:"points"`
+	Length      float64              `json:"distance"`
+	WayType     string               `json:"type"`
+	Elevation   *RoutingLegElevation `json:"elev"`
+	OsmID       int64                `json:"osm_id"`
 }
 
 // DistanceCalculator describes implementations of finding the distance between 2 points

@@ -6,16 +6,16 @@ import (
 )
 
 type router struct {
-	edgeFinder gravelmap.EdgeFinder
+	edgeFinder     gravelmap.EdgeFinder
 	shortestFinder gravelmap.ShortestFinder
-	edgeReader gravelmap.EdgeReader
+	edgeReader     gravelmap.EdgeReader
 }
 
 func NewGmRouter(edgeFinder gravelmap.EdgeFinder, shortestFinder gravelmap.ShortestFinder, edgeReader gravelmap.EdgeReader) *router {
 	return &router{
-		edgeFinder: edgeFinder,
+		edgeFinder:     edgeFinder,
 		shortestFinder: shortestFinder,
-		edgeReader: edgeReader,
+		edgeReader:     edgeReader,
 	}
 }
 
