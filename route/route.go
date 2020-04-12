@@ -70,6 +70,7 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 			Length:      float64(pWay.Distance),
 			Paved:       pWay.SurfaceType == gravelmap.WayTypePaved,
 			Elevation:   rlEle,
+			OsmID:       pWay.OsmID,
 		}
 
 		routingLegs = append(routingLegs, routingLeg)

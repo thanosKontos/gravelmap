@@ -29,7 +29,7 @@ func NewOsm2GmWays(
 	}
 }
 
-func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
+func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string, osmID int64) {
 	prevNodeID := 0
 	var wayNodeIds []int
 	for i, osmNdID := range osmNodeIds {
@@ -45,7 +45,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 
 		// Edge node with a connection or last node
 		if i == len(osmNodeIds)-1 || node.ConnectionCnt > 1 {
-			o.AddBackAndForthEdgesToWays(prevNodeID, node.ID, wayNodeIds, tags)
+			o.AddBackAndForthEdgesToWays(prevNodeID, node.ID, wayNodeIds, tags, osmID)
 
 			prevNodeID = node.ID
 			wayNodeIds = []int{prevNodeID}
@@ -55,7 +55,7 @@ func (o *osm2GmWays) Add(osmNodeIds []int64, tags map[string]string) {
 	}
 }
 
-func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wayNodeIds []int, tags map[string]string) {
+func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wayNodeIds []int, tags map[string]string, osmID int64) {
 	points := o.getWayPoints(wayNodeIds)
 	evaluation := o.costEvaluator.Evaluate(points.points, tags)
 
@@ -73,6 +73,8 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 				Type:          evaluation.WayType,
 				ElevationInfo: evaluation.BidirectionalElevationInfo.Normal,
 				Cost:          evaluation.BidirectionalCost.Normal,
+
+				OriginalOsmID: osmID,
 			}
 		}
 	} else {
@@ -87,6 +89,8 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 			Type:          evaluation.WayType,
 			ElevationInfo: evaluation.BidirectionalElevationInfo.Normal,
 			Cost:          evaluation.BidirectionalCost.Normal,
+
+			OriginalOsmID: osmID,
 		}
 	}
 
@@ -104,6 +108,8 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 				Type:          evaluation.WayType,
 				ElevationInfo: evaluation.BidirectionalElevationInfo.Reverse,
 				Cost:          evaluation.BidirectionalCost.Reverse,
+
+				OriginalOsmID: osmID,
 			}
 		}
 	} else {
@@ -118,6 +124,8 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 			Type:          evaluation.WayType,
 			ElevationInfo: evaluation.BidirectionalElevationInfo.Reverse,
 			Cost:          evaluation.BidirectionalCost.Reverse,
+
+			OriginalOsmID: osmID,
 		}
 	}
 }

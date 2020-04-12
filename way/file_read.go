@@ -61,6 +61,7 @@ func (fr *fileRead) Read(edges []gravelmap.Edge) ([]gravelmap.PresentableWay, er
 			ElevFrom:    edgeToRec.elevFrom,
 			ElevTo:      edgeToRec.elevTo,
 			Distance:    edgeToRec.distance,
+			OsmID:       edgeToRec.osmID,
 		})
 	}
 
@@ -72,7 +73,7 @@ func (fr *fileRead) Read(edges []gravelmap.Edge) ([]gravelmap.PresentableWay, er
 func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*edgeToRecord, error) {
 	readOffset := edgeStart.NodeToOffset
 	var distance, polylineLength int32
-	var polylineOffset int64
+	var polylineOffset, osmID int64
 	var wayType int8
 	var elevationStart, elevationEnd int16
 	found := false
@@ -111,6 +112,10 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 			buffer = bytes.NewBuffer(data)
 			binary.Read(buffer, binary.BigEndian, &polylineOffset)
 
+			data = readNextBytes(fr.edgeToFile, 8)
+			buffer = bytes.NewBuffer(data)
+			binary.Read(buffer, binary.BigEndian, &osmID)
+
 			found = true
 			break
 		}
@@ -129,6 +134,7 @@ func (fr *fileRead) readEdgeToFile(edgeStart edgeStartRecord, edgeToId int32) (*
 		elevFrom:         elevationStart,
 		elevTo:           elevationEnd,
 		polylinePosition: polylinePosition{length: polylineLength, offset: polylineOffset},
+		osmID:            osmID,
 	}
 
 	return &edgeToRecord, nil

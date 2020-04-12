@@ -30,6 +30,9 @@ type Way struct {
 	Type     int8
 	ElevationInfo
 	Cost int64
+
+	// for debug reasons not needed really for production code
+	OriginalOsmID int64
 }
 
 type BidirectionalElevationInfo struct {
@@ -50,7 +53,7 @@ type WayEvaluation struct {
 }
 
 type WayAdderGetter interface {
-	Add(osmNodeIds []int64, tags map[string]string)
+	Add(osmNodeIds []int64, tags map[string]string, osmID int64)
 	Get() map[int]map[int]Way
 }
 
@@ -111,6 +114,7 @@ type RoutingLeg struct {
 	Length      float64
 	Paved       bool
 	Elevation   *RoutingLegElevation
+	OsmID       int64
 }
 
 // DistanceCalculator describes implementations of finding the distance between 2 points
@@ -146,6 +150,7 @@ type PresentableWay struct {
 	SurfaceType int8
 	ElevFrom    int16
 	ElevTo      int16
+	OsmID       int64
 }
 
 type Encoder interface {

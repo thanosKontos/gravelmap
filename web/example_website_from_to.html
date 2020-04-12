@@ -1,10 +1,40 @@
 <html>
+<head>
+    <title>Gravelmap example</title>
+    <style>
+        h1, h2, p, a {
+            font-family: Verdana;
+        }
+        h2 {
+            color: #1c87c9;
+        }
+        #route-description-container p {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        #route-description-container .description a {
+            font-size: 0.8em;
+        }
+    </style>
+</head>
 <body>
 <div id="mapdiv" style="height: 60%"></div>
-<div><button id="clear-btn">Clear map</button>
+<div><button id="clear-btn">Clear map</button></div>
+
+<div>
+    <select id="routing_mode">
+        <option value="normal">Normal routing</option>
+        <option value="easiest">Easiest route (just account elevation)</option>
+        <option value="only_unpaved_account_elevation">Only unpaved (account elevation)</option>
+        <option value="only_unpaved_hardcore">Only unpaved (hardcode)</option>
+        <option value="no_length_care_normal">I don't care about the length</option>
+        <option value="no_length_care_unpaved_hardcore">I don't care about the length (nor elevation)</option>
+    </select>
 </div>
-<div id="chart-container" style="clear: both; height: 400px; width: 80%; min-width: 380px; display: none; float: left"></div>
-<div id="route-data-container" style="height: 400px; width: 10%; padding-left: 20px; display: none; float: left;">
+
+<div id="chart-container" style="clear: both; height: 200px; width: 40%; min-width: 200px; display: none; float: left"></div>
+<div id="route-info-container" style="height: 200px; width: 15%; padding-left: 20px; display: none; float: left;">
     <h2>Route info</h2>
     <p>Route length: <strong id="overall-length"></strong></p>
     <p>Paved roads: <strong id="paved-percentage"></strong></p>
@@ -12,14 +42,13 @@
     <p>Total incline: <strong id="incline"></strong></p>
     <a id="download-kml" href="#">Download KML</a>
 </div>
-<select id="routing_mode">
-    <option value="normal">Normal routing</option>
-    <option value="easiest">Easiest route (just account elevation)</option>
-    <option value="only_unpaved_account_elevation">Only unpaved (account elevation)</option>
-    <option value="only_unpaved_hardcore">Only unpaved (hardcode)</option>
-    <option value="no_length_care_normal">I don't care about the length</option>
-    <option value="no_length_care_unpaved_hardcore">I don't care about the length (nor elevation)</option>
-</select>
+
+<div id="route-description-container" style="height: 200px; width: 35%; padding-left: 20px; display: none; float: left;">
+    <h2>Route description</h2>
+    <div class="description">
+    </div>
+</div>
+
 
 <script
         src="https://code.jquery.com/jquery-3.4.1.min.js"
@@ -97,9 +126,18 @@
         $('#chart-container').show();
         let chartData = [];
         let distance = 0;
+        let grade = 1;
         let elevationIncline = 0;
         let pavedDistance = 0;
         let endElevation = 0;
+        let routeDescriptionHtml = '';
+        let elevationDescriptionTxt = '';
+        let pavedDescriptionTxt = '';
+        let previousPavedDescriptionTxt = '';
+        let previousElevationDescriptionTxt = '';
+        let previousDistanceDescriptionTxt = 0;
+        let previousOsmDescriptionLink = '';
+
         let routeFeatures = JSON.parse(result);
 
         routeFeatures.forEach(function(feature) {
@@ -107,7 +145,7 @@
             if (feature.Elevation != null) {
                 chartData.push([distance, feature.Elevation.Start]);
 
-                let grade = (feature.Elevation.End - feature.Elevation.Start) * 100 / feature.Length;
+                grade = (feature.Elevation.End - feature.Elevation.Start) * 100 / feature.Length;
                 if (grade < 1) {
                     lineColor = '#236b31';
                 } else if (grade <= 1.3) {
@@ -150,18 +188,53 @@
             if (feature.Elevation != null) {
                 endElevation = feature.Elevation.End
             }
+
+            if (feature.Paved) {
+                pavedDescriptionTxt = "Paved";
+            } else {
+                pavedDescriptionTxt = "Unpaved";
+            }
+
+            if (grade <= 1.5) {
+                elevationDescriptionTxt = "Easy";
+            } else if (grade <= 4) {
+                elevationDescriptionTxt = "Medium";
+            } else if (grade <= 7) {
+                elevationDescriptionTxt = "Hard";
+            } else {
+                elevationDescriptionTxt = "Very Hard";
+            }
+
+            if (previousPavedDescriptionTxt !== '' && (previousPavedDescriptionTxt !== pavedDescriptionTxt || previousElevationDescriptionTxt !== elevationDescriptionTxt)) {
+                routeDescriptionHtml += "<p>"+previousPavedDescriptionTxt+" way ("+previousElevationDescriptionTxt+"): "+previousDistanceDescriptionTxt+"m "+previousOsmDescriptionLink+"</p>";
+
+                previousDistanceDescriptionTxt = feature.Length;
+                previousOsmDescriptionLink = "<a href='https://www.openstreetmap.org/way/"+feature.OsmID+"'>See in OSM</a> ";
+            } else {
+                previousDistanceDescriptionTxt += feature.Length;
+                previousOsmDescriptionLink += "<a href='https://www.openstreetmap.org/way/"+feature.OsmID+"'>See in OSM</a> ";
+            }
+
+            previousPavedDescriptionTxt = pavedDescriptionTxt;
+            previousElevationDescriptionTxt = elevationDescriptionTxt;
         });
 
+        // Write (flush) remaining unwritten ways
+        routeDescriptionHtml += "<p>"+previousPavedDescriptionTxt+" way ("+previousElevationDescriptionTxt+"): "+previousDistanceDescriptionTxt+"m "+previousOsmDescriptionLink+"</p>";
+
         chartData.push([distance, endElevation]);
-        updateChartData(chart, chartData)
+        updateChartData(chart, chartData);
 
         let pavedPercentage = Math.round(pavedDistance/distance*100*100)/100;
         $('#overall-length').text(Math.round(distance/1000 * 100) / 100 + " km");
         $('#paved-percentage').text(Math.round(pavedPercentage*100)/100 + '%');
         $('#unpaved-percentage').text(Math.round((100-pavedPercentage)*100)/100 + '%');
         $('#incline').text(Math.round(elevationIncline*100)/100 + ' m');
-        $('#route-data-container a#download-kml').attr("href", "http://localhost:8000/create-kml?from="+routeFrom+"&to="+routeTo);
-        $('#route-data-container').show();
+        $('#route-info-container a#download-kml').attr("href", "/create-kml?from="+routeFrom+"&to="+routeTo);
+        $('#route-info-container').show();
+
+        $('#route-description-container .description').html(routeDescriptionHtml);
+        $('#route-description-container').show();
     }
 
     let chart = initializeChart([]);

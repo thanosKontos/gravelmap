@@ -58,6 +58,7 @@ func (fs *fileStore) Store(ways map[int]map[int]gravelmap.Way) error {
 				elevFrom:         v.ElevationInfo.From,
 				elevTo:           v.ElevationInfo.To,
 				polylinePosition: polylinePosition{length: polylineLen, offset: polylineOffset},
+				osmID:            v.OriginalOsmID,
 			}
 			edgeToRecords = append(edgeToRecords, edgeToRec)
 
