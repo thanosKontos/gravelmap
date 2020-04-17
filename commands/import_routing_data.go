@@ -76,7 +76,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 
 	var rms = map[string]routingMode{
 		"bicycle": {"graph_bicycle.gob", way.NewBicycleWeight()},
-		"foot": {"graph_foot.gob", way.NewHikingWeight()},
+		"foot":    {"graph_foot.gob", way.NewHikingWeight()},
 	}
 	routingMode := rms[routingMd]
 

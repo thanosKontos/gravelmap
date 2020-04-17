@@ -51,7 +51,6 @@ func createWebServerCmdRun() error {
 	}
 	dataFile.Close()
 
-
 	footGraph := dijkstra.NewGraph()
 	dataFile, err = os.Open("_files/graph_foot.gob")
 	if err != nil {
@@ -65,14 +64,10 @@ func createWebServerCmdRun() error {
 	}
 	dataFile.Close()
 
-
-
-
-	graphs := map[string]*dijkstra.Graph {
+	graphs := map[string]*dijkstra.Graph{
 		"bicycle": mtbGraph,
-		"foot": footGraph,
+		"foot":    footGraph,
 	}
-
 
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {
 		routeHandler(w, r, graphs)
@@ -98,9 +93,6 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*dij
 		return
 	}
 
-
-
-
 	routingModeParam, ok := r.URL.Query()["routing_mode"]
 	if !ok || len(routingModeParam) != 1 || (routingModeParam[0] != "bicycle" && routingModeParam[0] != "foot") {
 		w.WriteHeader(400)
@@ -109,7 +101,6 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*dij
 		return
 	}
 	routingMode := routingModeParam[0]
-
 
 	distanceCalc := distance.NewHaversine()
 	edgeFinder := edge.NewBBoxFileRead("_files", distanceCalc)
