@@ -61,10 +61,6 @@ type WayStorer interface {
 	Store(ways map[int]map[int]Way) error
 }
 
-type GraphWayStorer interface {
-	Store(ways map[int]map[int]Way) error
-}
-
 type GraphWayAdder interface {
 	AddWays(ways map[int]map[int]Way)
 }

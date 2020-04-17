@@ -72,10 +72,9 @@ func importRoutingDataCmdRun(inputFilename string) error {
 
 	graph := graph2.NewDijkstra()
 	wayStorer := way.NewFileStore("_files", pointEncoder)
-	graphWayStorer := graph2.NewGraphEdgeFileStore("_files")
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
-	osmWayFileRead := osm.NewOsmWayFileRead(inputFilename, wayStorer, graphWayStorer, graph, wayAdderGetter)
+	osmWayFileRead := osm.NewOsmWayFileRead(inputFilename, wayStorer, graph, wayAdderGetter)
 	err = osmWayFileRead.Process()
 	if err != nil {
 		logger.Error(err)
