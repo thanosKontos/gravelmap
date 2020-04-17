@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/elevation"
@@ -20,7 +21,7 @@ import (
 // importRoutingDataCommand imports data from an OSM file.
 func importRoutingDataCommand() *cobra.Command {
 	var (
-		inputFilename string
+		inputFilename, routingMd string
 	)
 
 	importRoutingDataCmd := &cobra.Command{
@@ -30,14 +31,20 @@ func importRoutingDataCommand() *cobra.Command {
 	}
 
 	importRoutingDataCmd.Flags().StringVar(&inputFilename, "input", "", "The osm input file.")
+	importRoutingDataCmd.Flags().StringVar(&routingMd, "routing-mode", "bicycle", "The routing mode.")
 	importRoutingDataCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return importRoutingDataCmdRun(inputFilename)
+		return importRoutingDataCmdRun(inputFilename, routingMd)
 	}
 
 	return importRoutingDataCmd
 }
 
-func importRoutingDataCmdRun(inputFilename string) error {
+type routingMode struct {
+	graphFilename string
+	weighter      gravelmap.Weighter
+}
+
+func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 	os.Mkdir("_files", 0777)
 
 	// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
@@ -64,11 +71,16 @@ func importRoutingDataCmdRun(inputFilename string) error {
 	// ## 3. Process OSM ways (store way info and create graph)
 	elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 	distanceCalculator := distance.NewHaversine()
-	weighter := way.NewBicycleWeight()
-
-	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, weighter)
-	pointEncoder := encode.NewGooglemaps()
 	pathSimplifier := path.NewSimplifiedDouglasPeucker(distanceCalculator)
+	pointEncoder := encode.NewGooglemaps()
+
+	var rms = map[string]routingMode{
+		"bicycle": {"graph_bicycle.gob", way.NewBicycleWeight()},
+		"foot":    {"graph_foot.gob", way.NewHikingWeight()},
+	}
+	routingMode := rms[routingMd]
+
+	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, routingMode.weighter)
 
 	graph := graph2.NewDijkstra()
 	wayStorer := way.NewFileStore("_files", pointEncoder)
@@ -85,7 +97,7 @@ func importRoutingDataCmdRun(inputFilename string) error {
 	elevationGetterCloser.Close()
 
 	// also persist it to file
-	graphFile, _ := os.Create("_files/graph.gob")
+	graphFile, _ := os.Create(fmt.Sprintf("_files/%s", routingMode.graphFilename))
 	dataEncoder := gob.NewEncoder(graphFile)
 	dataEncoder.Encode(graph.Get())
 	graphFile.Close()
