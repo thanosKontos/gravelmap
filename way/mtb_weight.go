@@ -1,6 +1,8 @@
 package way
 
-import "github.com/thanosKontos/gravelmap"
+import (
+	"github.com/thanosKontos/gravelmap"
+)
 
 type bicycleWeight struct {
 }
@@ -61,6 +63,10 @@ func getWayAcceptance(tags map[string]string) wayAcceptance {
 		}
 
 		return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
+	}
+
+	if _, ok := tags["military"]; ok {
+		return wayAcceptance{wayAcceptanceNo, wayAcceptanceNo}
 	}
 
 	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
