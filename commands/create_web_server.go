@@ -38,24 +38,47 @@ func createWebServerCommand() *cobra.Command {
 
 // createRoutingDataCmdRun defines the command run actions.
 func createWebServerCmdRun() error {
-	graph := dijkstra.NewGraph()
-	dataFile, err := os.Open("_files/graph.gob")
+	mtbGraph := dijkstra.NewGraph()
+	dataFile, err := os.Open("_files/graph_bicycle.gob")
 	if err != nil {
 		return err
 	}
 
 	dataDecoder := gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&graph)
+	err = dataDecoder.Decode(&mtbGraph)
 	if err != nil {
 		return err
 	}
 	dataFile.Close()
 
+
+	footGraph := dijkstra.NewGraph()
+	dataFile, err = os.Open("_files/graph_foot.gob")
+	if err != nil {
+		return err
+	}
+
+	dataDecoder = gob.NewDecoder(dataFile)
+	err = dataDecoder.Decode(&footGraph)
+	if err != nil {
+		return err
+	}
+	dataFile.Close()
+
+
+
+
+	graphs := map[string]*dijkstra.Graph {
+		"bicycle": mtbGraph,
+		"foot": footGraph,
+	}
+
+
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {
-		routeHandler(w, r, graph)
+		routeHandler(w, r, graphs)
 	})
 	http.HandleFunc("/create-kml", func(w http.ResponseWriter, r *http.Request) {
-		createKmlHandler(w, r, graph)
+		createKmlHandler(w, r, mtbGraph)
 	})
 
 	http.ListenAndServe(":8000", nil)
@@ -63,7 +86,7 @@ func createWebServerCmdRun() error {
 	return nil
 }
 
-func routeHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph) {
+func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*dijkstra.Graph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	pointFrom, err := getPointFromParams("from", r)
@@ -75,6 +98,19 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph)
 		return
 	}
 
+
+
+
+	routingModeParam, ok := r.URL.Query()["routing_mode"]
+	if !ok || len(routingModeParam) != 1 || (routingModeParam[0] != "bicycle" && routingModeParam[0] != "foot") {
+		w.WriteHeader(400)
+		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
+
+		return
+	}
+	routingMode := routingModeParam[0]
+
+
 	distanceCalc := distance.NewHaversine()
 	edgeFinder := edge.NewBBoxFileRead("_files", distanceCalc)
 
@@ -85,7 +121,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph)
 		return
 	}
 
-	router := route.NewGmRouter(edgeFinder, graph, edgeReader)
+	router := route.NewGmRouter(edgeFinder, graphs[routingMode], edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {
 		w.WriteHeader(500)

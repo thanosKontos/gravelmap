@@ -4,14 +4,14 @@ import (
 	"github.com/thanosKontos/gravelmap"
 )
 
-type bicycleWeight struct {
+type hikingWeight struct {
 }
 
-func NewBicycleWeight() *bicycleWeight {
-	return &bicycleWeight{}
+func NewHikingWeight() *hikingWeight {
+	return &hikingWeight{}
 }
 
-func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
+func (b *hikingWeight) WeightOffRoad(wayType int8) float64 {
 	if wayType == gravelmap.WayTypeUnaved {
 		return 0.6
 	}
@@ -19,8 +19,8 @@ func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
 	return 1.0
 }
 
-func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.BidirectionalWeight {
-	wayAcceptance := getMtbWayAcceptance(tags)
+func (b *hikingWeight) WeightWayAcceptance(tags map[string]string) gravelmap.BidirectionalWeight {
+	wayAcceptance := getFootWayAcceptance(tags)
 	wayAcceptanceWeight := gravelmap.BidirectionalWeight{Normal: 1.0, Reverse: 1.0}
 	if wayAcceptance.normal == wayAcceptanceNo {
 		wayAcceptanceWeight.Normal = 10000000
@@ -32,37 +32,11 @@ func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.Bi
 	return wayAcceptanceWeight
 }
 
-func getMtbWayAcceptance(tags map[string]string) wayAcceptance {
-	if val, ok := tags["oneway"]; ok {
-		if val == "yes" {
-			if val, ok := tags["cycleway"]; ok {
-				if val == "opposite" || val == "opposite_lane" {
-					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-				}
-			}
-
-			if val, ok := tags["cycleway:left"]; ok {
-				if val == "opposite_lane" {
-					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-				}
-			}
-
-			if val, ok := tags["cycleway:right"]; ok {
-				if val == "opposite_lane" {
-					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-				}
-			}
-
-			if val, ok := tags["oneway:bicycle"]; ok {
-				if val == "no" {
-					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-				}
-			}
-
-			return wayAcceptance{wayAcceptanceYes, wayAcceptanceNo}
+func getFootWayAcceptance(tags map[string]string) wayAcceptance {
+	if val, ok := tags["highway"]; ok {
+		if val == "motorway" || val == "trunk" || val == "primary" {
+			return wayAcceptance{wayAcceptanceNo, wayAcceptanceNo}
 		}
-
-		return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 	}
 
 	if _, ok := tags["military"]; ok {
@@ -72,8 +46,8 @@ func getMtbWayAcceptance(tags map[string]string) wayAcceptance {
 	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 }
 
-func (b *bicycleWeight) WeightVehicleAcceptance(tags map[string]string) float64 {
-	switch getMtbVehicleWayAcceptance(tags) {
+func (b *hikingWeight) WeightVehicleAcceptance(tags map[string]string) float64 {
+	switch getFootVehicleWayAcceptance(tags) {
 	case vehicleAcceptanceExclusively:
 		return 0.7
 	case vehicleAcceptancePartially:
@@ -87,49 +61,11 @@ func (b *bicycleWeight) WeightVehicleAcceptance(tags map[string]string) float64 
 	return 1.0
 }
 
-func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
-	if _, ok := tags["mtb:scale"]; ok {
-		return vehicleAcceptanceExclusively
-	}
-
-	if val, ok := tags["bicycle"]; ok {
-		if val == "yes" || val == "permissive" || val == "designated" {
-			return vehicleAcceptanceExclusively
-		}
-
-		if val == "no" {
-			return vehicleAcceptanceNo
-		}
-	}
-
+func getFootVehicleWayAcceptance(tags map[string]string) int32 {
 	if val, ok := tags["highway"]; ok {
-		if val == "footway" || val == "path" {
-			return vehicleAcceptanceMaybe
-		}
-
-		if val == "cycleway" {
+		if val == "footway" || val == "path" || val == "pedestrian" {
 			return vehicleAcceptanceExclusively
 		}
-
-		if val == "service" {
-			if val, ok := tags["bicycle"]; ok {
-				if val == "yes" || val == "permissive" || val == "designated" {
-					return vehicleAcceptanceExclusively
-				}
-			} else {
-				return vehicleAcceptanceNo
-			}
-		}
-
-		if val == "motorway" || val == "steps" {
-			return vehicleAcceptanceNo
-		}
-
-		if val == "primary" {
-			return vehicleAcceptancePartially
-		}
-
-		return vehicleAcceptanceYes
 	}
 
 	return vehicleAcceptanceYes
@@ -141,7 +77,7 @@ func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
 //7-9%: Starting to become uncomfortable for seasoned riders, and very challenging for new climbers.
 //10%-15%: A painful gradient, especially if maintained for any length of time
 //16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
-func (b *bicycleWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
+func (b *hikingWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
 	if elevation == nil {
 		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
 	}
