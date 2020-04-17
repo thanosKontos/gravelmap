@@ -9,13 +9,13 @@ type Vertex struct {
 	Arcs map[int]int64
 
 	//best cost to the Vertex
-	cost          int64
-	bestVerticies []int
+	cost         int64
+	bestVertices []int
 }
 
 //NewVertex creates a new vertex
 func NewVertex(ID int) *Vertex {
-	return &Vertex{ID: ID, bestVerticies: []int{-1}, Arcs: map[int]int64{}}
+	return &Vertex{ID: ID, bestVertices: []int{-1}, Arcs: map[int]int64{}}
 }
 
 //AddArc adds an arc to the vertex, it's up to the user to make sure this is used

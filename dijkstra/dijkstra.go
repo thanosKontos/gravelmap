@@ -17,12 +17,12 @@ func (g *Graph) setup(src int) {
 	g.setDefaults()
 
 	//Set the cost of initial vertex 0 and add it to the list
-	g.Verticies[src].cost = 0
-	g.list.PushOrdered(&g.Verticies[src])
+	g.Vertices[src].cost = 0
+	g.list.PushOrdered(&g.Vertices[src])
 }
 
 func (g *Graph) setupList() {
-	if len(g.Verticies) < 800 {
+	if len(g.Vertices) < 800 {
 		g.list = linkedListNewLong()
 		return
 	}
@@ -48,23 +48,23 @@ func (g *Graph) postSetupEvaluate(src, dest int) (gravelmap.BestPath, error) {
 		}
 		for v, dist := range current.Arcs {
 			//If the arc has better access, than the current costToDest, update the Vertex being touched
-			if current.cost+dist < g.Verticies[v].cost {
-				if current.bestVerticies[0] == v && g.Verticies[v].ID != dest {
+			if current.cost+dist < g.Vertices[v].cost {
+				if current.bestVertices[0] == v && g.Vertices[v].ID != dest {
 					//also only do this if we aren't checkout out the best cost again
 					//This seems familiar 8^)
 					return gravelmap.BestPath{}, newErrLoop(current.ID, v)
 				}
-				g.Verticies[v].cost = current.cost + dist
-				g.Verticies[v].bestVerticies[0] = current.ID
+				g.Vertices[v].cost = current.cost + dist
+				g.Vertices[v].bestVertices[0] = current.ID
 				if v == dest {
-					//If this is the destination update costToDest, so we can stop looking at useless Verticies
+					//If this is the destination update costToDest, so we can stop looking at useless Vertices
 					g.costToDest = current.cost + dist
 					g.destFound = true
 					continue // Do not push if dest
 				}
 
 				//Push this updated Vertex into the list to be evaluated, pushes in sorted form
-				g.list.PushOrdered(&g.Verticies[v])
+				g.list.PushOrdered(&g.Vertices[v])
 			}
 		}
 	}
@@ -80,25 +80,25 @@ func (g *Graph) finally(src, dest int) (gravelmap.BestPath, error) {
 
 func (g *Graph) bestPath(src, dest int) gravelmap.BestPath {
 	var path []int
-	for c := g.Verticies[dest]; c.ID != src; c = g.Verticies[c.bestVerticies[0]] {
+	for c := g.Vertices[dest]; c.ID != src; c = g.Vertices[c.bestVertices[0]] {
 		path = append(path, c.ID)
 	}
 	path = append(path, src)
 	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
 		path[i], path[j] = path[j], path[i]
 	}
-	return gravelmap.BestPath{Distance: g.Verticies[dest].cost, Path: path}
+	return gravelmap.BestPath{Distance: g.Vertices[dest].cost, Path: path}
 }
 
 // 1. Reset state
 // 2. Reset the cost to destination
-// set all best verticies to -1 (unused) and set the defaults *almost* as bad
+// set all best vertices to -1 (unused) and set the defaults *almost* as bad
 func (g *Graph) setDefaults() {
 	g.destFound = false
 	g.costToDest = int64(math.MaxInt64)
 
-	for i := range g.Verticies {
-		g.Verticies[i].bestVerticies = []int{-1}
-		g.Verticies[i].cost = int64(math.MaxInt64) - 2
+	for i := range g.Vertices {
+		g.Vertices[i].bestVertices = []int{-1}
+		g.Vertices[i].cost = int64(math.MaxInt64) - 2
 	}
 }
