@@ -6,8 +6,8 @@ import (
 
 //Graph contains all the graph details
 type Graph struct {
-	//slice of all verticies available
-	Verticies []Vertex
+	//slice of all vertices available
+	Vertices []Vertex
 
 	costToDest int64
 	destFound  bool
@@ -21,38 +21,33 @@ func NewGraph() *Graph {
 
 //AddNewVertex adds a new vertex at the next available index
 func (g *Graph) AddNewVertex() *Vertex {
-	for i, v := range g.Verticies {
+	for i, v := range g.Vertices {
 		if i != v.ID {
-			g.Verticies[i] = Vertex{ID: i}
-			return &g.Verticies[i]
+			g.Vertices[i] = Vertex{ID: i}
+			return &g.Vertices[i]
 		}
 	}
-	return g.AddVertex(len(g.Verticies))
+	return g.AddVertex(len(g.Vertices))
 }
 
 //AddVertex adds a single vertex
 func (g *Graph) AddVertex(ID int) *Vertex {
-	g.addVerticies(Vertex{ID: ID})
-	return &g.Verticies[ID]
-}
-
-//addVerticies adds the listed verticies to the graph, overwrites any existing Vertex with the same ID.
-func (g *Graph) addVerticies(verticies ...Vertex) {
-	for _, v := range verticies {
-		v.bestVerticies = []int{-1}
-		if v.ID >= len(g.Verticies) {
-			newV := make([]Vertex, v.ID+1-len(g.Verticies))
-			g.Verticies = append(g.Verticies, newV...)
-		}
-		g.Verticies[v.ID] = v
+	v := Vertex{ID: ID}
+	v.bestVertices = []int{-1}
+	if v.ID >= len(g.Vertices) {
+		newV := make([]Vertex, v.ID+1-len(g.Vertices))
+		g.Vertices = append(g.Vertices, newV...)
 	}
+	g.Vertices[v.ID] = v
+
+	return &g.Vertices[ID]
 }
 
 //AddArc is the default method for adding an arc from a Source Vertex to a Destination Vertex
 func (g *Graph) AddArc(Source, Destination int, Distance int64) error {
-	if len(g.Verticies) <= Source || len(g.Verticies) <= Destination {
+	if len(g.Vertices) <= Source || len(g.Vertices) <= Destination {
 		return errors.New("Source/Destination not found")
 	}
-	g.Verticies[Source].AddArc(Destination, Distance)
+	g.Vertices[Source].AddArc(Destination, Distance)
 	return nil
 }
