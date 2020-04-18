@@ -1,17 +1,17 @@
-package dijkstra
+package graph
 
 import (
 	"sort"
 )
 
-type dijkstraList interface {
+type DijkstraList interface {
 	PushOrdered(*Vertex)
 	PopOrdered() *Vertex
 	Len() int
 }
 
 //PriorityQueueNewLong creates a new priority queue for long solving
-func priorityQueueNewLong() dijkstraList {
+func PriorityQueueNewLong() DijkstraList {
 	l := &priorityQueueWrapper{new(priorityQueueLong)}
 	n := l.Len()
 	for i := n/2 - 1; i >= 0; i-- {
@@ -32,7 +32,7 @@ type priorityQueueWrapper struct {
 
 func (pq priorityQueueLong) Less(i, j int) bool {
 	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq.priorityQueueBase[i].value.cost < pq.priorityQueueBase[j].value.cost
+	return pq.priorityQueueBase[i].value.Cost < pq.priorityQueueBase[j].value.Cost
 }
 
 // An Item is something we manage in a priority queue.

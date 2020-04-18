@@ -1,4 +1,4 @@
-package dijkstra
+package graph
 
 import (
 	"testing"

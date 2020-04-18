@@ -1,4 +1,4 @@
-package dijkstra
+package graph
 
 //THE FOLLOWING FILE IS BASED FROM GO AUTHORS EDITED MINORLY AND LAZILY TO SUIT MY NEEDS
 //https://golang.org/src/container/list/list.go?m=text
@@ -29,8 +29,8 @@ type linkedList struct {
 }
 
 // Init initializes or clears list l.
-func linkedListNewLong() dijkstraList {
-	return dijkstraList(new(linkedList).init())
+func LinkedListNewLong() DijkstraList {
+	return DijkstraList(new(linkedList).init())
 }
 
 // Init initializes or clears list l.
@@ -98,11 +98,11 @@ func (l *linkedList) pushOrdered(v *Vertex) *element {
 		return l.pushFront(v)
 	}
 	back := l.back()
-	if back.Value.cost < v.cost {
+	if back.Value.Cost < v.Cost {
 		return l.insertValue(v, l.root.prev)
 	}
 	current := l.front()
-	for current.Value.cost < v.cost && current.Value.ID != v.ID { //don't need to chack if current=back cause back already checked
+	for current.Value.Cost < v.Cost && current.Value.ID != v.ID { //don't need to chack if current=back cause back already checked
 		current = current.next
 	}
 	if current.Value.ID == v.ID {

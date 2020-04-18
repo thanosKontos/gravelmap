@@ -13,11 +13,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/dijkstra"
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
+	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/kml"
 	"github.com/thanosKontos/gravelmap/route"
+	"github.com/thanosKontos/gravelmap/routing_algorithm/dijkstra"
 	"github.com/thanosKontos/gravelmap/way"
 )
 
@@ -38,7 +39,7 @@ func createWebServerCommand() *cobra.Command {
 
 // createRoutingDataCmdRun defines the command run actions.
 func createWebServerCmdRun() error {
-	mtbGraph := dijkstra.NewGraph()
+	mtbGraph := graph.NewGraph()
 	dataFile, err := os.Open("_files/graph_bicycle.gob")
 	if err != nil {
 		return err
@@ -51,7 +52,7 @@ func createWebServerCmdRun() error {
 	}
 	dataFile.Close()
 
-	footGraph := dijkstra.NewGraph()
+	footGraph := graph.NewGraph()
 	dataFile, err = os.Open("_files/graph_foot.gob")
 	if err != nil {
 		return err
@@ -64,7 +65,7 @@ func createWebServerCmdRun() error {
 	}
 	dataFile.Close()
 
-	graphs := map[string]*dijkstra.Graph{
+	graphs := map[string]*graph.Graph{
 		"bicycle": mtbGraph,
 		"foot":    footGraph,
 	}
@@ -81,7 +82,7 @@ func createWebServerCmdRun() error {
 	return nil
 }
 
-func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*dijkstra.Graph) {
+func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*graph.Graph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	pointFrom, err := getPointFromParams("from", r)
@@ -129,7 +130,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*dij
 	fmt.Fprintf(w, string(json))
 }
 
-func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Graph) {
+func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.Graph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	pointFrom, err := getPointFromParams("from", r)

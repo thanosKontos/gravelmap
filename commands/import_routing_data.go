@@ -7,14 +7,15 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/dijkstra"
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/elevation"
 	"github.com/thanosKontos/gravelmap/encode"
+	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/path"
+	"github.com/thanosKontos/gravelmap/routing_algorithm/dijkstra"
 	"github.com/thanosKontos/gravelmap/way"
 )
 
@@ -82,7 +83,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 
 	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, routingMode.weighter)
 
-	graph := dijkstra.NewGraph()
+	graph := graph.NewGraph()
 	wayStorer := way.NewFileStore("_files", pointEncoder)
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 

@@ -1,4 +1,4 @@
-package dijkstra
+package graph
 
 import "github.com/thanosKontos/gravelmap"
 
