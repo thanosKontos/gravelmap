@@ -8,10 +8,6 @@ import (
 type Graph struct {
 	//slice of all vertices available
 	Vertices []Vertex
-
-	costToDest int64
-	destFound  bool
-	list       dijkstraList
 }
 
 //NewGraph creates a new empty graph

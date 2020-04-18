@@ -112,7 +112,10 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*dij
 		return
 	}
 
-	router := route.NewGmRouter(edgeFinder, graphs[routingMode], edgeReader)
+	graph := graphs[routingMode]
+	dijkstra := dijkstra.NewDijkstraRouter(graph)
+
+	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {
 		w.WriteHeader(500)
@@ -148,7 +151,8 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *dijkstra.Gr
 		return
 	}
 
-	router := route.NewGmRouter(edgeFinder, graph, edgeReader)
+	dijkstra := dijkstra.NewDijkstraRouter(graph)
+	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {
 		w.WriteHeader(500)
