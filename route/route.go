@@ -30,8 +30,6 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 		return []gravelmap.RoutingLeg{}, err
 	}
 
-	// NewDijkstra(r.shortestFinder)
-
 	best, err := r.graph.FindShortest(int(edgeFrom), int(edgeTo))
 	if err != nil {
 		return []gravelmap.RoutingLeg{}, err

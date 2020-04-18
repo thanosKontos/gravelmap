@@ -114,14 +114,13 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 	}
 
 	graph := graphs[routingMode]
-	dijkstra := dijkstra.NewDijkstraRouter(graph)
+	dijkstra := dijkstra.NewDijkstra(graph)
 
 	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {
 		w.WriteHeader(500)
-		json, _ := json.Marshal(err)
-		fmt.Fprintf(w, string(json))
+		fmt.Fprintf(w, `{"message": "%s"}`, err)
 
 		return
 	}
@@ -152,7 +151,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.Graph
 		return
 	}
 
-	dijkstra := dijkstra.NewDijkstraRouter(graph)
+	dijkstra := dijkstra.NewDijkstra(graph)
 	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {

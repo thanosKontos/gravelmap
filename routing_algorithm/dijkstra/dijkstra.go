@@ -7,7 +7,7 @@ import (
 	"github.com/thanosKontos/gravelmap/graph"
 )
 
-type dijkstraRouter struct {
+type dijkstra struct {
 	graph *graph.Graph
 
 	costToDest int64
@@ -15,19 +15,19 @@ type dijkstraRouter struct {
 	list       graph.DijkstraList
 }
 
-func NewDijkstraRouter(graph *graph.Graph) *dijkstraRouter {
-	return &dijkstraRouter{
+func NewDijkstra(graph *graph.Graph) *dijkstra {
+	return &dijkstra{
 		graph: graph,
 	}
 }
 
 //Shortest calculates the shortest path from src to dest
-func (g *dijkstraRouter) FindShortest(src, dest int) (gravelmap.BestPath, error) {
+func (g *dijkstra) FindShortest(src, dest int) (gravelmap.BestPath, error) {
 	g.setup(src)
 	return g.postSetupEvaluate(src, dest)
 }
 
-func (g *dijkstraRouter) setup(src int) {
+func (g *dijkstra) setup(src int) {
 	g.setupList()
 	g.setDefaults()
 
@@ -36,7 +36,7 @@ func (g *dijkstraRouter) setup(src int) {
 	g.list.PushOrdered(&g.graph.Vertices[src])
 }
 
-func (g *dijkstraRouter) setupList() {
+func (g *dijkstra) setupList() {
 	if len(g.graph.Vertices) < 800 {
 		g.list = graph.LinkedListNewLong()
 		return
@@ -46,7 +46,7 @@ func (g *dijkstraRouter) setupList() {
 	return
 }
 
-func (g *dijkstraRouter) postSetupEvaluate(src, dest int) (gravelmap.BestPath, error) {
+func (g *dijkstra) postSetupEvaluate(src, dest int) (gravelmap.BestPath, error) {
 	var current *graph.Vertex
 	oldCurrent := -1
 	for g.list.Len() > 0 {
@@ -86,14 +86,14 @@ func (g *dijkstraRouter) postSetupEvaluate(src, dest int) (gravelmap.BestPath, e
 	return g.finally(src, dest)
 }
 
-func (g *dijkstraRouter) finally(src, dest int) (gravelmap.BestPath, error) {
+func (g *dijkstra) finally(src, dest int) (gravelmap.BestPath, error) {
 	if !g.destFound {
 		return gravelmap.BestPath{}, ErrNoPath
 	}
 	return g.bestPath(src, dest), nil
 }
 
-func (g *dijkstraRouter) bestPath(src, dest int) gravelmap.BestPath {
+func (g *dijkstra) bestPath(src, dest int) gravelmap.BestPath {
 	var path []int
 	for c := g.graph.Vertices[dest]; c.ID != src; c = g.graph.Vertices[c.BestVertices[0]] {
 		path = append(path, c.ID)
@@ -108,7 +108,7 @@ func (g *dijkstraRouter) bestPath(src, dest int) gravelmap.BestPath {
 // 1. Reset state
 // 2. Reset the cost to destination
 // set all best vertices to -1 (unused) and set the defaults *almost* as bad
-func (g *dijkstraRouter) setDefaults() {
+func (g *dijkstra) setDefaults() {
 	g.destFound = false
 	g.costToDest = int64(math.MaxInt64)
 

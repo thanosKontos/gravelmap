@@ -104,7 +104,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 	graphFile.Close()
 	logger.Info("Graph created")
 
-	dijkstra := dijkstra.NewDijkstraRouter(graph)
+	dijkstra := dijkstra.NewDijkstra(graph)
 	best, _ := dijkstra.FindShortest(14827, 1037)
 
 	logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))

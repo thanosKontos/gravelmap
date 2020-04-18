@@ -5,11 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/thanosKontos/gravelmap"
+	"github.com/thanosKontos/gravelmap/graph"
 )
 
 func TestCorrectSmallGraphFindShortest(t *testing.T) {
-	graph := NewGraph()
-	dijkstraRouter := NewDijkstraRouter(graph)
+	graph := graph.NewGraph()
+	dijkstraRouter := NewDijkstra(graph)
 
 	graph.AddVertex(0)
 	graph.AddVertex(1)
@@ -34,8 +35,8 @@ func TestCorrectSmallGraphFindShortest(t *testing.T) {
 }
 
 func TestCorrectLargeGraphFindShortest(t *testing.T) {
-	graph := NewGraph()
-	dijkstraRouter := NewDijkstraRouter(graph)
+	graph := graph.NewGraph()
+	dijkstraRouter := NewDijkstra(graph)
 
 	for i := 0; i < 2000; i++ {
 		v := graph.AddNewVertex()
