@@ -11,10 +11,11 @@ import (
 	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/elevation"
 	"github.com/thanosKontos/gravelmap/encode"
-	graph2 "github.com/thanosKontos/gravelmap/graph"
+	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/path"
+	"github.com/thanosKontos/gravelmap/routing_algorithm/dijkstra"
 	"github.com/thanosKontos/gravelmap/way"
 )
 
@@ -82,7 +83,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 
 	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, routingMode.weighter)
 
-	graph := graph2.NewDijkstra()
+	graph := graph.NewGraph()
 	wayStorer := way.NewFileStore("_files", pointEncoder)
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
@@ -99,12 +100,12 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 	// also persist it to file
 	graphFile, _ := os.Create(fmt.Sprintf("_files/%s", routingMode.graphFilename))
 	dataEncoder := gob.NewEncoder(graphFile)
-	dataEncoder.Encode(graph.Get())
+	dataEncoder.Encode(graph)
 	graphFile.Close()
 	logger.Info("Graph created")
 
-	dGraph := graph.Get()
-	best, _ := dGraph.FindShortest(14827, 1037)
+	dijkstra := dijkstra.NewDijkstra(graph)
+	best, _ := dijkstra.FindShortest(14827, 1037)
 
 	logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))
 

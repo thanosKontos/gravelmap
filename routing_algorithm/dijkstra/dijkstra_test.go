@@ -5,10 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/thanosKontos/gravelmap"
+	"github.com/thanosKontos/gravelmap/graph"
 )
 
 func TestCorrectSmallGraphFindShortest(t *testing.T) {
-	graph := NewGraph()
+	graph := graph.NewGraph()
+	dijkstraRouter := NewDijkstra(graph)
 
 	graph.AddVertex(0)
 	graph.AddVertex(1)
@@ -23,23 +25,25 @@ func TestCorrectSmallGraphFindShortest(t *testing.T) {
 	graph.AddArc(0, 4, 10)
 	graph.AddArc(2, 4, 5)
 
-	bp, err := graph.FindShortest(0, 3)
+	bp, err := dijkstraRouter.FindShortest(0, 3)
 	assert.Nil(t, err)
 	assert.Equal(t, gravelmap.BestPath{Distance: 1, Path: []int{0, 2, 3}}, bp)
 
-	bp, err = graph.FindShortest(0, 4)
+	bp, err = dijkstraRouter.FindShortest(0, 4)
 	assert.Nil(t, err)
 	assert.Equal(t, gravelmap.BestPath{Distance: 6, Path: []int{0, 2, 4}}, bp)
 }
 
 func TestCorrectLargeGraphFindShortest(t *testing.T) {
-	g := NewGraph()
+	graph := graph.NewGraph()
+	dijkstraRouter := NewDijkstra(graph)
+
 	for i := 0; i < 2000; i++ {
-		v := g.AddNewVertex()
+		v := graph.AddNewVertex()
 		v.AddArc(i+1, 1)
 	}
-	g.AddNewVertex()
-	bp, err := g.FindShortest(0, 2000)
+	graph.AddNewVertex()
+	bp, err := dijkstraRouter.FindShortest(0, 2000)
 
 	assert.Nil(t, err)
 	assert.Equal(t, int64(2000), bp.Distance)

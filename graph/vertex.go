@@ -1,4 +1,4 @@
-package dijkstra
+package graph
 
 //Vertex is a single node in the network, contains it's ID, best cost (to
 // itself from the src) and the weight to go to each other connected node (Vertex)
@@ -9,13 +9,13 @@ type Vertex struct {
 	Arcs map[int]int64
 
 	//best cost to the Vertex
-	cost         int64
-	bestVertices []int
+	Cost         int64
+	BestVertices []int
 }
 
 //NewVertex creates a new vertex
 func NewVertex(ID int) *Vertex {
-	return &Vertex{ID: ID, bestVertices: []int{-1}, Arcs: map[int]int64{}}
+	return &Vertex{ID: ID, BestVertices: []int{-1}, Arcs: map[int]int64{}}
 }
 
 //AddArc adds an arc to the vertex, it's up to the user to make sure this is used

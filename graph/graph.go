@@ -1,4 +1,4 @@
-package dijkstra
+package graph
 
 import (
 	"errors"
@@ -8,10 +8,6 @@ import (
 type Graph struct {
 	//slice of all vertices available
 	Vertices []Vertex
-
-	costToDest int64
-	destFound  bool
-	list       dijkstraList
 }
 
 //NewGraph creates a new empty graph
@@ -33,7 +29,7 @@ func (g *Graph) AddNewVertex() *Vertex {
 //AddVertex adds a single vertex
 func (g *Graph) AddVertex(ID int) *Vertex {
 	v := Vertex{ID: ID}
-	v.bestVertices = []int{-1}
+	v.BestVertices = []int{-1}
 	if v.ID >= len(g.Vertices) {
 		newV := make([]Vertex, v.ID+1-len(g.Vertices))
 		g.Vertices = append(g.Vertices, newV...)

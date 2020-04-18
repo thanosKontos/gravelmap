@@ -6,16 +6,16 @@ import (
 )
 
 type router struct {
-	edgeFinder     gravelmap.EdgeFinder
-	shortestFinder gravelmap.ShortestFinder
-	edgeReader     gravelmap.EdgeReader
+	edgeFinder gravelmap.EdgeFinder
+	graph      gravelmap.ShortestFinder
+	edgeReader gravelmap.EdgeReader
 }
 
-func NewGmRouter(edgeFinder gravelmap.EdgeFinder, shortestFinder gravelmap.ShortestFinder, edgeReader gravelmap.EdgeReader) *router {
+func NewGmRouter(edgeFinder gravelmap.EdgeFinder, graph gravelmap.ShortestFinder, edgeReader gravelmap.EdgeReader) *router {
 	return &router{
-		edgeFinder:     edgeFinder,
-		shortestFinder: shortestFinder,
-		edgeReader:     edgeReader,
+		edgeFinder: edgeFinder,
+		graph:      graph,
+		edgeReader: edgeReader,
 	}
 }
 
@@ -30,7 +30,7 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 		return []gravelmap.RoutingLeg{}, err
 	}
 
-	best, err := r.shortestFinder.FindShortest(int(edgeFrom), int(edgeTo))
+	best, err := r.graph.FindShortest(int(edgeFrom), int(edgeTo))
 	if err != nil {
 		return []gravelmap.RoutingLeg{}, err
 	}
