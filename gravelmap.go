@@ -166,7 +166,7 @@ type Weighter interface {
 	WeightOffRoad(wayType int8) float64
 	WeightWayAcceptance(tags map[string]string) BidirectionalWeight
 	WeightVehicleAcceptance(tags map[string]string) float64
-	WeightElevation(elevation *WayElevation) BidirectionalWeight
+	WeightElevation(tags map[string]string, elevation *WayElevation) BidirectionalWeight
 }
 
 //BestPath contains the solution of the most optimal path

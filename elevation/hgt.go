@@ -22,15 +22,23 @@ type hgt struct {
 	destinationDir string
 	nasaUsername   string
 	nasaPassword   string
+	distanceCalc   gravelmap.DistanceCalculator
 	logger         gravelmap.Logger
 }
 
-func NewHgt(destinationDir, nasaUsername, nasaPassword string, logger gravelmap.Logger) *hgt {
+func NewHgt(
+	destinationDir,
+	nasaUsername,
+	nasaPassword string,
+	distanceCalc gravelmap.DistanceCalculator,
+	logger gravelmap.Logger,
+	) *hgt {
 	return &hgt{
 		files:          make(map[string]*os.File),
 		destinationDir: destinationDir,
 		nasaUsername:   nasaUsername,
 		nasaPassword:   nasaPassword,
+		distanceCalc:   distanceCalc,
 		logger:         logger,
 	}
 }
@@ -45,39 +53,9 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 	}
 
 	for i, pt := range points {
-		dms := getDMSFromPoint(pt)
-		file, err := h.getFile(dms)
+		ele, err := h.getPointElevation(pt)
 		if err != nil {
 			return nil, err
-		}
-
-		latDiff := pt.Lat - math.Floor(pt.Lat)
-		lngDiff := pt.Lng - math.Floor(pt.Lng)
-
-		row := oneArcSecondRowColCount - int64(math.Round(latDiff*oneArcSecondRowColCount))
-		col := int64(math.Round(lngDiff * oneArcSecondRowColCount))
-
-		position := row*oneArcSecondRowColCount + col
-
-		file.Seek(position*2, 0)
-
-		data, err := readNextBytes(file, 2)
-		if err != nil {
-			return nil, err
-		}
-		buffer := bytes.NewBuffer(data)
-		d := make([]byte, 2)
-
-		err = binary.Read(buffer, binary.BigEndian, d)
-		if err != nil {
-			return nil, err
-		}
-
-		ele := int32(binary.BigEndian.Uint16(d))
-		if ele > 60000 {
-			h.logger.Debug("Could not grade (wrong elevation). Probably water, will use 0 instead")
-
-			ele = 0
 		}
 
 		if i == 0 {
@@ -101,15 +79,118 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 	}, nil
 }
 
-func readNextBytes(file *os.File, number int) ([]byte, error) {
-	bytes := make([]byte, number)
+type closebyEle struct {
+	distance int64
+	ele int32
+	weight float64
+}
 
-	_, err := file.Read(bytes)
+func (h *hgt) getPointElevation(pt gravelmap.Point) (int32, error) {
+	dms := getDMSFromPoint(pt)
+	f, err := h.getFile(dms)
+	if err != nil {
+		return 0, err
+	}
+
+	baseLat := math.Floor(pt.Lat)
+	baseLng := math.Floor(pt.Lng)
+
+	latDiff := pt.Lat - baseLat
+	lngDiff := pt.Lng - baseLng
+
+	rowMax := oneArcSecondRowColCount - int64(math.Floor(latDiff*oneArcSecondRowColCount))
+	rowMin := rowMax - 1
+	if rowMax == 0 {
+		rowMin = 0
+	}
+
+	colMin := int64(math.Floor(lngDiff * oneArcSecondRowColCount))
+	colMax := colMin + 1
+	if colMax == oneArcSecondRowColCount {
+		colMax = oneArcSecondRowColCount
+	}
+
+	minLat := baseLat + (float64(3601-rowMax) * (1.0/3601))
+	maxLat := baseLat + (float64(3601-rowMin) * (1.0/3601))
+	minLng := baseLng + (1.0/3601)*float64(colMin)
+	maxLng := baseLng + (1.0/3601)*float64(colMax)
+
+	var closebyElevations []closebyEle
+	topLeftEle, err := h.getEleFileRecord(f, rowMax, colMax)
+	if err == nil {
+		closebyElevations = append(closebyElevations, closebyEle{h.distanceCalc.Calculate(pt, gravelmap.Point{Lat: maxLat, Lng: minLng}), topLeftEle, 0.0})
+	}
+
+	topRightEle, err := h.getEleFileRecord(f, rowMax, colMin)
+	if err == nil {
+		closebyElevations = append(closebyElevations, closebyEle{h.distanceCalc.Calculate(pt, gravelmap.Point{Lat: maxLat, Lng: maxLng}), topRightEle, 0.0})
+	}
+
+	bottomLeftEle, err := h.getEleFileRecord(f, rowMin, colMax)
+	if err == nil {
+		closebyElevations = append(closebyElevations, closebyEle{h.distanceCalc.Calculate(pt, gravelmap.Point{Lat: minLat, Lng: minLng}), bottomLeftEle, 0.0})
+	}
+
+	bottomRightEle, err := h.getEleFileRecord(f, rowMin, colMin)
+	if err == nil {
+		closebyElevations = append(closebyElevations, closebyEle{h.distanceCalc.Calculate(pt, gravelmap.Point{Lat: minLat, Lng: maxLng}), bottomRightEle, 0.0})
+	}
+
+	largestDist := int64(0)
+	for _, closebyEle := range closebyElevations {
+		if closebyEle.distance > largestDist {
+			largestDist = closebyEle.distance
+		}
+	}
+
+	totalWeights := 0.0
+	for i, closebyEle := range closebyElevations {
+		closebyElevations[i].weight = float64(largestDist-closebyEle.distance)*100.0/float64(largestDist)
+		totalWeights += closebyElevations[i].weight
+	}
+
+	elev := 0.0
+	for _, closebyEle := range closebyElevations {
+		elev += float64(closebyEle.ele)*closebyEle.weight/totalWeights
+	}
+
+	return int32(elev), nil
+}
+
+func (h *hgt) getEleFileRecord(f *os.File, row, col int64) (int32, error) {
+	pos := row*oneArcSecondRowColCount + col
+	f.Seek(pos*2, 0)
+
+	data, err := readNextBytes(f, 2)
+	if err != nil {
+		return 0, err
+	}
+	buffer := bytes.NewBuffer(data)
+	d := make([]byte, 2)
+
+	err = binary.Read(buffer, binary.BigEndian, d)
+	if err != nil {
+		return 0, err
+	}
+
+	ele := int32(binary.BigEndian.Uint16(d))
+	if ele > 60000 {
+		h.logger.Debug("Could not grade (wrong elevation). Probably water, will use 0 instead")
+
+		ele = 0
+	}
+
+	return ele, nil
+}
+
+func readNextBytes(file *os.File, number int) ([]byte, error) {
+	bts := make([]byte, number)
+	_, err := file.Read(bts)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	return bytes, nil
+	return bts, nil
 }
 
 // TODO: replace the real wget and tar commands with net/http and archive/zip in order to be testable and less dependent

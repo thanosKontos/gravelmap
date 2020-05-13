@@ -13,7 +13,7 @@ func NewHikingWeight() *hikingWeight {
 
 func (b *hikingWeight) WeightOffRoad(wayType int8) float64 {
 	if wayType == gravelmap.WayTypeUnaved {
-		return 0.6
+		return 0.2
 	}
 
 	return 1.0
@@ -77,7 +77,7 @@ func getFootVehicleWayAcceptance(tags map[string]string) int32 {
 //7-9%: Starting to become uncomfortable for seasoned riders, and very challenging for new climbers.
 //10%-15%: A painful gradient, especially if maintained for any length of time
 //16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
-func (b *hikingWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
+func (b *hikingWeight) WeightElevation(tags map[string]string, elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
 	if elevation == nil {
 		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
 	}

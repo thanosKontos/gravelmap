@@ -53,7 +53,7 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 	wayAcceptanceWeight := ce.weighter.WeightWayAcceptance(tags)
 	vehicleAcceptanceWeight := ce.weighter.WeightVehicleAcceptance(tags)
 	offRoadWeight := ce.weighter.WeightOffRoad(wayType)
-	elevationWeight := ce.weighter.WeightElevation(elevation)
+	elevationWeight := ce.weighter.WeightElevation(tags, elevation)
 
 	return gravelmap.WayEvaluation{
 		BidirectionalCost: gravelmap.BidirectionalCost{

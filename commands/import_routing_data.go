@@ -70,8 +70,14 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 	logger.Info("Node file written")
 
 	// ## 3. Process OSM ways (store way info and create graph)
-	elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 	distanceCalculator := distance.NewHaversine()
+	elevationGetterCloser := elevation.NewHgt(
+		"/tmp",
+		os.Getenv("NASA_USERNAME"),
+		os.Getenv("NASA_PASSWORD"),
+		distanceCalculator,
+		logger,
+		)
 	pathSimplifier := path.NewSimplifiedDouglasPeucker(distanceCalculator)
 	pointEncoder := encode.NewGooglemaps()
 

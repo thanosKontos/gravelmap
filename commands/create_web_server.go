@@ -24,57 +24,50 @@ import (
 
 // createWebServerCommand creates a web server for testing purposes.
 func createWebServerCommand() *cobra.Command {
+	var (
+		routingMd string
+	)
+
 	createWebServerCmd := &cobra.Command{
 		Use:   "create-web-server",
 		Short: "create a simple server to host a test route website",
 		Long:  "create a simple server to host a test route website",
 	}
 
+	createWebServerCmd.Flags().StringVar(&routingMd, "routing-mode", "bicycle", "The routing mode.")
 	createWebServerCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return createWebServerCmdRun()
+		return createWebServerCmdRun(routingMd)
 	}
 
 	return createWebServerCmd
 }
 
 // createRoutingDataCmdRun defines the command run actions.
-func createWebServerCmdRun() error {
-	mtbGraph := graph.NewGraph()
-	dataFile, err := os.Open("_files/graph_bicycle.gob")
+func createWebServerCmdRun(routingMd string) error {
+	graphFilename := "_files/graph_bicycle.gob"
+	if routingMd == "foot" {
+		graphFilename = "_files/graph_foot.gob"
+	}
+
+	graph := graph.NewGraph()
+	dataFile, err := os.Open(graphFilename)
 	if err != nil {
 		return err
 	}
 
 	dataDecoder := gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&mtbGraph)
+	err = dataDecoder.Decode(&graph)
 	if err != nil {
 		return err
 	}
 	dataFile.Close()
 
-	footGraph := graph.NewGraph()
-	dataFile, err = os.Open("_files/graph_foot.gob")
-	if err != nil {
-		return err
-	}
-
-	dataDecoder = gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&footGraph)
-	if err != nil {
-		return err
-	}
-	dataFile.Close()
-
-	graphs := map[string]*graph.Graph{
-		"bicycle": mtbGraph,
-		"foot":    footGraph,
-	}
 
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {
-		routeHandler(w, r, graphs)
+		routeHandler(w, r, graph)
 	})
 	http.HandleFunc("/create-kml", func(w http.ResponseWriter, r *http.Request) {
-		createKmlHandler(w, r, mtbGraph)
+		createKmlHandler(w, r, graph)
 	})
 
 	http.ListenAndServe(":8000", nil)
@@ -82,7 +75,7 @@ func createWebServerCmdRun() error {
 	return nil
 }
 
-func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*graph.Graph) {
+func routeHandler(w http.ResponseWriter, r *http.Request, graph *graph.Graph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	pointFrom, err := getPointFromParams("from", r)
@@ -94,15 +87,6 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 		return
 	}
 
-	routingModeParam, ok := r.URL.Query()["routing_mode"]
-	if !ok || len(routingModeParam) != 1 || (routingModeParam[0] != "bicycle" && routingModeParam[0] != "foot") {
-		w.WriteHeader(400)
-		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
-
-		return
-	}
-	routingMode := routingModeParam[0]
-
 	distanceCalc := distance.NewHaversine()
 	edgeFinder := edge.NewBBoxFileRead("_files", distanceCalc)
 
@@ -113,9 +97,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 		return
 	}
 
-	graph := graphs[routingMode]
 	dijkstra := dijkstra.NewDijkstra(graph)
-
 	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {

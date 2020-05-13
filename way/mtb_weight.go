@@ -1,6 +1,8 @@
 package way
 
 import (
+	"strconv"
+
 	"github.com/thanosKontos/gravelmap"
 )
 
@@ -16,7 +18,7 @@ func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
 		return 0.6
 	}
 
-	return 1.0
+	return 5.0
 }
 
 func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.BidirectionalWeight {
@@ -88,8 +90,30 @@ func (b *bicycleWeight) WeightVehicleAcceptance(tags map[string]string) float64 
 }
 
 func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
-	if _, ok := tags["mtb:scale"]; ok {
-		return vehicleAcceptanceExclusively
+	if val, ok := tags["mtb:scale:imba"]; ok {
+		imbaScale, err := strconv.Atoi(val)
+		if err == nil {
+			if imbaScale >= 4 {
+				return vehicleAcceptanceNo
+			} else if imbaScale >= 2 {
+				return vehicleAcceptanceYes
+			} else {
+				return vehicleAcceptanceExclusively
+			}
+		}
+	}
+
+	if val, ok := tags["mtb:scale"]; ok {
+		mbScale, err := strconv.Atoi(val)
+		if err == nil {
+			if mbScale >= 3 {
+				return vehicleAcceptanceNo
+			} else if mbScale >= 2 {
+				return vehicleAcceptanceYes
+			} else {
+				return vehicleAcceptanceExclusively
+			}
+		}
 	}
 
 	if val, ok := tags["bicycle"]; ok {
@@ -141,35 +165,49 @@ func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
 //7-9%: Starting to become uncomfortable for seasoned riders, and very challenging for new climbers.
 //10%-15%: A painful gradient, especially if maintained for any length of time
 //16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
-func (b *bicycleWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
-	if elevation == nil {
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
+func (b *bicycleWeight) WeightElevation(tags map[string]string, elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
+	elevWeight := gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
+	if elevation != nil {
+		switch {
+		case elevation.BidirectionalElevationInfo.Normal.Grade < -15:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < -10:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 1, Reverse: 10}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < -7:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 1, Reverse: 7}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < -4:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 3}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < -2:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1.2}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < 0:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < 2:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 1, Reverse: 0.8}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < 4:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 1.2, Reverse: 0.8}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < 7:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 3, Reverse: 0.8}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < 10:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 7, Reverse: 1}
+		case elevation.BidirectionalElevationInfo.Normal.Grade < 15:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 10, Reverse: 1}
+		default:
+			elevWeight = gravelmap.BidirectionalWeight{Normal: 15, Reverse: 1}
+		}
 	}
 
-	switch {
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -15:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -10:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 10}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -7:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 7}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -4:
-		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 3}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -2:
-		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1.2}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 0:
-		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 2:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 0.8}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 4:
-		return gravelmap.BidirectionalWeight{Normal: 1.2, Reverse: 0.8}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 7:
-		return gravelmap.BidirectionalWeight{Normal: 3, Reverse: 0.8}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 10:
-		return gravelmap.BidirectionalWeight{Normal: 7, Reverse: 1}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 15:
-		return gravelmap.BidirectionalWeight{Normal: 10, Reverse: 1}
-	default:
-		return gravelmap.BidirectionalWeight{Normal: 15, Reverse: 1}
+	if val, ok := tags["mtb:scale:uphill"]; ok {
+		uphill, err := strconv.Atoi(val)
+		if err == nil {
+			if uphill >= 4 {
+				elevWeight = gravelmap.BidirectionalWeight{Normal: 15, Reverse: 1}
+			} else if uphill >= 2 {
+				elevWeight = gravelmap.BidirectionalWeight{Normal: 10, Reverse: 1}
+			} else {
+				elevWeight = gravelmap.BidirectionalWeight{Normal: 3, Reverse: 1}
+			}
+		}
 	}
+
+	return elevWeight
 }
