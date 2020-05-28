@@ -11,17 +11,19 @@ Example of building and running in Ubuntu x64:
 ```bash
 git clone git@github.com:thanosKontos/gravelmap.git
 cd gravelmap
+cp .env.dist .env
 env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap version
 ```
 
 ## Import OSM data
 
-The command below will extract the osm data and create all the routing files needed.
+The 2 commands below will extract the needed osm data for routing and create all the routing files.
 
-At the moment the graph is created using plain dijkstra.
+At the moment the graph.
 
 ```bash
-go run cmd/main.go import-routing-data -v info --input /Users/thanoskontos/Downloads/bremen_for_routing.osm.pbf
+go run cmd/main.go filter-osm --input ~/Downloads/bremen-latest.osm.pbf --output ~/Downloads/bremen_for_routing.osm.pbf
+go run cmd/main.go import-routing-data -v info --input ~/Downloads/bremen_for_routing.osm.pbf
 ```
 
 ## Create web-server
@@ -34,7 +36,7 @@ Plus is a nice way for me to debug the result in a nice interface.
 env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap create-web-server
 ```
 
-Open example_website.html to test routing
+Open example_website_from_to.html to test routing
 
 ![](resources/example_website.png)
 
