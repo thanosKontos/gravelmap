@@ -6,6 +6,8 @@ Gravelmap is a routing engine made for off-road adventurers (hikers, mountain bi
 
 ## Installation guide
 
+**Prerequisites:** You need to have installed in your system *osmium* (https://osmcode.org/osmium-tool/), *wget* and *unzip* commands (also you need to have them set in $PATH).
+
 Example of building and running in Ubuntu x64:
 
 ```bash

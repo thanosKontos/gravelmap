@@ -52,22 +52,8 @@ func createWebServerCmdRun() error {
 	}
 	dataFile.Close()
 
-	footGraph := graph.NewGraph()
-	dataFile, err = os.Open("_files/graph_foot.gob")
-	if err != nil {
-		return err
-	}
-
-	dataDecoder = gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&footGraph)
-	if err != nil {
-		return err
-	}
-	dataFile.Close()
-
 	graphs := map[string]*graph.Graph{
 		"bicycle": mtbGraph,
-		"foot":    footGraph,
 	}
 
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {

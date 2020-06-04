@@ -112,7 +112,7 @@ func readNextBytes(file *os.File, number int) ([]byte, error) {
 	return bytes, nil
 }
 
-// TODO: replace the real wget and tar commands with net/http and archive/zip in order to be testable and less dependent
+// TODO: replace the real wget and tar commands with net/http and archive/zip in order to be testable and less os dependent
 func (h *hgt) downloadFile(dms string) error {
 	h.logger.Info(fmt.Sprintf("Start downloading file: %s", dms))
 
@@ -127,9 +127,9 @@ func (h *hgt) downloadFile(dms string) error {
 	h.logger.Debug(string(out))
 
 	zipFile := fmt.Sprintf("/%s/%s.SRTMGL1.hgt.zip", h.destinationDir, dms)
-	out, err = exec.Command("tar", "xvf", zipFile, "-C", h.destinationDir).Output()
+	out, err = exec.Command("unzip", zipFile, "-d", h.destinationDir).Output()
 	if err != nil {
-		h.logger.Error("untar error")
+		h.logger.Error("unzip error")
 
 		return err
 	}
