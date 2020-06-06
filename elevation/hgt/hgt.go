@@ -1,4 +1,4 @@
-package elevation
+package hgt
 
 import (
 	"bytes"
@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
-
 	"os"
-	"os/exec"
 
 	"github.com/thanosKontos/gravelmap"
 )
@@ -17,20 +15,31 @@ const oneArcSecondRowColCount = 3601
 
 var errorCannotGradeWay = errors.New("could not grade way")
 
+type unzipper interface {
+	unzip(zipFilename string) error
+}
+
+type downloader interface {
+	download(dms string) error
+}
+
 type hgt struct {
 	files          map[string]*os.File
 	destinationDir string
-	nasaUsername   string
-	nasaPassword   string
+	unzipper       unzipper
+	downloader     downloader
 	logger         gravelmap.Logger
 }
 
+// NewHgt instanciates a new HGT object
 func NewHgt(destinationDir, nasaUsername, nasaPassword string, logger gravelmap.Logger) *hgt {
+	unzipper := &unzip{destinationDir}
+	downloader := &download{nasaUsername, nasaPassword, destinationDir}
 	return &hgt{
 		files:          make(map[string]*os.File),
 		destinationDir: destinationDir,
-		nasaUsername:   nasaUsername,
-		nasaPassword:   nasaPassword,
+		unzipper:       unzipper,
+		downloader:     downloader,
 		logger:         logger,
 	}
 }
@@ -112,27 +121,11 @@ func readNextBytes(file *os.File, number int) ([]byte, error) {
 	return bytes, nil
 }
 
-// TODO: replace the real wget and tar commands with net/http and archive/zip in order to be testable and less os dependent
 func (h *hgt) downloadFile(dms string) error {
 	h.logger.Info(fmt.Sprintf("Start downloading file: %s", dms))
 
-	url := fmt.Sprintf("http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/%s.SRTMGL1.hgt.zip", dms)
-	out, err := exec.Command("wget", url, fmt.Sprintf("--http-user=%s", h.nasaUsername), fmt.Sprintf("--http-password=%s", h.nasaPassword), "-P", h.destinationDir).Output()
-	if err != nil {
-		h.logger.Error("wget error")
-
-		return err
-	}
-
-	h.logger.Debug(string(out))
-
-	zipFile := fmt.Sprintf("/%s/%s.SRTMGL1.hgt.zip", h.destinationDir, dms)
-	out, err = exec.Command("unzip", zipFile, "-d", h.destinationDir).Output()
-	if err != nil {
-		h.logger.Error("unzip error")
-
-		return err
-	}
+	h.downloader.download(dms)
+	h.unzipper.unzip(dms)
 
 	h.logger.Info(fmt.Sprintf("Done downloading file: %s", dms))
 

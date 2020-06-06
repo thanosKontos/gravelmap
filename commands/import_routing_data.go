@@ -9,7 +9,7 @@ import (
 	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/edge"
-	"github.com/thanosKontos/gravelmap/elevation"
+	"github.com/thanosKontos/gravelmap/elevation/hgt"
 	"github.com/thanosKontos/gravelmap/encode"
 	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
@@ -70,7 +70,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 	logger.Info("Node file written")
 
 	// ## 3. Process OSM ways (store way info and create graph)
-	elevationGetterCloser := elevation.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
+	elevationGetterCloser := hgt.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 	distanceCalculator := distance.NewHaversine()
 	pathSimplifier := path.NewSimplifiedDouglasPeucker(distanceCalculator)
 	pointEncoder := encode.NewGooglemaps()
