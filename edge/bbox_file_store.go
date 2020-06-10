@@ -24,10 +24,10 @@ func NewBBoxFileStore(storageDir string) *bboxFileStore {
 	}
 }
 
-func (fs *bboxFileStore) BatchStore(ndBatch []gravelmap.ConnectionNode) error {
-	ndBatchFileMap := map[string][]gravelmap.ConnectionNode{}
-	for _, gmNd := range ndBatch {
-		filename := findBBoxFileFromPoint(gmNd.Point)
+func (fs *bboxFileStore) BatchStore(ndPts []gravelmap.NodePoint) error {
+	ndBatchFileMap := map[string][]gravelmap.NodePoint{}
+	for _, gmNd := range ndPts {
+		filename := findBBoxFileFromPoint(gmNd.Pt)
 		ndBatchFileMap[filename] = append(ndBatchFileMap[filename], gmNd)
 	}
 
@@ -41,7 +41,7 @@ func (fs *bboxFileStore) BatchStore(ndBatch []gravelmap.ConnectionNode) error {
 	return nil
 }
 
-func (fs *bboxFileStore) writeBatchToFile(filename string, ndBatch []gravelmap.ConnectionNode) error {
+func (fs *bboxFileStore) writeBatchToFile(filename string, ndPts []gravelmap.NodePoint) error {
 	f, err := os.OpenFile(
 		fmt.Sprintf("%s/%s/%s", fs.storageDir, bBoxDir, filename),
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
@@ -56,8 +56,8 @@ func (fs *bboxFileStore) writeBatchToFile(filename string, ndBatch []gravelmap.C
 	}
 
 	var recs []gravelmap.NodePoint
-	for _, gmNd := range ndBatch {
-		recs = append(recs, gravelmap.NodePoint{NodeID: int32(gmNd.ID), Pt: gmNd.Point})
+	for _, ndPt := range ndPts {
+		recs = append(recs, gravelmap.NodePoint{NodeID: ndPt.NodeID, Pt: ndPt.Pt})
 	}
 
 	var buf bytes.Buffer

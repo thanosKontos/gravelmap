@@ -124,10 +124,12 @@ type DistanceCalculator interface {
 	Calculate(x, y Point) int64
 }
 
-type EdgeBatchStorer interface {
-	BatchStore(ndBatch []ConnectionNode) error
+// NodePointStorer describe implementations of storing NodePoints
+type NodePointStorer interface {
+	BatchStore(nds []NodePoint) error
 }
 
+// EdgeFinder describe implementations of finding nodes from coordinates
 type EdgeFinder interface {
 	FindClosest(point Point) (int32, error)
 }
