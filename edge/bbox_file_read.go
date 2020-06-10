@@ -31,35 +31,35 @@ func (fr *bboxFileRead) FindClosest(point gravelmap.Point) (int32, error) {
 		return 0, err
 	}
 
-	var closestEdge int32 = 0
-	var closestEdgeDistance int64 = 0
+	var closestNode int32 = 0
+	var closestNodeDistance int64 = 0
 	for {
-		edgeRec := bboxEdgeRecord{}
+		nodePoint := gravelmap.NodePoint{}
 		data := readNextBytes(f, 20)
 		buffer := bytes.NewBuffer(data)
-		err = binary.Read(buffer, binary.BigEndian, &edgeRec)
+		err = binary.Read(buffer, binary.BigEndian, &nodePoint)
 
-		if closestEdge == 0 {
-			closestEdge = edgeRec.EdgeID
-			closestEdgeDistance = fr.distanceCalc.Calculate(edgeRec.Pt, point)
+		if closestNode == 0 {
+			closestNode = nodePoint.NodeID
+			closestNodeDistance = fr.distanceCalc.Calculate(nodePoint.Pt, point)
 		} else {
-			d := fr.distanceCalc.Calculate(edgeRec.Pt, point)
-			if closestEdgeDistance > d {
-				closestEdge = edgeRec.EdgeID
-				closestEdgeDistance = d
+			d := fr.distanceCalc.Calculate(nodePoint.Pt, point)
+			if closestNodeDistance > d {
+				closestNode = nodePoint.NodeID
+				closestNodeDistance = d
 			}
 		}
 
-		if edgeRec.EdgeID == 0 {
-			if closestEdge == 0 {
-				return 0, errors.New("no edge found")
+		if nodePoint.NodeID == 0 {
+			if closestNode == 0 {
+				return 0, errors.New("no node found")
 			}
 
 			break
 		}
 	}
 
-	return closestEdge, nil
+	return closestNode, nil
 }
 
 func readNextBytes(file *os.File, number int) []byte {

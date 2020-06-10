@@ -55,9 +55,9 @@ func (fs *bboxFileStore) writeBatchToFile(filename string, ndBatch []gravelmap.C
 		return err
 	}
 
-	var recs []bboxEdgeRecord
+	var recs []gravelmap.NodePoint
 	for _, gmNd := range ndBatch {
-		recs = append(recs, bboxEdgeRecord{gmNd.Point, int32(gmNd.ID)})
+		recs = append(recs, gravelmap.NodePoint{NodeID: int32(gmNd.ID), Pt: gmNd.Point})
 	}
 
 	var buf bytes.Buffer

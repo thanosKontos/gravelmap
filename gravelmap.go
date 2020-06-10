@@ -6,6 +6,12 @@ const (
 	WayTypePath
 )
 
+// NodePoint is the data that holds the coordinates of a node
+type NodePoint struct {
+	NodeID int32
+	Pt     Point
+}
+
 type ConnectionNode struct {
 	ID            int
 	ConnectionCnt int
