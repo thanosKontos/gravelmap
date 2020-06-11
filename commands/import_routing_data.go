@@ -59,7 +59,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 	logger.Info("Done preparing node in-memory DB")
 
 	// ## 2. Store nodes to lookup files (nodeId -> lat/lon and lat/lon to closest nodeId)
-	bboxFS := node2point.NewBBoxFileStore("_files")
+	bboxFS := node2point.NewNodePointBboxFileStore("_files")
 	osm2LatLngStore := node.NewOsm2LatLngMemoryStore()
 	ndFileStore := node.NewOsmNodeProcessor(inputFilename, osm2GmStore, bboxFS, osm2LatLngStore)
 	err = ndFileStore.Process()

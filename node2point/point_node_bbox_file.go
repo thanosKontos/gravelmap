@@ -15,29 +15,26 @@ type nodePointBboxFile struct {
 	storageDir string
 }
 
-func NewBBoxFileRead(storageDir string, dc gravelmap.DistanceCalculator) *bboxFileRead {
-	nodePointBboxStorer := NewNodePointBboxFileRead(storageDir)
-
-	return &bboxFileRead{
+// NewNodePointBboxFileRead instantiate a new nodePointBboxFile object for reading
+func NewNodePointBboxFileRead(storageDir string, dc gravelmap.DistanceCalculator) *nodePointRead {
+	nodePointBboxStorer := &nodePointBboxFile{
+		storageDir: storageDir,
+	}
+	return &nodePointRead{
 		distanceCalc:        dc,
 		nodePointBboxStorer: nodePointBboxStorer,
 	}
 }
 
-// NewNodePointBboxFileRead instantiate a new nodePointBboxFile object for reading
-func NewNodePointBboxFileRead(storageDir string) *nodePointBboxFile {
-	return &nodePointBboxFile{
-		storageDir: storageDir,
-	}
-}
-
-// NewNodePointBboxFileStore instantiate a new nodePointBboxFile object for writing
-func NewNodePointBboxFileStore(storageDir string) *nodePointBboxFile {
+func NewNodePointBboxFileStore(storageDir string) *nodePointStore {
 	os.RemoveAll(fmt.Sprintf("%s/%s", storageDir, bBoxDir))
 	os.Mkdir(fmt.Sprintf("%s/%s", storageDir, bBoxDir), 0777)
-
-	return &nodePointBboxFile{
+	nodePointBboxStorer := &nodePointBboxFile{
 		storageDir: storageDir,
+	}
+
+	return &nodePointStore{
+		nodePointBboxStorer: nodePointBboxStorer,
 	}
 }
 

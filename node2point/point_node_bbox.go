@@ -15,12 +15,12 @@ type nodePointBboxStorer interface {
 	getBboxWriteCloser(bbox string) (io.WriteCloser, error)
 }
 
-type bboxFileRead struct {
+type nodePointRead struct {
 	distanceCalc        gravelmap.DistanceCalculator
 	nodePointBboxStorer nodePointBboxStorer
 }
 
-func (fr *bboxFileRead) FindClosest(point gravelmap.Point) (int32, error) {
+func (fr *nodePointRead) FindClosest(point gravelmap.Point) (int32, error) {
 	rc, err := fr.nodePointBboxStorer.getPointReadCloser(point)
 	if err != nil {
 		return 0, err
@@ -65,19 +65,11 @@ func readNextBytes(r io.Reader, number int) []byte {
 	return byteSeq
 }
 
-type bboxFileStore struct {
+type nodePointStore struct {
 	nodePointBboxStorer nodePointBboxStorer
 }
 
-func NewBBoxFileStore(storageDir string) *bboxFileStore {
-	nodePointBboxStorer := NewNodePointBboxFileStore(storageDir)
-
-	return &bboxFileStore{
-		nodePointBboxStorer: nodePointBboxStorer,
-	}
-}
-
-func (fs *bboxFileStore) BatchStore(ndPts []gravelmap.NodePoint) error {
+func (fs *nodePointStore) BatchStore(ndPts []gravelmap.NodePoint) error {
 	ndBatchFileMap := map[string][]gravelmap.NodePoint{}
 	for _, gmNd := range ndPts {
 		bbox := fs.nodePointBboxStorer.getPointBbox(gmNd.Pt)
@@ -94,7 +86,7 @@ func (fs *bboxFileStore) BatchStore(ndPts []gravelmap.NodePoint) error {
 	return nil
 }
 
-func (fs *bboxFileStore) writeBatch(bbox string, ndPts []gravelmap.NodePoint) error {
+func (fs *nodePointStore) writeBatch(bbox string, ndPts []gravelmap.NodePoint) error {
 	wc, err := fs.nodePointBboxStorer.getBboxWriteCloser(bbox)
 	defer wc.Close()
 	if err != nil {

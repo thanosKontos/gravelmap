@@ -90,7 +90,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 	routingMode := routingModeParam[0]
 
 	distanceCalc := distance.NewHaversine()
-	edgeFinder := node2point.NewBBoxFileRead("_files", distanceCalc)
+	edgeFinder := node2point.NewNodePointBboxFileRead("_files", distanceCalc)
 
 	edgeReader, err := way.NewWayFileRead("_files")
 	if err != nil {
@@ -128,7 +128,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.Graph
 	}
 
 	distanceCalc := distance.NewHaversine()
-	edgeFinder := node2point.NewBBoxFileRead("_files", distanceCalc)
+	edgeFinder := node2point.NewNodePointBboxFileRead("_files", distanceCalc)
 
 	edgeReader, err := way.NewWayFileRead("_files")
 	if err != nil {
