@@ -14,9 +14,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/distance"
-	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/kml"
+	"github.com/thanosKontos/gravelmap/node2point"
 	"github.com/thanosKontos/gravelmap/route"
 	"github.com/thanosKontos/gravelmap/routing_algorithm/dijkstra"
 	"github.com/thanosKontos/gravelmap/way"
@@ -90,7 +90,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 	routingMode := routingModeParam[0]
 
 	distanceCalc := distance.NewHaversine()
-	edgeFinder := edge.NewBBoxFileRead("_files", distanceCalc)
+	edgeFinder := node2point.NewBBoxFileRead("_files", distanceCalc)
 
 	edgeReader, err := way.NewWayFileRead("_files")
 	if err != nil {
@@ -128,7 +128,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.Graph
 	}
 
 	distanceCalc := distance.NewHaversine()
-	edgeFinder := edge.NewBBoxFileRead("_files", distanceCalc)
+	edgeFinder := node2point.NewBBoxFileRead("_files", distanceCalc)
 
 	edgeReader, err := way.NewWayFileRead("_files")
 	if err != nil {
