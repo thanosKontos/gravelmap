@@ -13,20 +13,20 @@ import (
 type osmNodeProcess struct {
 	osmFilename      string
 	osm2GmStore      gravelmap.Osm2GmNodeReaderWriter
-	edgeBatchStorer  gravelmap.EdgeBatchStorer
+	NodePointStorer  gravelmap.NodePointStorer
 	osm2LatLngWriter gravelmap.Osm2LatLngWriter
 }
 
 func NewOsmNodeProcessor(
 	osmFilename string,
 	osm2GmStore gravelmap.Osm2GmNodeReaderWriter,
-	edgeBatchStorer gravelmap.EdgeBatchStorer,
+	NodePointStorer gravelmap.NodePointStorer,
 	osm2LatLngWriter gravelmap.Osm2LatLngWriter,
 ) *osmNodeProcess {
 	return &osmNodeProcess{
 		osmFilename:      osmFilename,
 		osm2GmStore:      osm2GmStore,
-		edgeBatchStorer:  edgeBatchStorer,
+		NodePointStorer:  NodePointStorer,
 		osm2LatLngWriter: osm2LatLngWriter,
 	}
 }
@@ -49,7 +49,7 @@ func (fs *osmNodeProcess) Process() error {
 		return err
 	}
 
-	var gmNdBatch []gravelmap.ConnectionNode
+	var nodePtBatch []gravelmap.NodePoint
 
 	for {
 		if v, err := d.Decode(); err == io.EOF {
@@ -67,18 +67,18 @@ func (fs *osmNodeProcess) Process() error {
 				gm2OsmNode.Point = gravelmap.Point{Lat: v.Lat, Lng: v.Lon}
 				_ = fs.osm2GmStore.Write(v.ID, gm2OsmNode)
 
-				gmNd := gravelmap.ConnectionNode{ID: gm2OsmNode.ID, Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
+				nodePt := gravelmap.NodePoint{NodeID: int32(gm2OsmNode.ID), Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
 
 				// Write nodes in file in order to be able to find lat long per id
-				fs.osm2LatLngWriter.Write(gmNd.ID, gmNd.Point)
+				fs.osm2LatLngWriter.Write(int(nodePt.NodeID), nodePt.Point)
 
 				// Write edge in bounding boxes in order to be able to find closest edge per lat/lng
 				if gm2OsmNode.ConnectionCnt > 1 {
-					gmNdBatch = append(gmNdBatch, gmNd)
+					nodePtBatch = append(nodePtBatch, nodePt)
 
-					if len(gmNdBatch) >= 10000 {
-						fs.edgeBatchStorer.BatchStore(gmNdBatch)
-						gmNdBatch = []gravelmap.ConnectionNode{}
+					if len(nodePtBatch) >= 10000 {
+						fs.NodePointStorer.BatchStore(nodePtBatch)
+						nodePtBatch = []gravelmap.NodePoint{}
 					}
 				}
 
@@ -88,8 +88,8 @@ func (fs *osmNodeProcess) Process() error {
 		}
 	}
 
-	if len(gmNdBatch) > 0 {
-		fs.edgeBatchStorer.BatchStore(gmNdBatch)
+	if len(nodePtBatch) > 0 {
+		fs.NodePointStorer.BatchStore(nodePtBatch)
 	}
 
 	return nil

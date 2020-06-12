@@ -6,6 +6,12 @@ const (
 	WayTypePath
 )
 
+// NodePoint is the data that holds the coordinates of a node
+type NodePoint struct {
+	NodeID int32
+	Point  Point
+}
+
 type ConnectionNode struct {
 	ID            int
 	ConnectionCnt int
@@ -118,10 +124,12 @@ type DistanceCalculator interface {
 	Calculate(x, y Point) int64
 }
 
-type EdgeBatchStorer interface {
-	BatchStore(ndBatch []ConnectionNode) error
+// NodePointStorer describe implementations of storing NodePoints
+type NodePointStorer interface {
+	BatchStore(nds []NodePoint) error
 }
 
+// EdgeFinder describe implementations of finding nodes from coordinates
 type EdgeFinder interface {
 	FindClosest(point Point) (int32, error)
 }

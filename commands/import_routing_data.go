@@ -8,11 +8,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/distance"
-	"github.com/thanosKontos/gravelmap/edge"
 	"github.com/thanosKontos/gravelmap/elevation/hgt"
 	"github.com/thanosKontos/gravelmap/encode"
 	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
+	"github.com/thanosKontos/gravelmap/node2point"
 	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/path"
 	"github.com/thanosKontos/gravelmap/routing_algorithm/dijkstra"
@@ -59,7 +59,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
 	logger.Info("Done preparing node in-memory DB")
 
 	// ## 2. Store nodes to lookup files (nodeId -> lat/lon and lat/lon to closest nodeId)
-	bboxFS := edge.NewBBoxFileStore("_files")
+	bboxFS := node2point.NewNodePointBboxFileStore("_files")
 	osm2LatLngStore := node.NewOsm2LatLngMemoryStore()
 	ndFileStore := node.NewOsmNodeProcessor(inputFilename, osm2GmStore, bboxFS, osm2LatLngStore)
 	err = ndFileStore.Process()
