@@ -67,10 +67,10 @@ func (fs *osmNodeProcess) Process() error {
 				gm2OsmNode.Point = gravelmap.Point{Lat: v.Lat, Lng: v.Lon}
 				_ = fs.osm2GmStore.Write(v.ID, gm2OsmNode)
 
-				nodePt := gravelmap.NodePoint{NodeID: int32(gm2OsmNode.ID), Pt: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
+				nodePt := gravelmap.NodePoint{NodeID: int32(gm2OsmNode.ID), Point: gravelmap.Point{Lat: v.Lat, Lng: v.Lon}}
 
 				// Write nodes in file in order to be able to find lat long per id
-				fs.osm2LatLngWriter.Write(int(nodePt.NodeID), nodePt.Pt)
+				fs.osm2LatLngWriter.Write(int(nodePt.NodeID), nodePt.Point)
 
 				// Write edge in bounding boxes in order to be able to find closest edge per lat/lng
 				if gm2OsmNode.ConnectionCnt > 1 {

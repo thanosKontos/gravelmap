@@ -9,7 +9,7 @@ const (
 // NodePoint is the data that holds the coordinates of a node
 type NodePoint struct {
 	NodeID int32
-	Pt     Point
+	Point  Point
 }
 
 type ConnectionNode struct {

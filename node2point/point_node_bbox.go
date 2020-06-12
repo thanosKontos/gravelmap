@@ -37,9 +37,9 @@ func (fr *nodePointRead) FindClosest(point gravelmap.Point) (int32, error) {
 
 		if closestNode == 0 {
 			closestNode = nodePoint.NodeID
-			closestNodeDistance = fr.distanceCalc.Calculate(nodePoint.Pt, point)
+			closestNodeDistance = fr.distanceCalc.Calculate(nodePoint.Point, point)
 		} else {
-			d := fr.distanceCalc.Calculate(nodePoint.Pt, point)
+			d := fr.distanceCalc.Calculate(nodePoint.Point, point)
 			if closestNodeDistance > d {
 				closestNode = nodePoint.NodeID
 				closestNodeDistance = d
@@ -72,7 +72,7 @@ type nodePointStore struct {
 func (fs *nodePointStore) BatchStore(ndPts []gravelmap.NodePoint) error {
 	ndBatchFileMap := map[string][]gravelmap.NodePoint{}
 	for _, gmNd := range ndPts {
-		bbox := fs.nodePointBboxStorer.getPointBbox(gmNd.Pt)
+		bbox := fs.nodePointBboxStorer.getPointBbox(gmNd.Point)
 		ndBatchFileMap[bbox] = append(ndBatchFileMap[bbox], gmNd)
 	}
 
@@ -93,13 +93,8 @@ func (fs *nodePointStore) writeBatch(bbox string, ndPts []gravelmap.NodePoint) e
 		return err
 	}
 
-	var recs []gravelmap.NodePoint
-	for _, ndPt := range ndPts {
-		recs = append(recs, gravelmap.NodePoint{NodeID: ndPt.NodeID, Pt: ndPt.Pt})
-	}
-
 	var buf bytes.Buffer
-	err = binary.Write(&buf, binary.BigEndian, recs)
+	err = binary.Write(&buf, binary.BigEndian, ndPts)
 	if err != nil {
 		return err
 	}
