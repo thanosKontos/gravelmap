@@ -19,7 +19,7 @@ func (nm NodeMap) Write(osmNdID int64, gm *gravelmap.ConnectionNode) error {
 func (nm NodeMap) Read(osmNdID int64) *gravelmap.ConnectionNode {
 	if val, ok := nm[osmNdID]; ok {
 		return val
-	} else {
-		return nil
 	}
+
+	return nil
 }

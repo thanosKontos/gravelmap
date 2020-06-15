@@ -23,6 +23,7 @@ import (
 func importRoutingDataCommand() *cobra.Command {
 	var (
 		inputFilename, routingMd string
+		useFilesystem            bool
 	)
 
 	importRoutingDataCmd := &cobra.Command{
@@ -33,8 +34,10 @@ func importRoutingDataCommand() *cobra.Command {
 
 	importRoutingDataCmd.Flags().StringVar(&inputFilename, "input", "", "The osm input file.")
 	importRoutingDataCmd.Flags().StringVar(&routingMd, "routing-mode", "bicycle", "The routing mode.")
+	importRoutingDataCmd.Flags().BoolVar(&useFilesystem, "use-filesystem", false, "Use filesystem if your system runs out of memory (e.g. you are importing a large osm file on a low mem system). Will make import very slow!")
+
 	importRoutingDataCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return importRoutingDataCmdRun(inputFilename, routingMd)
+		return importRoutingDataCmdRun(inputFilename, routingMd, useFilesystem)
 	}
 
 	return importRoutingDataCmd
@@ -45,11 +48,17 @@ type routingMode struct {
 	weighter      gravelmap.Weighter
 }
 
-func importRoutingDataCmdRun(inputFilename string, routingMd string) error {
+func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesystem bool) error {
 	os.Mkdir("_files", 0777)
 
 	// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
-	osm2GmStore := node.NewOsm2GmNodeMemoryStore()
+	var osm2GmStore gravelmap.Osm2GmNodeReaderWriter
+	if useFilesystem {
+		osm2GmStore = node.NewOsm2GmNodeFileStore("_files")
+	} else {
+		osm2GmStore = node.NewOsm2GmNodeMemoryStore()
+	}
+
 	osm2GmNode := osm.NewOsmWayProcessor(inputFilename, osm2GmStore)
 	err := osm2GmNode.Process()
 	if err != nil {

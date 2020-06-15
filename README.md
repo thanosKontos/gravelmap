@@ -21,12 +21,14 @@ env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/grave
 
 The 2 commands below will extract the needed osm data for routing and create all the routing files.
 
-At the moment the graph.
-
 ```bash
 go run cmd/main.go filter-osm --input ~/Downloads/bremen-latest.osm.pbf --output ~/Downloads/bremen_for_routing.osm.pbf
 go run cmd/main.go import-routing-data -v info --input ~/Downloads/bremen_for_routing.osm.pbf
 ```
+
+Now you can start using the router!
+
+If your system is suffering from high memory consumption you can use the flag `use-filesystem`. Beware, this will make data importing extremely slow.
 
 ## Create web-server
 
