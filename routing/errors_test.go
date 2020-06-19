@@ -1,4 +1,4 @@
-package dijkstra
+package routing
 
 import (
 	"fmt"

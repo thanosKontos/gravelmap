@@ -1,12 +1,12 @@
-package graph
+package routing
 
 import (
 	"sort"
 )
 
 type DijkstraList interface {
-	PushOrdered(*Vertex)
-	PopOrdered() *Vertex
+	PushOrdered(*evaluatedVertex)
+	PopOrdered() *evaluatedVertex
 	Len() int
 }
 
@@ -23,8 +23,8 @@ func PriorityQueueNewLong() DijkstraList {
 type priorityQueueLong struct{ priorityQueueBase }
 type priorityQueueInterface interface {
 	sort.Interface
-	Push(x *Vertex)
-	Pop() *Vertex
+	Push(x *evaluatedVertex)
+	Pop() *evaluatedVertex
 }
 type priorityQueueWrapper struct {
 	priorityQueueInterface
@@ -32,12 +32,12 @@ type priorityQueueWrapper struct {
 
 func (pq priorityQueueLong) Less(i, j int) bool {
 	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq.priorityQueueBase[i].value.Cost < pq.priorityQueueBase[j].value.Cost
+	return pq.priorityQueueBase[i].value.cost < pq.priorityQueueBase[j].value.cost
 }
 
 // An Item is something we manage in a priority queue.
 type Item struct {
-	value *Vertex // The value of the item; arbitrary.
+	value *evaluatedVertex // The value of the item; arbitrary.
 }
 type priorityQueueBase []*Item
 
@@ -47,7 +47,7 @@ func (pq priorityQueueBase) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 }
 
-func (pq *priorityQueueBase) Push(v *Vertex) {
+func (pq *priorityQueueBase) Push(v *evaluatedVertex) {
 	/*	id := v.(*Vertex).ID
 		for _, v := range *pq {
 			if v.value.ID == id {
@@ -57,19 +57,19 @@ func (pq *priorityQueueBase) Push(v *Vertex) {
 	*pq = append(*pq, &Item{v})
 }
 
-func (pq *priorityQueueWrapper) PushOrdered(v *Vertex) {
+func (pq *priorityQueueWrapper) PushOrdered(v *evaluatedVertex) {
 	pq.Push(v)
 	pq.up(pq.Len() - 1)
 }
 
-func (pq *priorityQueueWrapper) PopOrdered() *Vertex {
+func (pq *priorityQueueWrapper) PopOrdered() *evaluatedVertex {
 	n := pq.Len() - 1
 	pq.Swap(0, n)
 	pq.down(0, n)
 	return pq.Pop()
 }
 
-func (pq *priorityQueueBase) Pop() *Vertex {
+func (pq *priorityQueueBase) Pop() *evaluatedVertex {
 	old := *pq
 	n := len(old)
 	item := old[n-1]

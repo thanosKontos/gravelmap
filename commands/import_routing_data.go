@@ -15,7 +15,6 @@ import (
 	"github.com/thanosKontos/gravelmap/node2point"
 	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/path"
-	"github.com/thanosKontos/gravelmap/routing_algorithm/dijkstra"
 	"github.com/thanosKontos/gravelmap/way"
 )
 
@@ -92,7 +91,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 
 	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, routingMode.weighter)
 
-	graph := graph.NewGraph()
+	graph := graph.NewWeightedBidirectionalGraph()
 	wayStorer := way.NewFileStore("_files", pointEncoder)
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
@@ -113,10 +112,10 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	graphFile.Close()
 	logger.Info("Graph created")
 
-	dijkstra := dijkstra.NewDijkstra(graph)
-	best, _ := dijkstra.FindShortest(14827, 1037)
+	// dijkstra := dijkstra.NewDijkstra(graph)
+	// best, _ := dijkstra.FindShortest(14827, 1037)
 
-	logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))
+	// logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))
 
 	return nil
 }
