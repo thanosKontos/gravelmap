@@ -8,7 +8,7 @@ import (
 	"github.com/thanosKontos/gravelmap/distance"
 )
 
-func TestSimplifiedDouglasPeuckerSimplification(t *testing.T) {
+func TestSimplePathSimplification(t *testing.T) {
 	points := []gravelmap.Point{
 		{38.06988, 22.98194},
 		{38.06994, 22.98195},
@@ -34,13 +34,13 @@ func TestSimplifiedDouglasPeuckerSimplification(t *testing.T) {
 	}
 
 	hd := distance.NewHaversine()
-	dp := NewSimplifiedDouglasPeucker(hd)
+	dp := NewSimpleSimplifiedPath(hd)
 	simplified := dp.Simplify(points)
 
 	assert.Equal(t, 11, len(simplified))
 }
 
-func TestSimplifiedDouglasPeuckerSimplificationAnother(t *testing.T) {
+func TestSimplePathSimplificationAnother(t *testing.T) {
 	points := []gravelmap.Point{
 		{37.9818586, 23.8148583},
 		{37.9818, 23.814885},
@@ -79,7 +79,7 @@ func TestSimplifiedDouglasPeuckerSimplificationAnother(t *testing.T) {
 	}
 
 	hd := distance.NewHaversine()
-	dp := NewSimplifiedDouglasPeucker(hd)
+	dp := NewSimpleSimplifiedPath(hd)
 	simplified := dp.Simplify(points)
 
 	assert.Equal(t, 30, len(simplified))

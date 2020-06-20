@@ -9,7 +9,6 @@ import (
 	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/distance"
 	"github.com/thanosKontos/gravelmap/elevation/hgt"
-	"github.com/thanosKontos/gravelmap/encode"
 	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/node"
 	"github.com/thanosKontos/gravelmap/node2point"
@@ -69,7 +68,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	// ## 2. Store nodes to lookup files (nodeId -> lat/lon and lat/lon to closest nodeId)
 	bboxFS := node2point.NewNodePointBboxFileStore("_files")
 	osm2LatLngStore := node.NewOsm2LatLngMemoryStore()
-	ndFileStore := node.NewOsmNodeProcessor(inputFilename, osm2GmStore, bboxFS, osm2LatLngStore)
+	ndFileStore := osm.NewOsmNodeProcessor(inputFilename, osm2GmStore, bboxFS, osm2LatLngStore)
 	err = ndFileStore.Process()
 	if err != nil {
 		logger.Error(err)
@@ -80,8 +79,6 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	// ## 3. Process OSM ways (store way info and create graph)
 	elevationGetterCloser := hgt.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 	distanceCalculator := distance.NewHaversine()
-	pathSimplifier := path.NewSimplifiedDouglasPeucker(distanceCalculator)
-	pointEncoder := encode.NewGooglemaps()
 
 	var rms = map[string]routingMode{
 		"bicycle": {"graph_bicycle.gob", way.NewBicycleWeight()},
@@ -89,12 +86,13 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	}
 	routingMode := rms[routingMd]
 
+	pathEncoder := path.NewGooglemaps()
+	wayStorer := way.NewFileStore("_files", pathEncoder)
+	pathSimplifier := path.NewSimpleSimplifiedPath(distanceCalculator)
 	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, routingMode.weighter)
-
-	graph := graph.NewWeightedBidirectionalGraph()
-	wayStorer := way.NewFileStore("_files", pointEncoder)
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
+	graph := graph.NewWeightedBidirectionalGraph()
 	osmWayFileRead := osm.NewOsmWayFileRead(inputFilename, wayStorer, graph, wayAdderGetter)
 	err = osmWayFileRead.Process()
 	if err != nil {

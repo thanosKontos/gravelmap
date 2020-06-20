@@ -4,17 +4,17 @@ import (
 	"github.com/thanosKontos/gravelmap"
 )
 
-type simplifiedDouglasPeuker struct {
+type simpleSimplifiedPath struct {
 	distanceCalc gravelmap.DistanceCalculator
 }
 
-func NewSimplifiedDouglasPeucker(distanceCalc gravelmap.DistanceCalculator) *simplifiedDouglasPeuker {
-	return &simplifiedDouglasPeuker{
+func NewSimpleSimplifiedPath(distanceCalc gravelmap.DistanceCalculator) *simpleSimplifiedPath {
+	return &simpleSimplifiedPath{
 		distanceCalc: distanceCalc,
 	}
 }
 
-func (dp *simplifiedDouglasPeuker) Simplify(points []gravelmap.Point) []gravelmap.Point {
+func (dp *simpleSimplifiedPath) Simplify(points []gravelmap.Point) []gravelmap.Point {
 	if len(points) < 3 {
 		return points
 	}

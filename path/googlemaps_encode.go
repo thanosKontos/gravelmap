@@ -1,4 +1,4 @@
-package encode
+package path
 
 import (
 	"github.com/thanosKontos/gravelmap"

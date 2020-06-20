@@ -29,6 +29,6 @@ type edgeToRecord struct {
 	elevTo   int16
 	polylinePosition
 
-	// for debug reasons
+	// for debugging
 	osmID int64
 }

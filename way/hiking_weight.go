@@ -49,9 +49,9 @@ func getFootWayAcceptance(tags map[string]string) wayAcceptance {
 func (b *hikingWeight) WeightVehicleAcceptance(tags map[string]string) float64 {
 	switch getFootVehicleWayAcceptance(tags) {
 	case vehicleAcceptanceExclusively:
-		return 0.7
+		return 1.0
 	case vehicleAcceptancePartially:
-		return 2.0
+		return 2.2
 	case vehicleAcceptanceMaybe:
 		return 10000000.0
 	case vehicleAcceptanceNo:

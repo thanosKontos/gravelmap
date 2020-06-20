@@ -13,10 +13,10 @@ func NewBicycleWeight() *bicycleWeight {
 
 func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
 	if wayType == gravelmap.WayTypeUnaved {
-		return 0.6
+		return 1.0
 	}
 
-	return 1.0
+	return 1.6
 }
 
 func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.BidirectionalWeight {
