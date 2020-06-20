@@ -18,7 +18,7 @@ import (
 	"github.com/thanosKontos/gravelmap/kml"
 	"github.com/thanosKontos/gravelmap/node2point"
 	"github.com/thanosKontos/gravelmap/route"
-	"github.com/thanosKontos/gravelmap/routing_algorithm/dijkstra"
+	"github.com/thanosKontos/gravelmap/routing"
 	"github.com/thanosKontos/gravelmap/way"
 )
 
@@ -39,7 +39,7 @@ func createWebServerCommand() *cobra.Command {
 
 // createRoutingDataCmdRun defines the command run actions.
 func createWebServerCmdRun() error {
-	mtbGraph := graph.NewGraph()
+	mtbGraph := graph.NewWeightedBidirectionalGraph()
 	dataFile, err := os.Open("_files/graph_bicycle.gob")
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func createWebServerCmdRun() error {
 	}
 	dataFile.Close()
 
-	graphs := map[string]*graph.Graph{
+	graphs := map[string]*graph.WeightedBidirectionalGraph{
 		"bicycle": mtbGraph,
 	}
 
@@ -68,7 +68,7 @@ func createWebServerCmdRun() error {
 	return nil
 }
 
-func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*graph.Graph) {
+func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*graph.WeightedBidirectionalGraph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	pointFrom, err := getPointFromParams("from", r)
@@ -100,7 +100,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 	}
 
 	graph := graphs[routingMode]
-	dijkstra := dijkstra.NewDijkstra(graph)
+	dijkstra := routing.NewDijsktraShortestPath(graph)
 
 	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
@@ -115,7 +115,7 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 	fmt.Fprintf(w, string(json))
 }
 
-func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.Graph) {
+func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.WeightedBidirectionalGraph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	pointFrom, err := getPointFromParams("from", r)
@@ -137,7 +137,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.Graph
 		return
 	}
 
-	dijkstra := dijkstra.NewDijkstra(graph)
+	dijkstra := routing.NewDijsktraShortestPath(graph)
 	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {
