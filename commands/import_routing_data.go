@@ -112,10 +112,5 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	graphFile.Close()
 	logger.Info("Graph created")
 
-	// dijkstra := dijkstra.NewDijkstra(graph)
-	// best, _ := dijkstra.FindShortest(14827, 1037)
-
-	// logger.Info(fmt.Sprintf("Shortest distance %d following path %#v", best.Distance, best.Path))
-
 	return nil
 }
