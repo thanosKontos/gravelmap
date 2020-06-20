@@ -90,7 +90,7 @@ func isOffRoadWay(tags map[string]string) bool {
 
 func isPathway(tags map[string]string) bool {
 	if val, ok := tags["highway"]; ok {
-		if val == "path" {
+		if val == "path" || val == "pedestrian" || val == "steps" {
 			return true
 		}
 	}
