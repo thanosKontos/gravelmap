@@ -41,19 +41,29 @@ func createWebServerCommand() *cobra.Command {
 func createWebServerCmdRun() error {
 	mtbGraph := graph.NewWeightedBidirectionalGraph()
 	dataFile, err := os.Open("_files/graph_bicycle.gob")
-	if err != nil {
-		return err
+	if err == nil {
+		dataDecoder := gob.NewDecoder(dataFile)
+		err = dataDecoder.Decode(&mtbGraph)
+		if err != nil {
+			return err
+		}
+		dataFile.Close()
 	}
 
-	dataDecoder := gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&mtbGraph)
-	if err != nil {
-		return err
+	footGraph := graph.NewWeightedBidirectionalGraph()
+	dataFile, err = os.Open("_files/graph_foot.gob")
+	if err == nil {
+		dataDecoder := gob.NewDecoder(dataFile)
+		err = dataDecoder.Decode(&footGraph)
+		if err != nil {
+			return err
+		}
+		dataFile.Close()
 	}
-	dataFile.Close()
 
 	graphs := map[string]*graph.WeightedBidirectionalGraph{
 		"bicycle": mtbGraph,
+		"foot":    footGraph,
 	}
 
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {

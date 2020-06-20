@@ -13,10 +13,10 @@ func NewHikingWeight() *hikingWeight {
 
 func (b *hikingWeight) WeightOffRoad(wayType int8) float64 {
 	if wayType == gravelmap.WayTypeUnaved {
-		return 0.6
+		return 1.0
 	}
 
-	return 1.0
+	return 1.6
 }
 
 func (b *hikingWeight) WeightWayAcceptance(tags map[string]string) gravelmap.BidirectionalWeight {
@@ -84,13 +84,13 @@ func (b *hikingWeight) WeightElevation(elevation *gravelmap.WayElevation) gravel
 
 	switch {
 	case elevation.BidirectionalElevationInfo.Normal.Grade < -15:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 6}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < -10:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 10}
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 4}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < -7:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 7}
+		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 2.5}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < -4:
-		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 3}
+		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1.5}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < -2:
 		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1.2}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < 0:
@@ -100,12 +100,12 @@ func (b *hikingWeight) WeightElevation(elevation *gravelmap.WayElevation) gravel
 	case elevation.BidirectionalElevationInfo.Normal.Grade < 4:
 		return gravelmap.BidirectionalWeight{Normal: 1.2, Reverse: 0.8}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < 7:
-		return gravelmap.BidirectionalWeight{Normal: 3, Reverse: 0.8}
+		return gravelmap.BidirectionalWeight{Normal: 1.5, Reverse: 0.8}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < 10:
-		return gravelmap.BidirectionalWeight{Normal: 7, Reverse: 1}
+		return gravelmap.BidirectionalWeight{Normal: 2.5, Reverse: 1}
 	case elevation.BidirectionalElevationInfo.Normal.Grade < 15:
-		return gravelmap.BidirectionalWeight{Normal: 10, Reverse: 1}
+		return gravelmap.BidirectionalWeight{Normal: 4, Reverse: 1}
 	default:
-		return gravelmap.BidirectionalWeight{Normal: 15, Reverse: 1}
+		return gravelmap.BidirectionalWeight{Normal: 6, Reverse: 1}
 	}
 }

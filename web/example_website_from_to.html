@@ -22,10 +22,19 @@
             border-collapse: collapse;
             padding: 5px;
         }
+
+        #routing-error {
+            color: #d64e20;
+            border: 1px solid #ff6633;
+            padding: 20px 25px;
+            margin: 10px 0px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 <div id="mapdiv" style="height: 60%"></div>
+<div id="routing-error"></div>
 <div><button id="clear-btn">Clear map</button></div>
 
 <div>
@@ -94,6 +103,8 @@
         vectorLayer = new OpenLayers.Layer.Vector("Overlay");
 
         map.addLayer(startEndMarkers);
+
+        $("#routing-error").hide();
     });
 
     map.events.register('click', map, function(e) {
@@ -120,6 +131,10 @@
             url: "http://localhost:8000/route?from="+routeFrom+"&to="+routeTo+'&routing_mode='+routing_mode,
             success: function(result) {
                 drawRouteFromServerResult(result);
+            },
+            error: function(result) {
+                error = JSON.parse(result.responseText);
+                $("#routing-error").text("An error occurred: " + error.message).show();
             }
         });
     });
