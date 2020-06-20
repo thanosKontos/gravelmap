@@ -10,17 +10,17 @@ import (
 // TODO: in the future would be nice to connect dijkstra with a graph interface instead of concrete implementation
 // as in here. Not going to need abstraction soon, so it is ok for now (integration tests are also ok at the moment)
 type dijsktraShortestPath struct {
-	graph             *graph.WeightedBidirectionalGraph
-	list              DijkstraList
-	destFound         bool
-	costToDest        int64
-	evaluatedVertices map[int]evaluatedVertex
+	graph          *graph.WeightedBidirectionalGraph
+	list           DijkstraList
+	destFound      bool
+	costToDest     int64
+	evaluatedNodes map[int]evaluatedNode
 }
 
-type evaluatedVertex struct {
-	id           int
-	cost         int64
-	bestVertices []int
+type evaluatedNode struct {
+	id        int
+	cost      int64
+	bestNodes []int
 }
 
 func NewDijsktraShortestPath(g *graph.WeightedBidirectionalGraph) dijsktraShortestPath {
@@ -34,19 +34,19 @@ func (dsp dijsktraShortestPath) FindShortest(fromID, toID int) (gravelmap.BestPa
 	dsp.destFound = false
 	dsp.costToDest = int64(math.MaxInt64)
 	dsp.list = PriorityQueueNewLong()
-	dsp.evaluatedVertices = make(map[int]evaluatedVertex)
+	dsp.evaluatedNodes = make(map[int]evaluatedNode)
 	for i := range dsp.graph.Connections {
-		dsp.evaluatedVertices[i] = evaluatedVertex{
-			id:           i,
-			cost:         int64(math.MaxInt64),
-			bestVertices: []int{-1},
+		dsp.evaluatedNodes[i] = evaluatedNode{
+			id:        i,
+			cost:      int64(math.MaxInt64),
+			bestNodes: []int{-1},
 		}
 	}
-	fromVtx := dsp.evaluatedVertices[fromID]
+	fromVtx := dsp.evaluatedNodes[fromID]
 	fromVtx.cost = 0
 	dsp.list.PushOrdered(&fromVtx)
 
-	var current *evaluatedVertex
+	var current *evaluatedNode
 	oldCurrent := -1
 	for dsp.list.Len() > 0 {
 		current = dsp.list.PopOrdered()
@@ -61,27 +61,27 @@ func (dsp dijsktraShortestPath) FindShortest(fromID, toID int) (gravelmap.BestPa
 
 		currNodeConns := dsp.graph.Connections[current.id]
 		for v, dist := range currNodeConns {
-			//If the arc has better access, than the current costToDest, update the Vertex being touched
-			if current.cost+dist < dsp.evaluatedVertices[v].cost {
-				if current.bestVertices[0] == v && dsp.evaluatedVertices[v].id != toID {
+			//If the arc has better access, than the current costToDest, update the node being touched
+			if current.cost+dist < dsp.evaluatedNodes[v].cost {
+				if current.bestNodes[0] == v && dsp.evaluatedNodes[v].id != toID {
 					//also only do this if we aren't checkout out the best cost again
 					//This seems familiar 8^)
 					return gravelmap.BestPath{}, newErrLoop(current.id, v)
 				}
 
-				bv := dsp.evaluatedVertices[v].bestVertices
+				bv := dsp.evaluatedNodes[v].bestNodes
 				bv[0] = current.id
-				dsp.evaluatedVertices[v] = evaluatedVertex{id: v, cost: current.cost + dist, bestVertices: bv}
+				dsp.evaluatedNodes[v] = evaluatedNode{id: v, cost: current.cost + dist, bestNodes: bv}
 				if v == toID {
-					//If this is the destination update costToDest, so we can stop looking at useless Vertices
+					//If this is the destination update costToDest, so we can stop looking at useless nodes
 					dsp.costToDest = current.cost + dist
 					dsp.destFound = true
 					continue // Do not push if dest
 				}
 
-				//Push this updated Vertex into the list to be evaluated, pushes in sorted form
-				toBeEvaluatedVtx := dsp.evaluatedVertices[v]
-				toBeEvaluatedVtx.bestVertices = []int{-1}
+				//Push this updated node into the list to be evaluated
+				toBeEvaluatedVtx := dsp.evaluatedNodes[v]
+				toBeEvaluatedVtx.bestNodes = []int{-1}
 				dsp.list.PushOrdered(&toBeEvaluatedVtx)
 			}
 		}
@@ -96,12 +96,12 @@ func (dsp dijsktraShortestPath) FindShortest(fromID, toID int) (gravelmap.BestPa
 
 func (dsp *dijsktraShortestPath) getCalculatedBestPath(src, dest int) gravelmap.BestPath {
 	var path []int
-	for c := dsp.evaluatedVertices[dest]; c.id != src; c = dsp.evaluatedVertices[c.bestVertices[0]] {
+	for c := dsp.evaluatedNodes[dest]; c.id != src; c = dsp.evaluatedNodes[c.bestNodes[0]] {
 		path = append(path, c.id)
 	}
 	path = append(path, src)
 	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
 		path[i], path[j] = path[j], path[i]
 	}
-	return gravelmap.BestPath{Distance: dsp.evaluatedVertices[dest].cost, Path: path}
+	return gravelmap.BestPath{Distance: dsp.evaluatedNodes[dest].cost, Path: path}
 }
