@@ -43,7 +43,3 @@ env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/grave
 Open example_website_from_to.html to test routing
 
 ![](resources/example_website.png)
-
-## Special thanks
-
-To Ryan Carrier for the dijkstra implementation (taken from here: https://github.com/RyanCarrier/dijkstra).
