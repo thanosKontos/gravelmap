@@ -61,7 +61,7 @@ func (dsp dijsktraShortestPath) FindShortest(fromID, toID int) (gravelmap.BestPa
 
 		currNodeConns := dsp.graph.Connections[current.id]
 		for v, dist := range currNodeConns {
-			//If the arc has better access, than the current costToDest, update the node being touched
+			//If the edge has better access, than the current costToDest, update the node being touched
 			if current.cost+dist < dsp.evaluatedNodes[v].cost {
 				if current.bestNodes[0] == v && dsp.evaluatedNodes[v].id != toID {
 					//also only do this if we aren't checkout out the best cost again
