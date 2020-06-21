@@ -2,6 +2,7 @@ package way
 
 import (
 	"github.com/thanosKontos/gravelmap"
+	gmstring "github.com/thanosKontos/gravelmap/string"
 )
 
 type bicycleWeight struct {
@@ -36,7 +37,7 @@ func getMtbWayAcceptance(tags map[string]string) wayAcceptance {
 	if val, ok := tags["oneway"]; ok {
 		if val == "yes" {
 			if val, ok := tags["cycleway"]; ok {
-				if val == "opposite" || val == "opposite_lane" {
+				if gmstring.String(val).Exists([]string{"opposite", "opposite_lane"}) {
 					return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 				}
 			}
@@ -93,7 +94,7 @@ func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
 	}
 
 	if val, ok := tags["bicycle"]; ok {
-		if val == "yes" || val == "permissive" || val == "designated" {
+		if gmstring.String(val).Exists([]string{"yes", "permissive", "designated"}) {
 			return vehicleAcceptanceExclusively
 		}
 
@@ -103,7 +104,7 @@ func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
 	}
 
 	if val, ok := tags["highway"]; ok {
-		if val == "footway" || val == "path" {
+		if gmstring.String(val).Exists([]string{"footway", "path"}) {
 			return vehicleAcceptanceMaybe
 		}
 
@@ -113,7 +114,7 @@ func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
 
 		if val == "service" {
 			if val, ok := tags["bicycle"]; ok {
-				if val == "yes" || val == "permissive" || val == "designated" {
+				if gmstring.String(val).Exists([]string{"yes", "permissive", "designated"}) {
 					return vehicleAcceptanceExclusively
 				}
 			} else {
@@ -121,7 +122,7 @@ func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
 			}
 		}
 
-		if val == "motorway" || val == "steps" {
+		if gmstring.String(val).Exists([]string{"motorway", "steps"}) {
 			return vehicleAcceptanceNo
 		}
 

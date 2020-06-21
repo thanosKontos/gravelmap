@@ -2,6 +2,7 @@ package way
 
 import (
 	"github.com/thanosKontos/gravelmap"
+	gmstring "github.com/thanosKontos/gravelmap/string"
 )
 
 type hikingWeight struct {
@@ -34,7 +35,7 @@ func (b *hikingWeight) WeightWayAcceptance(tags map[string]string) gravelmap.Bid
 
 func getFootWayAcceptance(tags map[string]string) wayAcceptance {
 	if val, ok := tags["highway"]; ok {
-		if val == "motorway" || val == "trunk" || val == "primary" {
+		if gmstring.String(val).Exists([]string{"motorway", "trunk", "primary"}) {
 			return wayAcceptance{wayAcceptanceNo, wayAcceptanceNo}
 		}
 	}
@@ -63,7 +64,7 @@ func (b *hikingWeight) WeightVehicleAcceptance(tags map[string]string) float64 {
 
 func getFootVehicleWayAcceptance(tags map[string]string) int32 {
 	if val, ok := tags["highway"]; ok {
-		if val == "footway" || val == "path" || val == "pedestrian" {
+		if gmstring.String(val).Exists([]string{"footway", "path", "pedestrian", "steps"}) {
 			return vehicleAcceptanceExclusively
 		}
 	}

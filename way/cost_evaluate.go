@@ -2,6 +2,7 @@ package way
 
 import (
 	"github.com/thanosKontos/gravelmap"
+	gmstring "github.com/thanosKontos/gravelmap/string"
 )
 
 type costEvaluate struct {
@@ -68,7 +69,7 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 
 func isOffRoadWay(tags map[string]string) bool {
 	if val, ok := tags["surface"]; ok {
-		if val == "unpaved" || val == "fine_gravel" || val == "gravel" || val == "compacted" || val == "pebblestone" || val == "earth" || val == "dirt" || val == "grass" || val == "ground" {
+		if gmstring.String(val).Exists([]string{"unpaved", "fine_gravel", "gravel", "compacted", "pebblestone", "earth", "dirt", "grass", "ground"}) {
 			return true
 		}
 	}
@@ -90,9 +91,7 @@ func isOffRoadWay(tags map[string]string) bool {
 
 func isPathway(tags map[string]string) bool {
 	if val, ok := tags["highway"]; ok {
-		if val == "path" || val == "pedestrian" || val == "steps" {
-			return true
-		}
+		return gmstring.String(val).Exists([]string{"path", "pedestrian", "steps"})
 	}
 
 	return false
