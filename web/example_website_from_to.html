@@ -82,6 +82,8 @@
 
     let routeFrom = null;
     let routeTo = null;
+    let routing_mode = '';
+
     let startEndMarkers = new OpenLayers.Layer.Markers("start-end-markers");
     let epsg4326 =  new OpenLayers.Projection("EPSG:4326");
     let projectTo = map.getProjectionObject();
@@ -111,7 +113,6 @@
         let toProjection = new OpenLayers.Projection("EPSG:4326");
         let event_point = map.getLonLatFromPixel(e.xy);
         let lonlat = map.getLonLatFromPixel(e.xy).transform(map.getProjectionObject(), toProjection);
-        let routing_mode = 'normal';
 
         if (routeFrom === null) {
             routeFrom = lonlat.lat + "," + lonlat.lon;
@@ -263,7 +264,7 @@
         $('#paved-percentage').text(Math.round(pavedPercentage*100)/100 + '%');
         $('#unpaved-percentage').text(Math.round((100-pavedPercentage)*100)/100 + '%');
         $('#incline').text(Math.round(elevationIncline*100)/100 + ' m');
-        $('#route-info-container a#download-kml').attr("href", "http://localhost:8000/create-kml?from="+routeFrom+"&to="+routeTo);
+        $('#route-info-container a#download-kml').attr("href", "http://localhost:8000/create-kml?from="+routeFrom+"&to="+routeTo+"&routing_mode="+routing_mode);
         $('#route-info-container').show();
         $('#route-description-container .description').html("<table>"+routeDescriptionRowsHtml+"</table>");
         $('#route-description-container').show();

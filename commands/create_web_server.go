@@ -70,7 +70,7 @@ func createWebServerCmdRun() error {
 		routeHandler(w, r, graphs)
 	})
 	http.HandleFunc("/create-kml", func(w http.ResponseWriter, r *http.Request) {
-		createKmlHandler(w, r, mtbGraph)
+		createKmlHandler(w, r, graphs)
 	})
 
 	http.ListenAndServe(":8000", nil)
@@ -78,45 +78,52 @@ func createWebServerCmdRun() error {
 	return nil
 }
 
-func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*graph.WeightedBidirectionalGraph) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+var errWrongArguments = errors.New("wrong arguments")
+var errRouting = errors.New("wrong arguments")
 
+func buildRoutingLegsFromRequestParams(r *http.Request, graphs map[string]*graph.WeightedBidirectionalGraph) ([]gravelmap.RoutingLeg, error) {
 	pointFrom, err := getPointFromParams("from", r)
 	pointTo, err2 := getPointFromParams("to", r)
 	if err != nil || err2 != nil {
-		w.WriteHeader(400)
-		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
-
-		return
+		return []gravelmap.RoutingLeg{}, errWrongArguments
 	}
 
 	routingModeParam, ok := r.URL.Query()["routing_mode"]
 	if !ok || len(routingModeParam) != 1 || (routingModeParam[0] != "bicycle" && routingModeParam[0] != "foot") {
+		return []gravelmap.RoutingLeg{}, errWrongArguments
+	}
+	routingMode := routingModeParam[0]
+	graph := graphs[routingMode]
+	dijkstra := routing.NewDijsktraShortestPath(graph)
+
+	edgeReader, err := way.NewWayFileRead("_files")
+	if err != nil {
+		return []gravelmap.RoutingLeg{}, errRouting
+	}
+	distanceCalc := distance.NewHaversine()
+	edgeFinder := node2point.NewNodePointBboxFileRead("_files", distanceCalc)
+	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
+	routingData, err := router.Route(*pointFrom, *pointTo)
+	if err != nil {
+		err = errRouting
+	}
+
+	return routingData, err
+}
+
+func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*graph.WeightedBidirectionalGraph) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	routingData, err := buildRoutingLegsFromRequestParams(r, graphs)
+	if err == errWrongArguments {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
 
 		return
 	}
-	routingMode := routingModeParam[0]
-
-	distanceCalc := distance.NewHaversine()
-	edgeFinder := node2point.NewNodePointBboxFileRead("_files", distanceCalc)
-
-	edgeReader, err := way.NewWayFileRead("_files")
-	if err != nil {
-		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
-
-		return
-	}
-
-	graph := graphs[routingMode]
-	dijkstra := routing.NewDijsktraShortestPath(graph)
-
-	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
-	routingData, err := router.Route(*pointFrom, *pointTo)
-	if err != nil {
+	if err == errRouting {
 		w.WriteHeader(500)
-		fmt.Fprintf(w, `{"message": "%s"}`, err)
+		fmt.Fprintf(w, `{"message": "Error routing"}`)
 
 		return
 	}
@@ -125,35 +132,19 @@ func routeHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*gra
 	fmt.Fprintf(w, string(json))
 }
 
-func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.WeightedBidirectionalGraph) {
+func createKmlHandler(w http.ResponseWriter, r *http.Request, graphs map[string]*graph.WeightedBidirectionalGraph) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	pointFrom, err := getPointFromParams("from", r)
-	pointTo, err2 := getPointFromParams("to", r)
-	if err != nil || err2 != nil {
+	routingData, err := buildRoutingLegsFromRequestParams(r, graphs)
+	if err == errWrongArguments {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, `{"message": "Wrong arguments"}`)
 
 		return
 	}
-
-	distanceCalc := distance.NewHaversine()
-	edgeFinder := node2point.NewNodePointBboxFileRead("_files", distanceCalc)
-
-	edgeReader, err := way.NewWayFileRead("_files")
-	if err != nil {
-		fmt.Fprintf(w, `{"message": "Cannot open way files"}`)
-
-		return
-	}
-
-	dijkstra := routing.NewDijsktraShortestPath(graph)
-	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
-	routingData, err := router.Route(*pointFrom, *pointTo)
-	if err != nil {
+	if err == errRouting {
 		w.WriteHeader(500)
-		json, _ := json.Marshal(err)
-		fmt.Fprintf(w, string(json))
+		fmt.Fprintf(w, `{"message": "Error routing"}`)
 
 		return
 	}
@@ -162,7 +153,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graph *graph.Weigh
 	kmlString, err := kml.CreateFromRoute(routingData)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Fprintf(w, `{"message": "%s"}`, err)
+		fmt.Fprintf(w, `{"message": "Error creating kml"}`)
 
 		return
 	}
