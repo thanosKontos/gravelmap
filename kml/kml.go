@@ -3,8 +3,10 @@ package kml
 import (
 	"errors"
 	"fmt"
-	"github.com/thanosKontos/gravelmap"
+	"io"
 	"strings"
+
+	"github.com/thanosKontos/gravelmap"
 )
 
 var kmlBase = `<?xml version="1.0" encoding="UTF-8"?>
@@ -89,46 +91,49 @@ var placeMarkBase = `<Placemark>
 
 type kml struct{}
 
+// NewKml instantiates a new kml object
 func NewKml() *kml {
 	return &kml{}
 }
 
-func (k *kml) CreateFromRoute(routingLegs []gravelmap.RoutingLeg) (string, error) {
+func (k *kml) Write(w io.Writer, routingLegs []gravelmap.RoutingLeg) error {
 	if len(routingLegs) < 1 {
-		return "", errors.New("not enough routing legs to create kml")
+		return errors.New("not enough routing legs to create kml")
 	}
 
 	placemarks := ""
-	for _, leg := range routingLegs {
+	for _, way := range routingLegs {
 		pointsSl := make([]string, 0)
-		for _, point := range leg.Coordinates {
+		for _, point := range way.Coordinates {
 			pointsSl = append(pointsSl, fmt.Sprintf("%f,%f,0", point.Lng, point.Lat))
 		}
 
 		placemarkCoords := strings.Join(pointsSl, "\n")
 		paved := true
-		if leg.WayType == "unpaved" || leg.WayType == "path" {
+		if way.WayType == "unpaved" || way.WayType == "path" {
 			paved = false
 		}
-		placemark := fmt.Sprintf(placeMarkBase, getToKmlLineColor(leg.Elevation, leg.Length, paved), placemarkCoords)
+		placemark := fmt.Sprintf(placeMarkBase, getToKmlLineColor(way.Elevation, way.Length, paved), placemarkCoords)
 
 		placemarks += placemark
 	}
 
-	return fmt.Sprintf(kmlBase, placemarks), nil
+	_, err := io.WriteString(w, fmt.Sprintf(kmlBase, placemarks))
+
+	return err
 }
 
-func getToKmlLineColor(elevation *gravelmap.RoutingLegElevation, distance float64, paved bool) string {
+func getToKmlLineColor(elevationRange *gravelmap.ElevationRange, distance float64, paved bool) string {
 	surfaceStyle := "upvd"
 	if paved {
 		surfaceStyle = "pvd"
 	}
 
-	if elevation == nil {
+	if elevationRange == nil {
 		return "black-" + surfaceStyle
 	}
 
-	grade := (elevation.End - elevation.Start) * 100 / distance
+	grade := (elevationRange.End - elevationRange.Start) * 100 / distance
 	if grade < 1 {
 		return "green-" + surfaceStyle
 	}

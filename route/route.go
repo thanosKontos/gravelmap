@@ -57,9 +57,9 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 			latLngs = append(latLngs, gravelmap.Point{Lat: latlng.Lat, Lng: latlng.Lng})
 		}
 
-		var rlEle *gravelmap.RoutingLegElevation
+		var rlEle *gravelmap.ElevationRange
 		if pWay.ElevFrom != 0 && pWay.ElevTo != 0 {
-			rlEle = &gravelmap.RoutingLegElevation{
+			rlEle = &gravelmap.ElevationRange{
 				Start: float64(pWay.ElevFrom),
 				End:   float64(pWay.ElevTo),
 			}

@@ -149,18 +149,15 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graphs map[string]
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/vnd.google-earth.kml+xml")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"gravelmap.kml\"")
+
 	kml := kml.NewKml()
-	kmlString, err := kml.CreateFromRoute(routingData)
+	err = kml.Write(w, routingData)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, `{"message": "Error creating kml"}`)
-
-		return
 	}
-
-	w.Header().Set("Content-Type", "application/vnd.google-earth.kml+xml")
-	w.Header().Set("Content-Disposition", "attachment; filename=\"test.kml\"")
-	fmt.Fprintf(w, kmlString)
 }
 
 func getPointFromParams(param string, r *http.Request) (*gravelmap.Point, error) {

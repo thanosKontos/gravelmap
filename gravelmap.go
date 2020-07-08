@@ -104,19 +104,19 @@ type Point struct {
 	Lng float64 `json:"lng"`
 }
 
-// RoutingLegElevation represents the elevation routing leg
-type RoutingLegElevation struct {
+// ElevationRange represents the elevation routing leg
+type ElevationRange struct {
 	Start float64 `json:"start"`
 	End   float64 `json:"end"`
 }
 
 // RoutingLeg represents individual parts of a route
 type RoutingLeg struct {
-	Coordinates []Point              `json:"points"`
-	Length      float64              `json:"distance"`
-	WayType     string               `json:"type"`
-	Elevation   *RoutingLegElevation `json:"elev"`
-	OsmID       int64                `json:"osm_id"`
+	Coordinates []Point         `json:"points"`
+	Length      float64         `json:"distance"`
+	WayType     string          `json:"type"`
+	Elevation   *ElevationRange `json:"elev"`
+	OsmID       int64           `json:"osm_id"`
 }
 
 // DistanceCalculator describes implementations of finding the distance between 2 points
