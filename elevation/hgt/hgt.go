@@ -23,25 +23,14 @@ type downloader interface {
 	download(dms string) error
 }
 
-type hgt struct {
-	files          map[string]*os.File
-	destinationDir string
-	unzipper       unzipper
-	downloader     downloader
-	logger         gravelmap.Logger
+type hgtFileGetter interface {
+	getFile(dms string) (*os.File, error)
 }
 
-// NewHgt instanciates a new HGT object
-func NewHgt(destinationDir, nasaUsername, nasaPassword string, logger gravelmap.Logger) *hgt {
-	unzipper := &unzip{destinationDir}
-	downloader := &download{nasaUsername, nasaPassword, destinationDir}
-	return &hgt{
-		files:          make(map[string]*os.File),
-		destinationDir: destinationDir,
-		unzipper:       unzipper,
-		downloader:     downloader,
-		logger:         logger,
-	}
+type hgt struct {
+	files      map[string]*os.File
+	logger     gravelmap.Logger
+	fileGetter hgtFileGetter
 }
 
 func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayElevation, error) {
@@ -69,7 +58,6 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 		position := row*oneArcSecondRowColCount + col
 
 		file.Seek(position*2, 0)
-
 		data, err := readNextBytes(file, 2)
 		if err != nil {
 			return nil, err
@@ -121,34 +109,17 @@ func readNextBytes(file *os.File, number int) ([]byte, error) {
 	return bytes, nil
 }
 
-func (h *hgt) downloadFile(dms string) error {
-	h.logger.Info(fmt.Sprintf("Start downloading file: %s", dms))
-
-	h.downloader.download(dms)
-	h.unzipper.unzip(dms)
-
-	h.logger.Info(fmt.Sprintf("Done downloading file: %s", dms))
-
-	return nil
-}
-
 func (h *hgt) getFile(dms string) (*os.File, error) {
 	if f, ok := h.files[dms]; ok {
 		return f, nil
 	}
 
-	f, err := os.Open(fmt.Sprintf("%s/%s.hgt", h.destinationDir, dms))
+	h.logger.Info(fmt.Sprintf("Getting file: %s", dms))
+	f, err := h.fileGetter.getFile(dms)
 	if err != nil {
-		err = h.downloadFile(dms)
-		if err != nil {
-			return nil, err
-		}
-
-		f, err = os.Open(fmt.Sprintf("%s/%s.hgt", h.destinationDir, dms))
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
+	h.logger.Info("Done")
 
 	h.files[dms] = f
 
