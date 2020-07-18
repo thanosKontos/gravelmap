@@ -77,7 +77,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	logger.Info("Node file written")
 
 	// ## 3. Process OSM ways (store way info and create graph)
-	elevationGetterCloser := hgt.NewHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
+	elevationGetterCloser := hgt.NewNasaHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 	distanceCalculator := distance.NewHaversine()
 
 	var rms = map[string]routingMode{
