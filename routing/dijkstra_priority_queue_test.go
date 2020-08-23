@@ -12,12 +12,21 @@ func TestFindShortestHappyPath(t *testing.T) {
 	graph := graph.NewWeightedBidirectionalGraph()
 	dijkstraRouter := NewDijsktraShortestPath(graph)
 
-	graph.AddEdge(0, 1, 2)
-	graph.AddEdge(0, 2, 1)
-	graph.AddEdge(1, 3, 0)
-	graph.AddEdge(2, 3, 0)
-	graph.AddEdge(0, 4, 10)
-	graph.AddEdge(2, 4, 5)
+	var ways = map[int]map[int]gravelmap.Way{
+		0: {
+			1: gravelmap.Way{Cost: 2},
+			2: gravelmap.Way{Cost: 1},
+			4: gravelmap.Way{Cost: 10},
+		},
+		1: {
+			3: gravelmap.Way{Cost: 0},
+		},
+		2: {
+			3: gravelmap.Way{Cost: 0},
+			4: gravelmap.Way{Cost: 5},
+		},
+	}
+	graph.AddWays(ways)
 
 	bp, err := dijkstraRouter.FindShortest(0, 3)
 	assert.Nil(t, err)
@@ -32,13 +41,26 @@ func TestFindShortestNoPathFound(t *testing.T) {
 	graph := graph.NewWeightedBidirectionalGraph()
 	dijkstraRouter := NewDijsktraShortestPath(graph)
 
-	graph.AddEdge(0, 1, 1)
-	graph.AddEdge(1, 2, 1)
-	graph.AddEdge(2, 1, 1)
-	graph.AddEdge(2, 3, 1)
-	graph.AddEdge(3, 2, 1)
-	graph.AddEdge(4, 3, 1)
-	graph.AddEdge(4, 0, 1)
+	var ways = map[int]map[int]gravelmap.Way{
+		0: {
+			1: gravelmap.Way{Cost: 1},
+		},
+		1: {
+			2: gravelmap.Way{Cost: 1},
+		},
+		2: {
+			1: gravelmap.Way{Cost: 1},
+			3: gravelmap.Way{Cost: 1},
+		},
+		3: {
+			2: gravelmap.Way{Cost: 1},
+		},
+		4: {
+			3: gravelmap.Way{Cost: 1},
+			0: gravelmap.Way{Cost: 1},
+		},
+	}
+	graph.AddWays(ways)
 
 	_, err := dijkstraRouter.FindShortest(0, 4)
 	assert.Equal(t, "no path found", err.Error())

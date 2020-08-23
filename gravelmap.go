@@ -41,6 +41,14 @@ type Way struct {
 	OriginalOsmID int64
 }
 
+type Costable interface {
+	GetCost() int64
+}
+
+func (w *Way) GetCost() int64 {
+	return w.Cost
+}
+
 type BidirectionalElevationInfo struct {
 	Normal  ElevationInfo
 	Reverse ElevationInfo
