@@ -2,7 +2,7 @@ package gravelmap
 
 const (
 	WayTypePaved int8 = iota
-	WayTypeUnaved
+	WayTypeUnpaved
 	WayTypePath
 )
 

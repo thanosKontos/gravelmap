@@ -13,7 +13,7 @@ func NewBicycleWeight() *bicycleWeight {
 }
 
 func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
-	if wayType == gravelmap.WayTypeUnaved {
+	if wayType == gravelmap.WayTypeUnpaved {
 		return 1.0
 	}
 

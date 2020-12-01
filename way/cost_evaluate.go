@@ -39,7 +39,7 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 
 	wayType := gravelmap.WayTypePaved
 	if isOffRoadWay(tags) {
-		wayType = gravelmap.WayTypeUnaved
+		wayType = gravelmap.WayTypeUnpaved
 	}
 	if isPathway(tags) {
 		wayType = gravelmap.WayTypePath
