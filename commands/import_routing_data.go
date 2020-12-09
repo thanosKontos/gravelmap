@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/gob"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,7 @@ import (
 	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/path"
 	"github.com/thanosKontos/gravelmap/way"
+	"gopkg.in/yaml.v2"
 )
 
 // importRoutingDataCommand imports data from an OSM file.
@@ -46,7 +48,87 @@ type routingMode struct {
 	weighter      gravelmap.Weighter
 }
 
+var data = `
+weight_offroad: 0.6
+
+weight_vehicle_acceptance:
+  exclusively: 0.7
+  yes: 1.0
+  partially: 2.0
+  maybe: 10000000.0
+  no: 10000000.0
+
+vehicle_acceptance_tags:
+  exclusively:
+    tags:
+      - mtb:scale
+    values:
+      - bicycle:
+        - yes
+        - permissive
+        - designated
+  no:
+    values:
+      - bicycle:
+        - no
+  maybe:
+    values:
+      - highway:
+        - footway
+        - path
+`
+
+type T struct {
+	WeightOffroad             float64 `yaml:"weight_offroad"`
+	Weight_vehicle_acceptance struct {
+		Exclusively float64
+		Yes         float64
+		Partially   float64
+		Maybe       float64
+		No          float64
+	}
+
+	Vehicle_acceptance_tags struct {
+		Exclusively struct {
+			Tags   []string
+			Values interface{}
+		}
+		Yes struct {
+			Tags   []string
+			Values interface{}
+		}
+		Partially struct {
+			Tags   []string
+			Values interface{}
+		}
+		Maybe struct {
+			Tags   []string
+			Values interface{}
+		}
+		No struct {
+			Tags   []string
+			Values interface{}
+		}
+	}
+}
+
 func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesystem bool) error {
+
+	t := T{}
+
+	errzzz := yaml.Unmarshal([]byte(data), &t)
+	if errzzz != nil {
+		log.Fatalf("error: %v", errzzz)
+	}
+	fmt.Println(t.WeightOffroad)
+	fmt.Println(t.Weight_vehicle_acceptance)
+	fmt.Println(t.Vehicle_acceptance_tags.Exclusively.Tags)
+	fmt.Println(t.Vehicle_acceptance_tags.Exclusively.Values)
+	fmt.Println(t.Vehicle_acceptance_tags.Yes.Tags)
+	fmt.Println(t.Vehicle_acceptance_tags.Yes.Values)
+
+	os.Exit(0)
+
 	os.Mkdir("_files", 0777)
 
 	// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##

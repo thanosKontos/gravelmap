@@ -1,0 +1,17 @@
+weight_offroad: 0.6
+
+weight_vehicle_acceptance:
+  exclusively: 1.0
+  yes: 1.0
+  partially: 2.2
+  maybe: 10000000.0
+  no: 10000000.0
+
+vehicle_acceptance_tags:
+  exclusively:
+    values:
+      - highway:
+        - footway
+        - path
+        - pedestrian
+        - steps

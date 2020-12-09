@@ -1,0 +1,43 @@
+weight_offroad: 0.6
+
+
+weight_vehicle_acceptance:
+  exclusively: 0.7
+  yes: 1.0
+  partially: 2.0
+  maybe: 10000000.0
+  no: 10000000.0
+
+
+vehicle_acceptance_tags:
+  exclusively:
+    tags:
+      - mtb:scale
+    values:
+      - bicycle:
+        - yes
+        - permissive
+        - designated
+      - highway:
+        - cycleway
+  maybe:
+    values:
+      - highway:
+        - footway
+        - path
+  partially:
+    values:
+      - highway:
+        - primary
+  no:
+    values:
+      - bicycle:
+        - no
+      - highway:
+        - service
+        - motorway
+        - steps
+
+
+way_acceptance_tags:
+
