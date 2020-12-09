@@ -2,8 +2,11 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/thanosKontos/gravelmap"
 	"github.com/thanosKontos/gravelmap/log"
+
+	log2 "log"
 
 	"os"
 
@@ -51,7 +54,9 @@ func rootCommand() *cobra.Command {
 
 // persistentPreRunECommand defines the root command actions before the run command.
 func persistentPreRunECommand(cmdName string, verboseLevel string) error {
-	logger = log.NewStdout(verboseLevel)
+	stdoutLogger := log2.New(os.Stdout, "", 0)
+
+	logger = log.NewLevelized(verboseLevel, stdoutLogger)
 
 	return nil
 }
