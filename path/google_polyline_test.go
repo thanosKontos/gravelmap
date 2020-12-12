@@ -15,8 +15,8 @@ func TestGmapsEncodePath(t *testing.T) {
 		gravelmap.Point{10.52, 11.4},
 	}
 
-	gmapsEncoder := NewGooglemaps()
-	encoded := gmapsEncoder.Encode(pts)
+	gPoly := NewGooglePolyline()
+	encoded := gPoly.Encode(pts)
 
 	assert.Equal(t, "}dg}@_`~cAary@?_|B_pR", encoded)
 }
@@ -24,8 +24,26 @@ func TestGmapsEncodePath(t *testing.T) {
 func TestGmapsEncodePathNoPoints(t *testing.T) {
 	pts := []gravelmap.Point{}
 
-	gmapsEncoder := NewGooglemaps()
-	encoded := gmapsEncoder.Encode(pts)
+	gPoly := NewGooglePolyline()
+	encoded := gPoly.Encode(pts)
 
 	assert.Equal(t, "", encoded)
+}
+
+func TestGmapsDecodePolyline(t *testing.T) {
+	poly := "}dg}@_`~cAary@?_|B_pR"
+
+	gPoly := NewGooglePolyline()
+	decoded := gPoly.Decode(poly)
+
+	assert.Len(t, decoded, 3)
+}
+
+func TestGmapsDecodeEmptyPolyline(t *testing.T) {
+	poly := ""
+
+	gPoly := NewGooglePolyline()
+	decoded := gPoly.Decode(poly)
+
+	assert.Empty(t, decoded)
 }

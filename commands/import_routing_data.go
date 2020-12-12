@@ -86,7 +86,7 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	}
 	routingMode := rms[routingMd]
 
-	pathEncoder := path.NewGooglemaps()
+	pathEncoder := path.NewGooglePolyline()
 	wayStorer := way.NewFileStore("_files", pathEncoder)
 	pathSimplifier := path.NewSimpleSimplifiedPath(distanceCalculator)
 	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, routingMode.weighter)
