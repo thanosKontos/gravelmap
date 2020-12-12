@@ -169,6 +169,10 @@ type Encoder interface {
 	Encode(points []Point) string
 }
 
+type Decoder interface {
+	Decode(string) []Point
+}
+
 type PathSimplifier interface {
 	Simplify(points []Point) []Point
 }

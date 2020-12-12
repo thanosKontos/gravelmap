@@ -17,6 +17,7 @@ import (
 	"github.com/thanosKontos/gravelmap/graph"
 	"github.com/thanosKontos/gravelmap/kml"
 	"github.com/thanosKontos/gravelmap/node2point"
+	"github.com/thanosKontos/gravelmap/path"
 	"github.com/thanosKontos/gravelmap/route"
 	"github.com/thanosKontos/gravelmap/routing"
 	"github.com/thanosKontos/gravelmap/way"
@@ -102,7 +103,8 @@ func buildRoutingLegsFromRequestParams(r *http.Request, graphs map[string]*graph
 	}
 	distanceCalc := distance.NewHaversine()
 	edgeFinder := node2point.NewNodePointBboxFileRead("_files", distanceCalc)
-	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader)
+	pathDecoder := path.NewGooglePolyline()
+	router := route.NewGmRouter(edgeFinder, dijkstra, edgeReader, pathDecoder)
 	routingData, err := router.Route(*pointFrom, *pointTo)
 	if err != nil {
 		err = errRouting

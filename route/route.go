@@ -2,20 +2,21 @@ package route
 
 import (
 	"github.com/thanosKontos/gravelmap"
-	"googlemaps.github.io/maps"
 )
 
 type router struct {
-	edgeFinder gravelmap.EdgeFinder
-	graph      gravelmap.ShortestFinder
-	edgeReader gravelmap.EdgeReader
+	edgeFinder  gravelmap.EdgeFinder
+	graph       gravelmap.ShortestFinder
+	edgeReader  gravelmap.EdgeReader
+	pathDecoder gravelmap.Decoder
 }
 
-func NewGmRouter(edgeFinder gravelmap.EdgeFinder, graph gravelmap.ShortestFinder, edgeReader gravelmap.EdgeReader) *router {
+func NewGmRouter(edgeFinder gravelmap.EdgeFinder, graph gravelmap.ShortestFinder, edgeReader gravelmap.EdgeReader, pathDecoder gravelmap.Decoder) *router {
 	return &router{
-		edgeFinder: edgeFinder,
-		graph:      graph,
-		edgeReader: edgeReader,
+		edgeFinder:  edgeFinder,
+		graph:       graph,
+		edgeReader:  edgeReader,
+		pathDecoder: pathDecoder,
 	}
 }
 
@@ -50,12 +51,7 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 	var routingLegs []gravelmap.RoutingLeg
 	presentableWays, _ := r.edgeReader.Read(edges)
 	for _, pWay := range presentableWays {
-		var latLngs []gravelmap.Point
-		tmpLatLngs, _ := maps.DecodePolyline(pWay.Polyline)
-
-		for _, latlng := range tmpLatLngs {
-			latLngs = append(latLngs, gravelmap.Point{Lat: latlng.Lat, Lng: latlng.Lng})
-		}
+		latLngs := r.pathDecoder.Decode(pWay.Polyline)
 
 		var rlEle *gravelmap.ElevationRange
 		if pWay.ElevFrom != 0 && pWay.ElevTo != 0 {
