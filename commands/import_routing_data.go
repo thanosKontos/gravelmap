@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/gob"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,7 @@ import (
 	"github.com/thanosKontos/gravelmap/osm"
 	"github.com/thanosKontos/gravelmap/path"
 	"github.com/thanosKontos/gravelmap/way"
+	"gopkg.in/yaml.v2"
 )
 
 // importRoutingDataCommand imports data from an OSM file.
@@ -80,8 +82,22 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	elevationGetterCloser := hgt.NewNasaHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
 	distanceCalculator := distance.NewHaversine()
 
+	weightConf := way.WeightConfig{}
+	if routingMd == "bicycle" {
+		yamlFile, err := ioutil.ReadFile("profiles/mtb.yaml")
+		if err != nil {
+			logger.Error(err)
+			os.Exit(0)
+		}
+		err = yaml.Unmarshal(yamlFile, &weightConf)
+		if err != nil {
+			logger.Error(err)
+			os.Exit(0)
+		}
+	}
+
 	var rms = map[string]routingMode{
-		"bicycle": {"graph_bicycle.gob", way.NewBicycleWeight()},
+		"bicycle": {"graph_bicycle.gob", way.NewBicycleWeight(weightConf)},
 		"foot":    {"graph_foot.gob", way.NewHikingWeight()},
 	}
 	routingMode := rms[routingMd]

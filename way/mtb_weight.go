@@ -1,19 +1,16 @@
 package way
 
 import (
-	"io/ioutil"
-	"log"
 	"sort"
 
 	"github.com/thanosKontos/gravelmap"
 	gmstring "github.com/thanosKontos/gravelmap/string"
-	"gopkg.in/yaml.v2"
 )
 
-// type TagValueConfig struct {
-// 	Tags   []string
-// 	Values []map[string][]string
-// }
+type TagValueConfig struct {
+	Tags   []string
+	Values []map[string][]string
+}
 
 type WeightConfig struct {
 	WeightOffroad           float64 `yaml:"weight_offroad"`
@@ -26,38 +23,17 @@ type WeightConfig struct {
 	} `yaml:"weight_vehicle_acceptance"`
 
 	VehicleAcceptanceTags struct {
-		Exclusively struct {
-			Tags   []string
-			Values []map[string][]string
-		}
-		Yes struct {
-			Tags   []string
-			Values []map[string][]string
-		}
-		Partially struct {
-			Tags   []string
-			Values []map[string][]string
-		}
-		Maybe struct {
-			Tags   []string
-			Values []map[string][]string
-		}
-		No struct {
-			Tags   []string
-			Values []map[string][]string
-		}
+		Exclusively TagValueConfig
+		Yes         TagValueConfig
+		Partially   TagValueConfig
+		Maybe       TagValueConfig
+		No          TagValueConfig
 	} `yaml:"vehicle_acceptance_tags"`
 
 	WayAcceptanceTags struct {
 		Simple struct {
-			NoDirection struct {
-				Tags   []string
-				Values []map[string][]string
-			} `yaml:"no_direction"`
-			OppositeDirection struct {
-				Tags   []string
-				Values []map[string][]string
-			} `yaml:"opposite_direction"`
+			NoDirection       TagValueConfig `yaml:"no_direction"`
+			OppositeDirection TagValueConfig `yaml:"opposite_direction"`
 		}
 		Nested struct {
 			BothDirection []struct {
@@ -79,18 +55,7 @@ type bicycleWeight struct {
 	conf WeightConfig
 }
 
-func NewBicycleWeight() *bicycleWeight {
-	conf := WeightConfig{}
-
-	yamlFile, kkkerr := ioutil.ReadFile("profiles/mtb.yaml")
-	if kkkerr != nil {
-		log.Fatalf("error: %v", kkkerr)
-	}
-	errzzz := yaml.Unmarshal(yamlFile, &conf)
-	if errzzz != nil {
-		log.Fatalf("error: %v", errzzz)
-	}
-
+func NewBicycleWeight(conf WeightConfig) *bicycleWeight {
 	return &bicycleWeight{
 		conf,
 	}
