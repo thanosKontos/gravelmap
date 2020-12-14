@@ -1,23 +1,91 @@
 package way
 
 import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"sort"
+
 	"github.com/thanosKontos/gravelmap"
 	gmstring "github.com/thanosKontos/gravelmap/string"
+	"gopkg.in/yaml.v2"
 )
 
+type WeightConfig struct {
+	WeightOffroad             float64 `yaml:"weight_offroad"`
+	Weight_vehicle_acceptance struct {
+		Exclusively float64
+		Yes         float64
+		Partially   float64
+		Maybe       float64
+		No          float64
+	}
+
+	Vehicle_acceptance_tags struct {
+		Exclusively struct {
+			Tags   []string
+			Values []map[string][]string
+		}
+		Yes struct {
+			Tags   []string
+			Values []map[string][]string
+		}
+		Partially struct {
+			Tags   []string
+			Values []map[string][]string
+		}
+		Maybe struct {
+			Tags   []string
+			Values []map[string][]string
+		}
+		No struct {
+			Tags   []string
+			Values []map[string][]string
+		}
+	}
+
+	Way_acceptance_tags struct {
+		Tags interface{}
+	}
+
+	Weight_elevation struct {
+		Undefined []float64
+		Less_than map[float32][]float64
+	}
+}
+
 type bicycleWeight struct {
+	conf WeightConfig
 }
 
 func NewBicycleWeight() *bicycleWeight {
-	return &bicycleWeight{}
+	conf := WeightConfig{}
+
+	yamlFile, kkkerr := ioutil.ReadFile("profiles/mtb.yaml")
+	if kkkerr != nil {
+		fmt.Println(kkkerr)
+		os.Exit(0)
+	}
+	errzzz := yaml.Unmarshal(yamlFile, &conf)
+	if errzzz != nil {
+		log.Fatalf("error: %v", errzzz)
+	}
+
+	//fmt.Println(conf.Way_acceptance_tags.Tags)
+	fmt.Println(conf.Weight_elevation)
+
+	return &bicycleWeight{
+		conf,
+	}
 }
 
 func (b *bicycleWeight) WeightOffRoad(wayType int8) float64 {
 	if wayType == gravelmap.WayTypeUnpaved {
-		return 1.0
+		return b.conf.WeightOffroad
 	}
 
-	return 1.6
+	return 1.0
 }
 
 func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.BidirectionalWeight {
@@ -34,6 +102,10 @@ func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.Bi
 }
 
 func getMtbWayAcceptance(tags map[string]string) wayAcceptance {
+	if _, ok := tags["military"]; ok {
+		return wayAcceptance{wayAcceptanceNo, wayAcceptanceNo}
+	}
+
 	if val, ok := tags["oneway"]; ok {
 		if val == "yes" {
 			if val, ok := tags["cycleway"]; ok {
@@ -66,111 +138,117 @@ func getMtbWayAcceptance(tags map[string]string) wayAcceptance {
 		return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 	}
 
-	if _, ok := tags["military"]; ok {
-		return wayAcceptance{wayAcceptanceNo, wayAcceptanceNo}
-	}
-
 	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
 }
 
 func (b *bicycleWeight) WeightVehicleAcceptance(tags map[string]string) float64 {
-	switch getMtbVehicleWayAcceptance(tags) {
+	switch b.getMtbVehicleWayAcceptance(tags) {
 	case vehicleAcceptanceExclusively:
-		return 0.7
+		return b.conf.Weight_vehicle_acceptance.Exclusively
 	case vehicleAcceptancePartially:
-		return 2.0
+		return b.conf.Weight_vehicle_acceptance.Partially
 	case vehicleAcceptanceMaybe:
-		return 10000000.0
+		return b.conf.Weight_vehicle_acceptance.Maybe
 	case vehicleAcceptanceNo:
-		return 10000000.0
+		return b.conf.Weight_vehicle_acceptance.No
 	}
 
-	return 1.0
+	return b.conf.Weight_vehicle_acceptance.Yes
 }
 
-func getMtbVehicleWayAcceptance(tags map[string]string) int32 {
-	if _, ok := tags["mtb:scale"]; ok {
-		return vehicleAcceptanceExclusively
-	}
-
-	if val, ok := tags["bicycle"]; ok {
-		if gmstring.String(val).Exists([]string{"yes", "permissive", "designated"}) {
+func (b *bicycleWeight) getMtbVehicleWayAcceptance(tags map[string]string) int32 {
+	for _, excl_tag := range b.conf.Vehicle_acceptance_tags.Exclusively.Tags {
+		if _, ok := tags[excl_tag]; ok {
 			return vehicleAcceptanceExclusively
-		}
-
-		if val == "no" {
-			return vehicleAcceptanceNo
 		}
 	}
 
-	if val, ok := tags["highway"]; ok {
-		if gmstring.String(val).Exists([]string{"footway", "path"}) {
-			return vehicleAcceptanceMaybe
-		}
-
-		if val == "cycleway" {
-			return vehicleAcceptanceExclusively
-		}
-
-		if val == "service" {
-			if val, ok := tags["bicycle"]; ok {
-				if gmstring.String(val).Exists([]string{"yes", "permissive", "designated"}) {
+	for _, excl_vals := range b.conf.Vehicle_acceptance_tags.Exclusively.Values {
+		for tag, vals := range excl_vals {
+			if val, ok := tags[tag]; ok {
+				if gmstring.String(val).Exists(vals) {
 					return vehicleAcceptanceExclusively
 				}
-			} else {
-				return vehicleAcceptanceNo
 			}
 		}
+	}
 
-		if gmstring.String(val).Exists([]string{"motorway", "steps"}) {
+	for _, excl_tag := range b.conf.Vehicle_acceptance_tags.No.Tags {
+		if _, ok := tags[excl_tag]; ok {
 			return vehicleAcceptanceNo
 		}
+	}
 
-		if val == "primary" {
+	for _, excl_vals := range b.conf.Vehicle_acceptance_tags.No.Values {
+		for tag, vals := range excl_vals {
+			if val, ok := tags[tag]; ok {
+				if gmstring.String(val).Exists(vals) {
+					return vehicleAcceptanceNo
+				}
+			}
+		}
+	}
+
+	for _, excl_tag := range b.conf.Vehicle_acceptance_tags.Maybe.Tags {
+		if _, ok := tags[excl_tag]; ok {
+			return vehicleAcceptanceMaybe
+		}
+	}
+
+	for _, excl_vals := range b.conf.Vehicle_acceptance_tags.Maybe.Values {
+		for tag, vals := range excl_vals {
+			if val, ok := tags[tag]; ok {
+				if gmstring.String(val).Exists(vals) {
+					return vehicleAcceptanceMaybe
+				}
+			}
+		}
+	}
+
+	for _, excl_tag := range b.conf.Vehicle_acceptance_tags.Partially.Tags {
+		if _, ok := tags[excl_tag]; ok {
 			return vehicleAcceptancePartially
 		}
+	}
 
-		return vehicleAcceptanceYes
+	for _, excl_vals := range b.conf.Vehicle_acceptance_tags.Partially.Values {
+		for tag, vals := range excl_vals {
+			if val, ok := tags[tag]; ok {
+				if gmstring.String(val).Exists(vals) {
+					return vehicleAcceptancePartially
+				}
+			}
+		}
 	}
 
 	return vehicleAcceptanceYes
 }
 
-//0%: A flat road
-//1-3%: Slightly uphill but not particularly challenging. A bit like riding into the wind.
-//4-6%: A manageable gradient that can cause fatigue over long periods.
-//7-9%: Starting to become uncomfortable for seasoned riders, and very challenging for new climbers.
-//10%-15%: A painful gradient, especially if maintained for any length of time
-//16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
 func (b *bicycleWeight) WeightElevation(elevation *gravelmap.WayElevation) gravelmap.BidirectionalWeight {
 	if elevation == nil {
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
+		return gravelmap.BidirectionalWeight{
+			Normal:  b.conf.Weight_elevation.Undefined[0],
+			Reverse: b.conf.Weight_elevation.Undefined[1],
+		}
 	}
 
-	switch {
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -15:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 15}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -10:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 10}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -7:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 7}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -4:
-		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 3}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < -2:
-		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1.2}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 0:
-		return gravelmap.BidirectionalWeight{Normal: 0.8, Reverse: 1}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 2:
-		return gravelmap.BidirectionalWeight{Normal: 1, Reverse: 0.8}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 4:
-		return gravelmap.BidirectionalWeight{Normal: 1.2, Reverse: 0.8}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 7:
-		return gravelmap.BidirectionalWeight{Normal: 3, Reverse: 0.8}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 10:
-		return gravelmap.BidirectionalWeight{Normal: 7, Reverse: 1}
-	case elevation.BidirectionalElevationInfo.Normal.Grade < 15:
-		return gravelmap.BidirectionalWeight{Normal: 10, Reverse: 1}
-	default:
-		return gravelmap.BidirectionalWeight{Normal: 15, Reverse: 1}
+	// Looping through map may not keep the order, so we are sorting the keys and looping using the sorted array
+	confGrades := make([]float32, 0)
+	for confGrade, _ := range b.conf.Weight_elevation.Less_than {
+		confGrades = append(confGrades, confGrade)
+	}
+	sort.Slice(confGrades, func(i, j int) bool { return confGrades[i] < confGrades[j] })
+	for _, confGrade := range confGrades {
+		if elevation.BidirectionalElevationInfo.Normal.Grade < confGrade {
+			return gravelmap.BidirectionalWeight{
+				Normal:  b.conf.Weight_elevation.Less_than[confGrade][0],
+				Reverse: b.conf.Weight_elevation.Less_than[confGrade][1],
+			}
+		}
+	}
+
+	return gravelmap.BidirectionalWeight{
+		Normal:  b.conf.Weight_elevation.Undefined[0],
+		Reverse: b.conf.Weight_elevation.Undefined[1],
 	}
 }

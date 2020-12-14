@@ -15,3 +15,13 @@ vehicle_acceptance_tags:
         - path
         - pedestrian
         - steps
+
+way_acceptance_tags:
+  no_direction:
+    tags:
+      - military
+    values:
+      - highway:
+        - motorway
+        - trunk
+        - primary
