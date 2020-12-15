@@ -54,7 +54,7 @@ func TestVehicleAcceptanceWeight(t *testing.T) {
 		},
 	}
 
-	weighter := NewBicycleWeight(mtbConf)
+	weighter := NewDefaultWeight(mtbConf)
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, test.expected, weighter.WeightVehicleAcceptance(test.tags))
@@ -101,7 +101,7 @@ func TestWayAcceptanceWeight(t *testing.T) {
 		},
 	}
 
-	weighter := NewBicycleWeight(mtbConf)
+	weighter := NewDefaultWeight(mtbConf)
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, test.expected, weighter.getMtbWayAcceptance(test.tags))
@@ -151,7 +151,7 @@ func TestElevationWeight(t *testing.T) {
 		},
 	}
 
-	weighter := NewBicycleWeight(mtbConf)
+	weighter := NewDefaultWeight(mtbConf)
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, test.expected, weighter.WeightElevation(test.ele))

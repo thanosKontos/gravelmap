@@ -22,8 +22,8 @@ import (
 // importRoutingDataCommand imports data from an OSM file.
 func importRoutingDataCommand() *cobra.Command {
 	var (
-		inputFilename, routingMd string
-		useFilesystem            bool
+		inputFilename, profileName string
+		useFilesystem              bool
 	)
 
 	importRoutingDataCmd := &cobra.Command{
@@ -33,22 +33,17 @@ func importRoutingDataCommand() *cobra.Command {
 	}
 
 	importRoutingDataCmd.Flags().StringVar(&inputFilename, "input", "", "The osm input file.")
-	importRoutingDataCmd.Flags().StringVar(&routingMd, "routing-mode", "bicycle", "The routing mode.")
+	importRoutingDataCmd.Flags().StringVar(&profileName, "profile", "mtb", "The profile (routing type) to use.")
 	importRoutingDataCmd.Flags().BoolVar(&useFilesystem, "use-filesystem", false, "Use filesystem if your system runs out of memory (e.g. you are importing a large osm file on a low mem system). Will make import very slow!")
 
 	importRoutingDataCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return importRoutingDataCmdRun(inputFilename, routingMd, useFilesystem)
+		return importRoutingDataCmdRun(inputFilename, profileName, useFilesystem)
 	}
 
 	return importRoutingDataCmd
 }
 
-type routingMode struct {
-	graphFilename string
-	weighter      gravelmap.Weighter
-}
-
-func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesystem bool) error {
+func importRoutingDataCmdRun(inputFilename string, profileName string, useFilesystem bool) error {
 	os.Mkdir("_files", 0777)
 
 	// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
@@ -83,29 +78,21 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	distanceCalculator := distance.NewHaversine()
 
 	weightConf := way.WeightConfig{}
-	if routingMd == "bicycle" {
-		yamlFile, err := ioutil.ReadFile("profiles/mtb.yaml")
-		if err != nil {
-			logger.Error(err)
-			os.Exit(0)
-		}
-		err = yaml.Unmarshal(yamlFile, &weightConf)
-		if err != nil {
-			logger.Error(err)
-			os.Exit(0)
-		}
+	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("profiles/%s.yaml", profileName))
+	if err != nil {
+		logger.Error(err)
+		os.Exit(0)
 	}
-
-	var rms = map[string]routingMode{
-		"bicycle": {"graph_bicycle.gob", way.NewBicycleWeight(weightConf)},
-		"foot":    {"graph_foot.gob", way.NewHikingWeight()},
+	err = yaml.Unmarshal(yamlFile, &weightConf)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(0)
 	}
-	routingMode := rms[routingMd]
 
 	pathEncoder := path.NewGooglePolyline()
 	wayStorer := way.NewFileStore("_files", pathEncoder)
 	pathSimplifier := path.NewSimpleSimplifiedPath(distanceCalculator)
-	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, routingMode.weighter)
+	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, way.NewDefaultWeight(weightConf))
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
 	graph := graph.NewWeightedBidirectionalGraph()
@@ -120,7 +107,11 @@ func importRoutingDataCmdRun(inputFilename string, routingMd string, useFilesyst
 	elevationGetterCloser.Close()
 
 	// also persist it to file
-	graphFile, _ := os.Create(fmt.Sprintf("_files/%s", routingMode.graphFilename))
+	graphFile, err := os.Create(fmt.Sprintf("_files/graph_%s.gob", profileName))
+	if err != nil {
+		logger.Error(err)
+		os.Exit(0)
+	}
 	dataEncoder := gob.NewEncoder(graphFile)
 	dataEncoder.Encode(graph)
 	graphFile.Close()

@@ -1,0 +1,40 @@
+weight_offroad: 0.6
+
+weight_vehicle_acceptance:
+  exclusively: 1.0
+  yes: 1.0
+  partially: 2.2
+  maybe: 10000000.0
+  no: 10000000.0
+
+vehicle_acceptance_tags:
+  exclusively:
+    values:
+      - highway:
+        - footway
+        - path
+        - pedestrian
+        - steps
+
+way_acceptance_tags:
+  simple:
+    no_direction:
+      tags: ["military"]
+      values:
+        - highway: ["motorway", "trunk", "primary"]
+
+weight_elevation:
+  undefined: [1, 1]
+  less_than:
+    -15: [1, 6]
+    -10: [1, 4]
+    -7: [1, 2.5]
+    -4: [0.8, 1.5]
+    -2: [0.8, 1.2]
+    0: [0.8, 1]
+    2: [1, 0.8]
+    4: [1.2, 0.8]
+    7: [1.5, 0.8]
+    10: [2.5, 1]
+    15: [4, 1]
+    1000: [6, 1]
