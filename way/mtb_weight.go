@@ -12,6 +12,13 @@ type TagValueConfig struct {
 	Values []map[string][]string
 }
 
+type NestedTagValueConfig struct {
+	Tag          string
+	Value        string
+	NestedTag    string   `yaml:"nested_tag"`
+	NestedValues []string `yaml:"nested_values"`
+}
+
 type WeightConfig struct {
 	WeightOffroad           float64 `yaml:"weight_offroad"`
 	WeightVehicleAcceptance struct {
@@ -36,12 +43,7 @@ type WeightConfig struct {
 			OppositeDirection TagValueConfig `yaml:"opposite_direction"`
 		}
 		Nested struct {
-			BothDirection []struct {
-				Tag          string
-				Value        string
-				NestedTag    string   `yaml:"nested_tag"`
-				NestedValues []string `yaml:"nested_values"`
-			} `yaml:"both_direction"`
+			BothDirection []NestedTagValueConfig `yaml:"both_direction"`
 		}
 	} `yaml:"way_acceptance_tags"`
 
@@ -83,6 +85,14 @@ func (b *bicycleWeight) WeightWayAcceptance(tags map[string]string) gravelmap.Bi
 }
 
 func (b *bicycleWeight) getMtbWayAcceptance(tags map[string]string) wayAcceptance {
+	//TODO:
+	//First evaluate nested nos
+	//Then evaluate simple nos
+	//Then evaluate nested bothways
+	//Then evaluate nested opposites
+	//Then evaluate simple bothways
+	//Then evaluate simple opposites
+
 	// First evaluate the nested configs if any
 	for _, nestedConf := range b.conf.WayAcceptanceTags.Nested.BothDirection {
 		if val, ok := tags[nestedConf.Tag]; ok {
@@ -131,42 +141,6 @@ func (b *bicycleWeight) getMtbWayAcceptance(tags map[string]string) wayAcceptanc
 
 	// Allowing the vehicle to travel both directions is the default
 	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-
-	// if _, ok := tags["military"]; ok {
-	// 	return wayAcceptance{wayAcceptanceNo, wayAcceptanceNo}
-	// }
-
-	// if val, ok := tags["oneway"]; ok {
-	// 	if val == "yes" {
-	// 		if val, ok := tags["cycleway"]; ok {
-	// 			if gmstring.String(val).Exists([]string{"opposite", "opposite_lane"}) {
-	// 				return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-	// 			}
-	// 		}
-
-	// 		if val, ok := tags["cycleway:left"]; ok {
-	// 			if val == "opposite_lane" {
-	// 				return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-	// 			}
-	// 		}
-
-	// 		if val, ok := tags["cycleway:right"]; ok {
-	// 			if val == "opposite_lane" {
-	// 				return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-	// 			}
-	// 		}
-
-	// 		if val, ok := tags["oneway:bicycle"]; ok {
-	// 			if val == "no" {
-	// 				return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-	// 			}
-	// 		}
-
-	// 		return wayAcceptance{wayAcceptanceYes, wayAcceptanceNo}
-	// 	}
-
-	// 	return wayAcceptance{wayAcceptanceYes, wayAcceptanceYes}
-	// }
 }
 
 func (b *bicycleWeight) WeightVehicleAcceptance(tags map[string]string) float64 {
