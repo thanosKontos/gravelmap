@@ -271,7 +271,7 @@ func (b *defaultWeight) WeightElevation(elevation *gravelmap.WayElevation) grave
 	}
 	sort.Slice(confGrades, func(i, j int) bool { return confGrades[i] < confGrades[j] })
 	for _, confGrade := range confGrades {
-		if elevation.BidirectionalElevationInfo.Normal.Grade < confGrade {
+		if elevation.ElevationInfo.Grade < confGrade {
 			return gravelmap.BidirectionalWeight{
 				Normal:  b.conf.WeightElevation.LessThan[confGrade][0],
 				Reverse: b.conf.WeightElevation.LessThan[confGrade][1],

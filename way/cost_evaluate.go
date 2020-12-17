@@ -46,9 +46,9 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 	}
 
 	elevation, err := ce.elevationGetterCloser.Get(points, distance)
-	elevationEval := gravelmap.BidirectionalElevationInfo{}
+	elevationInfo := gravelmap.ElevationInfo{}
 	if err == nil {
-		elevationEval = elevation.BidirectionalElevationInfo
+		elevationInfo = elevation.ElevationInfo
 	}
 
 	wayAcceptanceWeight := ce.weighter.WeightWayAcceptance(tags)
@@ -61,9 +61,9 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 			Normal:  int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeight.Normal * offRoadWeight * elevationWeight.Normal),
 			Reverse: int64(distance * vehicleAcceptanceWeight * wayAcceptanceWeight.Reverse * offRoadWeight * elevationWeight.Reverse),
 		},
-		Distance:                   int32(distance),
-		WayType:                    wayType,
-		BidirectionalElevationInfo: elevationEval,
+		Distance:      int32(distance),
+		WayType:       wayType,
+		ElevationInfo: elevationInfo,
 	}
 }
 
