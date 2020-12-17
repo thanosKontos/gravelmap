@@ -71,7 +71,7 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 				Tags:          tags,
 				Distance:      evaluation.Distance,
 				Type:          evaluation.WayType,
-				ElevationInfo: evaluation.BidirectionalElevationInfo.Normal,
+				ElevationInfo: evaluation.ElevationInfo,
 				Cost:          evaluation.BidirectionalCost.Normal,
 
 				OriginalOsmID: osmID,
@@ -87,7 +87,7 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 			Tags:          tags,
 			Distance:      evaluation.Distance,
 			Type:          evaluation.WayType,
-			ElevationInfo: evaluation.BidirectionalElevationInfo.Normal,
+			ElevationInfo: evaluation.ElevationInfo,
 			Cost:          evaluation.BidirectionalCost.Normal,
 
 			OriginalOsmID: osmID,
@@ -106,7 +106,7 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 				Tags:          tags,
 				Distance:      evaluation.Distance,
 				Type:          evaluation.WayType,
-				ElevationInfo: evaluation.BidirectionalElevationInfo.Reverse,
+				ElevationInfo: evaluation.ElevationInfo.GetReverse(),
 				Cost:          evaluation.BidirectionalCost.Reverse,
 
 				OriginalOsmID: osmID,
@@ -122,7 +122,7 @@ func (o *osm2GmWays) AddBackAndForthEdgesToWays(edgeNodeFrom, edgeNodeTo int, wa
 			Tags:          tags,
 			Distance:      evaluation.Distance,
 			Type:          evaluation.WayType,
-			ElevationInfo: evaluation.BidirectionalElevationInfo.Reverse,
+			ElevationInfo: evaluation.ElevationInfo.GetReverse(),
 			Cost:          evaluation.BidirectionalCost.Reverse,
 
 			OriginalOsmID: osmID,

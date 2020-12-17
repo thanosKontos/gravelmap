@@ -129,24 +129,15 @@ func TestElevationWeight(t *testing.T) {
 			expected: gravelmap.BidirectionalWeight{1.2, 1.2},
 		},
 		"min": {
-			ele: &gravelmap.WayElevation{BidirectionalElevationInfo: gravelmap.BidirectionalElevationInfo{
-				Normal:  gravelmap.ElevationInfo{Grade: -15},
-				Reverse: gravelmap.ElevationInfo{Grade: 15},
-			}},
+			ele:      &gravelmap.WayElevation{ElevationInfo: gravelmap.ElevationInfo{Grade: -15}},
 			expected: gravelmap.BidirectionalWeight{1, 15},
 		},
 		"in_middle": {
-			ele: &gravelmap.WayElevation{BidirectionalElevationInfo: gravelmap.BidirectionalElevationInfo{
-				Normal:  gravelmap.ElevationInfo{Grade: 5.2},
-				Reverse: gravelmap.ElevationInfo{Grade: -5.2},
-			}},
+			ele:      &gravelmap.WayElevation{ElevationInfo: gravelmap.ElevationInfo{Grade: 5.2}},
 			expected: gravelmap.BidirectionalWeight{6, 1},
 		},
 		"max": {
-			ele: &gravelmap.WayElevation{BidirectionalElevationInfo: gravelmap.BidirectionalElevationInfo{
-				Normal:  gravelmap.ElevationInfo{Grade: 15},
-				Reverse: gravelmap.ElevationInfo{Grade: -15},
-			}},
+			ele:      &gravelmap.WayElevation{ElevationInfo: gravelmap.ElevationInfo{Grade: 15}},
 			expected: gravelmap.BidirectionalWeight{18, 1},
 		},
 	}

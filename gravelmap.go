@@ -29,6 +29,10 @@ type ElevationInfo struct {
 	To    int16
 }
 
+func (e *ElevationInfo) GetReverse() ElevationInfo {
+	return ElevationInfo{Grade: (-1) * e.Grade, From: e.To, To: e.From}
+}
+
 type Way struct {
 	Points   []Point
 	Tags     map[string]string
@@ -49,11 +53,6 @@ func (w *Way) GetCost() int64 {
 	return w.Cost
 }
 
-type BidirectionalElevationInfo struct {
-	Normal  ElevationInfo
-	Reverse ElevationInfo
-}
-
 type BidirectionalCost struct {
 	Normal  int64
 	Reverse int64
@@ -62,7 +61,7 @@ type BidirectionalCost struct {
 type WayEvaluation struct {
 	Distance int32
 	WayType  int8
-	BidirectionalElevationInfo
+	ElevationInfo
 	BidirectionalCost
 }
 
@@ -81,7 +80,7 @@ type GraphWayAdder interface {
 
 type WayElevation struct {
 	Elevations []int32
-	BidirectionalElevationInfo
+	ElevationInfo
 }
 
 type ElevationGetterCloser interface {
