@@ -1,0 +1,80 @@
+weight_offroad: 0.6
+
+
+weight_vehicle_acceptance:
+  exclusively: 0.7
+  yes: 1.0
+  partially: 2.0
+  maybe: 10000000.0
+  no: 10000000.0
+
+
+vehicle_acceptance_tags:
+  exclusively:
+    tags: ["mtb:scale"]
+    values:
+      - bicycle: ["yes", "permissive", "designated"]
+      - highway: ["cycleway"]
+  maybe:
+    values:
+      - highway: ["footway", "path"]
+  partially:
+    values:
+      - highway: ["primary"]
+  "no":
+    values:
+      - bicycle: ["no"]
+      - highway: ["service", "motorway", "steps"]
+
+way_acceptance_tags:
+  simple:
+    no_direction:
+      tags: ["military"]
+    opposite_direction:
+      values:
+        - oneway: ["yes"]
+  nested:
+    both_direction:
+      -
+        tag: oneway
+        value: "yes"
+        nested_tag: "cycleway"
+        nested_values: ["opposite", "opposite_lane"]
+      -
+        tag: oneway
+        value: "yes"
+        nested_tag: "cycleway:left"
+        nested_values: ["opposite_lane"]
+      -
+        tag: oneway
+        value: "yes"
+        nested_tag: "cycleway:right"
+        nested_values: ["opposite_lane"]
+      -
+        tag: oneway
+        value: "yes"
+        nested_tag: "oneway:bicycle"
+        nested_values: ["no"]
+
+
+# 0%: A flat road
+# 1-3%: Slightly uphill but not particularly challenging. A bit like riding into the wind.
+# 4-6%: A manageable gradient that can cause fatigue over long periods.
+# 7-9%: Starting to become uncomfortable for seasoned riders, and very challenging for new climbers.
+# 10%-15%: A painful gradient, especially if maintained for any length of time
+# 16%+: Very challenging for riders of all abilities. Maintaining this sort of incline for any length of time is very painful.
+weight_elevation:
+  undefined: [1, 1]
+  less_than:
+    -15: [1, 15]
+    -10: [1, 10]
+    -7: [1, 7]
+    -4: [0.8, 3]
+    -2: [0.8, 1.2]
+    0: [0.8, 1]
+    2: [1, 0.8]
+    4: [1.2, 0.8]
+    7: [3, 0.8]
+    10: [7, 1]
+    15: [10, 1]
+    1000: [15, 1]

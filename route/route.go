@@ -62,7 +62,7 @@ func (r *router) Route(ptFrom, ptTo gravelmap.Point) ([]gravelmap.RoutingLeg, er
 		}
 
 		wayType := "paved"
-		if pWay.SurfaceType == gravelmap.WayTypeUnaved {
+		if pWay.SurfaceType == gravelmap.WayTypeUnpaved {
 			wayType = "unpaved"
 		}
 		if pWay.SurfaceType == gravelmap.WayTypePath {

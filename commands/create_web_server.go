@@ -41,7 +41,7 @@ func createWebServerCommand() *cobra.Command {
 // createRoutingDataCmdRun defines the command run actions.
 func createWebServerCmdRun() error {
 	mtbGraph := graph.NewWeightedBidirectionalGraph()
-	dataFile, err := os.Open("_files/graph_bicycle.gob")
+	dataFile, err := os.Open("_files/graph_mtb.gob")
 	if err == nil {
 		dataDecoder := gob.NewDecoder(dataFile)
 		err = dataDecoder.Decode(&mtbGraph)
@@ -51,11 +51,11 @@ func createWebServerCmdRun() error {
 		dataFile.Close()
 	}
 
-	footGraph := graph.NewWeightedBidirectionalGraph()
-	dataFile, err = os.Open("_files/graph_foot.gob")
+	hikeGraph := graph.NewWeightedBidirectionalGraph()
+	dataFile, err = os.Open("_files/graph_hike.gob")
 	if err == nil {
 		dataDecoder := gob.NewDecoder(dataFile)
-		err = dataDecoder.Decode(&footGraph)
+		err = dataDecoder.Decode(&hikeGraph)
 		if err != nil {
 			return err
 		}
@@ -63,8 +63,8 @@ func createWebServerCmdRun() error {
 	}
 
 	graphs := map[string]*graph.WeightedBidirectionalGraph{
-		"bicycle": mtbGraph,
-		"foot":    footGraph,
+		"mtb":  mtbGraph,
+		"hike": hikeGraph,
 	}
 
 	http.HandleFunc("/route", func(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +80,7 @@ func createWebServerCmdRun() error {
 }
 
 var errWrongArguments = errors.New("wrong arguments")
-var errRouting = errors.New("wrong arguments")
+var errRouting = errors.New("error while routing")
 
 func buildRoutingLegsFromRequestParams(r *http.Request, graphs map[string]*graph.WeightedBidirectionalGraph) ([]gravelmap.RoutingLeg, error) {
 	pointFrom, err := getPointFromParams("from", r)
@@ -90,7 +90,7 @@ func buildRoutingLegsFromRequestParams(r *http.Request, graphs map[string]*graph
 	}
 
 	routingModeParam, ok := r.URL.Query()["routing_mode"]
-	if !ok || len(routingModeParam) != 1 || (routingModeParam[0] != "bicycle" && routingModeParam[0] != "foot") {
+	if !ok || len(routingModeParam) != 1 || (routingModeParam[0] != "mtb" && routingModeParam[0] != "hike") {
 		return []gravelmap.RoutingLeg{}, errWrongArguments
 	}
 	routingMode := routingModeParam[0]

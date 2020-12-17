@@ -16,6 +16,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	googlemaps.github.io/maps v0.0.0-20200130222743-aef6b08443c7
+	gopkg.in/yaml.v2 v2.2.2
 )
 
 go 1.13
