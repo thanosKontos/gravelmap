@@ -117,6 +117,7 @@ func (h *hgt) getFile(dms string) (*os.File, error) {
 	h.logger.Info(fmt.Sprintf("Getting file: %s", dms))
 	f, err := h.fileGetter.getFile(dms)
 	if err != nil {
+		h.logger.Error(err)
 		return nil, err
 	}
 	h.logger.Info("Done")

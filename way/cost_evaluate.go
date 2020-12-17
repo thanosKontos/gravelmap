@@ -91,7 +91,7 @@ func isOffRoadWay(tags map[string]string) bool {
 
 func isPathway(tags map[string]string) bool {
 	if val, ok := tags["highway"]; ok {
-		return gmstring.String(val).Exists([]string{"path", "pedestrian", "steps"})
+		return gmstring.String(val).Exists([]string{"path", "pedestrian", "steps", "footway"})
 	}
 
 	return false
