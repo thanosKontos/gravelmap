@@ -1,22 +1,11 @@
 package commands
 
 import (
-	"encoding/gob"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/thanosKontos/gravelmap"
-	"github.com/thanosKontos/gravelmap/distance"
-	"github.com/thanosKontos/gravelmap/elevation/hgt"
-	"github.com/thanosKontos/gravelmap/graph"
-	"github.com/thanosKontos/gravelmap/node"
-	"github.com/thanosKontos/gravelmap/node2point"
-	"github.com/thanosKontos/gravelmap/osm"
-	"github.com/thanosKontos/gravelmap/path"
-	"github.com/thanosKontos/gravelmap/way"
-	"gopkg.in/yaml.v2"
+	"github.com/thanosKontos/gravelmap/service"
 )
 
 // importRoutingDataCommand imports data from an OSM file.
@@ -44,78 +33,22 @@ func importRoutingDataCommand() *cobra.Command {
 }
 
 func importRoutingDataCmdRun(inputFilename string, profileName string, useFilesystem bool) error {
-	os.Mkdir("_files", 0777)
+	s := service.NewImport(service.ImportConfig{
+		OsmFilemame:          inputFilename,
+		OutputDir:            "_files",
+		ElevationDir:         "/tmp",
+		Log:                  logger,
+		Osm2GmUseFilesystem:  useFilesystem,
+		ProfileName:          profileName,
+		ProfileFilename:      fmt.Sprintf("profiles/%s.yaml", profileName),
+		ElevationCredentials: service.ElevationCredentials{Username: os.Getenv("NASA_USERNAME"), Password: os.Getenv("NASA_PASSWORD")},
+	})
 
-	// ## 1. Initially extract only the way nodes and keep them in a DB. Also keeps the GM identifier ##
-	var osm2GmStore gravelmap.Osm2GmNodeReaderWriter
-	if useFilesystem {
-		osm2GmStore = node.NewOsm2GmNodeFileStore("_files")
-	} else {
-		osm2GmStore = node.NewOsm2GmNodeMemoryStore()
-	}
-
-	osm2GmNode := osm.NewOsmWayProcessor(inputFilename, osm2GmStore)
-	err := osm2GmNode.Process()
+	err := s.Import()
 	if err != nil {
 		logger.Error(err)
-		os.Exit(0)
+		os.Exit(1)
 	}
-	logger.Info("Done preparing node in-memory DB")
-
-	// ## 2. Store nodes to lookup files (nodeId -> lat/lon and lat/lon to closest nodeId)
-	bboxFS := node2point.NewNodePointBboxFileStore("_files")
-	osm2LatLngStore := node.NewOsm2LatLngMemoryStore()
-	ndFileStore := osm.NewOsmNodeProcessor(inputFilename, osm2GmStore, bboxFS, osm2LatLngStore)
-	err = ndFileStore.Process()
-	if err != nil {
-		logger.Error(err)
-		os.Exit(0)
-	}
-	logger.Info("Node file written")
-
-	// ## 3. Process OSM ways (store way info and create graph)
-	elevationGetterCloser := hgt.NewNasaHgt("/tmp", os.Getenv("NASA_USERNAME"), os.Getenv("NASA_PASSWORD"), logger)
-	distanceCalculator := distance.NewHaversine()
-
-	weightConf := way.WeightConfig{}
-	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("profiles/%s.yaml", profileName))
-	if err != nil {
-		logger.Error(err)
-		os.Exit(0)
-	}
-	err = yaml.Unmarshal(yamlFile, &weightConf)
-	if err != nil {
-		logger.Error(err)
-		os.Exit(0)
-	}
-
-	pathEncoder := path.NewGooglePolyline()
-	wayStorer := way.NewFileStore("_files", pathEncoder)
-	pathSimplifier := path.NewSimpleSimplifiedPath(distanceCalculator)
-	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, way.NewDefaultWeight(weightConf))
-	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
-
-	graph := graph.NewWeightedBidirectionalGraph()
-	osmWayFileRead := osm.NewOsmWayFileRead(inputFilename, wayStorer, graph, wayAdderGetter)
-	err = osmWayFileRead.Process()
-	if err != nil {
-		logger.Error(err)
-		os.Exit(0)
-	}
-	logger.Info("Ways processed")
-
-	elevationGetterCloser.Close()
-
-	// also persist it to file
-	graphFile, err := os.Create(fmt.Sprintf("_files/graph_%s.gob", profileName))
-	if err != nil {
-		logger.Error(err)
-		os.Exit(0)
-	}
-	dataEncoder := gob.NewEncoder(graphFile)
-	dataEncoder.Encode(graph)
-	graphFile.Close()
-	logger.Info("Graph created")
 
 	return nil
 }

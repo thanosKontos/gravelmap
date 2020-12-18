@@ -19,10 +19,6 @@ type unzipper interface {
 	unzip(zipFilename string) error
 }
 
-type downloader interface {
-	download(dms string) error
-}
-
 type hgtFileGetter interface {
 	getFile(dms string) (*os.File, error)
 }
