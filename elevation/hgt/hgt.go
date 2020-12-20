@@ -11,12 +11,19 @@ import (
 
 var errorCannotGradeWay = errors.New("could not grade way")
 
-type unzipper interface {
-	unzip(zipFilename string) error
-}
-
 type hgtFileGetter interface {
 	getFile(dms string) (*os.File, error)
+}
+
+// NewNasaHgt instanciates a new HGT object with a file fetcher from US government
+func NewNasaHgt(destinationDir, username, password string, logger gravelmap.Logger) *hgt {
+	fileGetter := &nasa30mFile{username, password, destinationDir}
+
+	return &hgt{
+		dmsElevationGettersCache: make(map[string]gravelmap.ElevationPointGetterCloser),
+		logger:                   logger,
+		fileGetter:               fileGetter,
+	}
 }
 
 type hgt struct {

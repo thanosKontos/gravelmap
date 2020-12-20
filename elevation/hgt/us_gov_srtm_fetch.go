@@ -9,26 +9,9 @@ import (
 	"net/http/cookiejar"
 	"os"
 	"path/filepath"
-
-	"github.com/thanosKontos/gravelmap"
 )
 
 const nasa30mSrtmURL = "http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/%s.SRTMGL1.hgt.zip"
-
-type downloader interface {
-	download(dms string) error
-}
-
-// NewNasaHgt instanciates a new HGT object with files coming from nasa srtm servers
-func NewNasaHgt(destinationDir, username, password string, logger gravelmap.Logger) *hgt {
-	fileGetter := &nasa30mFile{username, password, destinationDir}
-
-	return &hgt{
-		dmsElevationGettersCache: make(map[string]gravelmap.ElevationPointGetterCloser),
-		logger:                   logger,
-		fileGetter:               fileGetter,
-	}
-}
 
 type nasa30mFile struct {
 	username       string
