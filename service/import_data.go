@@ -71,7 +71,7 @@ func (i importService) Import() error {
 	i.conf.Log.Info("Node file written")
 
 	// ## 3. Process OSM ways (store way info and create graph)
-	elevationGetterCloser := hgt.NewNasaHgt(
+	elevationWayGetterCloser := hgt.NewNasaHgt(
 		i.conf.ElevationDir,
 		i.conf.ElevationCredentials.Username,
 		i.conf.ElevationCredentials.Password,
@@ -92,7 +92,7 @@ func (i importService) Import() error {
 	pathEncoder := path.NewGooglePolyline()
 	wayStorer := way.NewFileStore(i.conf.OutputDir, pathEncoder)
 	pathSimplifier := path.NewSimpleSimplifiedPath(distanceCalculator)
-	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationGetterCloser, way.NewDefaultWeight(weightConf))
+	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationWayGetterCloser, way.NewDefaultWeight(weightConf))
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
 	graph := graph.NewWeightedBidirectionalGraph()
@@ -103,7 +103,7 @@ func (i importService) Import() error {
 	}
 	i.conf.Log.Info("Ways processed")
 
-	elevationGetterCloser.Close()
+	elevationWayGetterCloser.Close()
 
 	// also persist it to file
 	graphFile, err := os.Create(fmt.Sprintf("%s/graph_%s.gob", i.conf.OutputDir, i.conf.ProfileName))

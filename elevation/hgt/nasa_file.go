@@ -24,9 +24,9 @@ func NewNasaHgt(destinationDir, username, password string, logger gravelmap.Logg
 	fileGetter := &nasa30mFile{username, password, destinationDir}
 
 	return &hgt{
-		files:      make(map[string]*os.File),
-		logger:     logger,
-		fileGetter: fileGetter,
+		dmsElevationGettersCache: make(map[string]gravelmap.ElevationPointGetterCloser),
+		logger:                   logger,
+		fileGetter:               fileGetter,
 	}
 }
 

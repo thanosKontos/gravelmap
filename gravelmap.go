@@ -1,5 +1,7 @@
 package gravelmap
 
+import "io"
+
 const (
 	WayTypePaved int8 = iota
 	WayTypeUnpaved
@@ -83,9 +85,18 @@ type WayElevation struct {
 	ElevationInfo
 }
 
-type ElevationGetterCloser interface {
+type ElevationWayGetterCloser interface {
 	Get(points []Point, distance float64) (*WayElevation, error)
 	Close()
+}
+
+type ElevationPointGetter interface {
+	Get(pt Point) (int32, error)
+}
+
+type ElevationPointGetterCloser interface {
+	ElevationPointGetter
+	io.Closer
 }
 
 type CostEvaluator interface {

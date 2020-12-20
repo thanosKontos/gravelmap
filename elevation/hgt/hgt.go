@@ -1,8 +1,6 @@
 package hgt
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -10,8 +8,6 @@ import (
 
 	"github.com/thanosKontos/gravelmap"
 )
-
-const oneArcSecondRowColCount = 3601
 
 var errorCannotGradeWay = errors.New("could not grade way")
 
@@ -24,9 +20,9 @@ type hgtFileGetter interface {
 }
 
 type hgt struct {
-	files      map[string]*os.File
-	logger     gravelmap.Logger
-	fileGetter hgtFileGetter
+	dmsElevationGettersCache map[string]gravelmap.ElevationPointGetterCloser
+	logger                   gravelmap.Logger
+	fileGetter               hgtFileGetter
 }
 
 func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayElevation, error) {
@@ -40,37 +36,18 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 
 	for i, pt := range points {
 		dms := getDMSFromPoint(pt)
-		file, err := h.getFile(dms)
+		elevationGetter, err := h.getElevationGetter(dms)
 		if err != nil {
 			return nil, err
 		}
+		ele, err := elevationGetter.Get(pt)
 
-		latDiff := pt.Lat - math.Floor(pt.Lat)
-		lngDiff := pt.Lng - math.Floor(pt.Lng)
-
-		row := oneArcSecondRowColCount - int64(math.Round(latDiff*oneArcSecondRowColCount))
-		col := int64(math.Round(lngDiff * oneArcSecondRowColCount))
-
-		position := row*oneArcSecondRowColCount + col
-
-		file.Seek(position*2, 0)
-		data, err := readNextBytes(file, 2)
 		if err != nil {
-			return nil, err
-		}
-		buffer := bytes.NewBuffer(data)
-		d := make([]byte, 2)
-
-		err = binary.Read(buffer, binary.BigEndian, d)
-		if err != nil {
-			return nil, err
-		}
-
-		ele := int32(binary.BigEndian.Uint16(d))
-		if ele > 60000 {
-			h.logger.Debug("Could not grade (wrong elevation). Probably water, will use 0 instead")
-
-			ele = 0
+			if err == errorWrongElevation {
+				h.logger.Debug("Could not grade (wrong elevation). Probably water, will use 0 instead")
+			} else {
+				return nil, err
+			}
 		}
 
 		if i == 0 {
@@ -102,9 +79,9 @@ func readNextBytes(file *os.File, number int) ([]byte, error) {
 	return bytes, nil
 }
 
-func (h *hgt) getFile(dms string) (*os.File, error) {
-	if f, ok := h.files[dms]; ok {
-		return f, nil
+func (h *hgt) getElevationGetter(dms string) (gravelmap.ElevationPointGetter, error) {
+	if g, ok := h.dmsElevationGettersCache[dms]; ok {
+		return g, nil
 	}
 
 	h.logger.Info(fmt.Sprintf("Getting file: %s", dms))
@@ -115,9 +92,10 @@ func (h *hgt) getFile(dms string) (*os.File, error) {
 	}
 	h.logger.Info("Done")
 
-	h.files[dms] = f
+	g := NewStrm1(f)
+	h.dmsElevationGettersCache[dms] = g
 
-	return f, nil
+	return g, nil
 }
 
 // getDMSFromPoint extract the DMS format (e.g. N09E011) from point
@@ -136,7 +114,7 @@ func getDMSFromPoint(pt gravelmap.Point) string {
 }
 
 func (h *hgt) Close() {
-	for _, f := range h.files {
-		f.Close()
+	for _, egc := range h.dmsElevationGettersCache {
+		egc.Close()
 	}
 }
