@@ -1,11 +1,9 @@
 package commands
 
 import (
-	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -40,26 +38,16 @@ func createWebServerCommand() *cobra.Command {
 
 // createRoutingDataCmdRun defines the command run actions.
 func createWebServerCmdRun() error {
-	mtbGraph := graph.NewWeightedBidirectionalGraph()
-	dataFile, err := os.Open("_files/graph_mtb.gob")
-	if err == nil {
-		dataDecoder := gob.NewDecoder(dataFile)
-		err = dataDecoder.Decode(&mtbGraph)
-		if err != nil {
-			return err
-		}
-		dataFile.Close()
+	repo := graph.NewGobRepo("_files")
+
+	mtbGraph, err := repo.Fetch("mtb")
+	if err != nil {
+		return err
 	}
 
-	hikeGraph := graph.NewWeightedBidirectionalGraph()
-	dataFile, err = os.Open("_files/graph_hike.gob")
-	if err == nil {
-		dataDecoder := gob.NewDecoder(dataFile)
-		err = dataDecoder.Decode(&hikeGraph)
-		if err != nil {
-			return err
-		}
-		dataFile.Close()
+	hikeGraph, err := repo.Fetch("hike")
+	if err != nil {
+		return err
 	}
 
 	graphs := map[string]*graph.WeightedBidirectionalGraph{
