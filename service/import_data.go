@@ -1,8 +1,6 @@
 package service
 
 import (
-	"encoding/gob"
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -95,8 +93,8 @@ func (i importService) Import() error {
 	costEvaluator := way.NewCostEvaluate(distanceCalculator, elevationWayGetterCloser, way.NewDefaultWeight(weightConf))
 	wayAdderGetter := osm.NewOsm2GmWays(osm2GmStore, osm2LatLngStore, costEvaluator, pathSimplifier)
 
-	graph := graph.NewWeightedBidirectionalGraph()
-	osmWayFileRead := osm.NewOsmWayFileRead(i.conf.OsmFilemame, wayStorer, graph, wayAdderGetter)
+	g := graph.NewWeightedBidirectionalGraph()
+	osmWayFileRead := osm.NewOsmWayFileRead(i.conf.OsmFilemame, wayStorer, g, wayAdderGetter)
 	err = osmWayFileRead.Process()
 	if err != nil {
 		return err
@@ -105,14 +103,11 @@ func (i importService) Import() error {
 
 	elevationWayGetterCloser.Close()
 
-	// also persist it to file
-	graphFile, err := os.Create(fmt.Sprintf("%s/graph_%s.gob", i.conf.OutputDir, i.conf.ProfileName))
+	repo := graph.NewGobRepo(i.conf.OutputDir)
+	err = repo.Store(g, i.conf.ProfileName)
 	if err != nil {
 		return err
 	}
-	dataEncoder := gob.NewEncoder(graphFile)
-	dataEncoder.Encode(graph)
-	graphFile.Close()
 	i.conf.Log.Info("Graph created")
 
 	return nil
