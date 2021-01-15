@@ -3,91 +3,12 @@ package kml
 import (
 	"errors"
 	"fmt"
+	"image/color"
 	"io"
-	"strings"
 
 	"github.com/thanosKontos/gravelmap"
+	kml2 "github.com/twpayne/go-kml"
 )
-
-var kmlBase = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>Extracted route from gravelmap</name>
-    <description>Extracted route from gravelmap route from x to y.</description>
-	<Style id="black-pvd">
-      <LineStyle>
-        <color>ff000000</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-	<Style id="black-upvd">
-      <LineStyle>
-        <color>ff000000</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    <Style id="red-pvd">
-      <LineStyle>
-        <color>ff5252ff</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="red-upvd">
-      <LineStyle>
-        <color>ff5252ff</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    <Style id="green-pvd">
-      <LineStyle>
-        <color>7f236b31</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="green-upvd">
-      <LineStyle>
-        <color>7f236b31</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    <Style id="pink-pvd">
-      <LineStyle>
-        <color>7fe863ff</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="pink-upvd">
-      <LineStyle>
-        <color>7fe863ff</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    <Style id="blue-pvd">
-      <LineStyle>
-        <color>7f9e4a42</color>
-        <width>4</width>
-      </LineStyle>
-    </Style>
-    <Style id="blue-upvd">
-      <LineStyle>
-        <color>7f9e4a42</color>
-        <width>2</width>
-      </LineStyle>
-    </Style>
-    %s
-  </Document>
-</kml>
-`
-
-var placeMarkBase = `<Placemark>
-<styleUrl>#%s</styleUrl>
-<LineString>
-<extrude>1</extrude>
-<tessellate>1</tessellate>
-<altitudeMode>absolute</altitudeMode>
-<coordinates>%s</coordinates>
-</LineString>
-</Placemark>`
 
 type kml struct{}
 
@@ -101,39 +22,85 @@ func (k *kml) Write(w io.Writer, routingLegs []gravelmap.RoutingLeg) error {
 		return errors.New("not enough routing legs to create kml")
 	}
 
-	placemarks := ""
+	doc := kml2.Document(
+		kml2.Name("Extracted route from gravelmap"),
+		kml2.Description("Extracted route from gravelmap route from x to y."),
+		kml2.SharedStyle("black-pvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 0, G: 0, B: 0, A: 255}),
+			kml2.Width(4),
+		)),
+		kml2.SharedStyle("black-upvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 0, G: 0, B: 0, A: 255}),
+			kml2.Width(2),
+		)),
+		kml2.SharedStyle("red-pvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 255, G: 82, B: 82, A: 255}),
+			kml2.Width(4),
+		)),
+		kml2.SharedStyle("red-upvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 255, G: 82, B: 82, A: 255}),
+			kml2.Width(2),
+		)),
+		kml2.SharedStyle("green-pvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 49, G: 107, B: 35, A: 127}),
+			kml2.Width(4),
+		)),
+		kml2.SharedStyle("green-upvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 49, G: 107, B: 35, A: 127}),
+			kml2.Width(2),
+		)),
+		kml2.SharedStyle("pink-pvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 255, G: 99, B: 232, A: 127}),
+			kml2.Width(4),
+		)),
+		kml2.SharedStyle("pink-upvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 255, G: 99, B: 232, A: 127}),
+			kml2.Width(2),
+		)),
+		kml2.SharedStyle("blue-pvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 0, G: 128, B: 128, A: 127}),
+			kml2.Width(4),
+		)),
+		kml2.SharedStyle("blue-upvd", kml2.LineStyle(
+			kml2.Color(color.RGBA{R: 0, G: 128, B: 128, A: 127}),
+			kml2.Width(2),
+		)),
+	)
+
 	for _, way := range routingLegs {
-		pointsSl := make([]string, 0)
+
+		var routeCoordinates []kml2.Coordinate = []kml2.Coordinate{}
 		for _, point := range way.Coordinates {
-			pointsSl = append(pointsSl, fmt.Sprintf("%f,%f,0", point.Lng, point.Lat))
+			routeCoordinates = append(routeCoordinates, kml2.Coordinate{Lon: point.Lng, Lat: point.Lat})
 		}
 
-		placemarkCoords := strings.Join(pointsSl, "\n")
-		paved := true
-		if way.WayType == "unpaved" || way.WayType == "path" {
-			paved = false
-		}
-		placemark := fmt.Sprintf(placeMarkBase, getToKmlLineColor(way.Elevation, way.Length, paved), placemarkCoords)
+		pm := kml2.Placemark(
+			kml2.StyleURL(fmt.Sprintf("#%s", getWayLineStyle(way))),
+			kml2.LineString(
+				kml2.Coordinates(routeCoordinates...),
+				kml2.Tessellate(true),
+			),
+		)
 
-		placemarks += placemark
+		doc.Add(pm)
 	}
 
-	_, err := io.WriteString(w, fmt.Sprintf(kmlBase, placemarks))
+	result := kml2.KML(doc)
 
-	return err
+	return result.WriteIndent(w, "", "  ")
 }
 
-func getToKmlLineColor(elevationRange *gravelmap.ElevationRange, distance float64, paved bool) string {
-	surfaceStyle := "upvd"
-	if paved {
-		surfaceStyle = "pvd"
+func getWayLineStyle(way gravelmap.RoutingLeg) string {
+	surfaceStyle := "pvd"
+	if way.WayType == "unpaved" || way.WayType == "path" {
+		surfaceStyle = "upvd"
 	}
 
-	if elevationRange == nil {
+	if way.Elevation == nil {
 		return "black-" + surfaceStyle
 	}
 
-	grade := (elevationRange.End - elevationRange.Start) * 100 / distance
+	grade := (way.Elevation.End - way.Elevation.Start) * 100 / way.Length
 	if grade < 1 {
 		return "green-" + surfaceStyle
 	}

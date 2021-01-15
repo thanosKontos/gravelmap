@@ -13,7 +13,8 @@ require (
 	github.com/qedus/osmpbf v1.1.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
+	github.com/twpayne/go-kml v1.5.1
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	googlemaps.github.io/maps v0.0.0-20200130222743-aef6b08443c7
 	gopkg.in/yaml.v2 v2.2.2
