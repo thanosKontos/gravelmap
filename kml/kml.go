@@ -68,17 +68,18 @@ func (k *kml) Write(w io.Writer, routingLegs []gravelmap.RoutingLeg) error {
 	)
 
 	for _, way := range routingLegs {
-		var routeCoordinates []kml2.Coordinate = []kml2.Coordinate{
-			kml2.Coordinate{Lon: way.Coordinates[0].Lng, Lat: way.Coordinates[0].Lat},
-			kml2.Coordinate{Lon: way.Coordinates[1].Lng, Lat: way.Coordinates[1].Lat},
+
+		var routeCoordinates []kml2.Coordinate = []kml2.Coordinate{}
+		for _, point := range way.Coordinates {
+			routeCoordinates = append(routeCoordinates, kml2.Coordinate{Lon: point.Lng, Lat: point.Lat})
 		}
 
 		pm := kml2.Placemark(
+			kml2.StyleURL(fmt.Sprintf("#%s", getWayLineStyle(way))),
 			kml2.LineString(
 				kml2.Coordinates(routeCoordinates...),
 				kml2.Tessellate(true),
 			),
-			kml2.StyleURL(fmt.Sprintf("#%s", getWayLineStyle(way))),
 		)
 
 		doc.Add(pm)
