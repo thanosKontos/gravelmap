@@ -51,6 +51,17 @@ func (s *srtm1) Get(pt gravelmap.Point) (int32, error) {
 	return ele, nil
 }
 
+func readNextBytes(file *os.File, number int) ([]byte, error) {
+	bytes := make([]byte, number)
+
+	_, err := file.Read(bytes)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return bytes, nil
+}
+
 func (s *srtm1) Close() error {
 	return s.f.Close()
 }

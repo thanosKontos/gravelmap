@@ -69,12 +69,13 @@ func (i importService) Import() error {
 	i.conf.Log.Info("Node file written")
 
 	// ## 3. Process OSM ways (store way info and create graph)
-	elevationWayGetterCloser := hgt.NewNasaHgt(
+	elevationFileStorage := hgt.NewMemcacheNasaElevationFileStorage(
 		i.conf.ElevationDir,
 		i.conf.ElevationCredentials.Username,
 		i.conf.ElevationCredentials.Password,
 		i.conf.Log,
 	)
+	elevationWayGetterCloser := hgt.NewHgt(elevationFileStorage, i.conf.Log)
 	distanceCalculator := distance.NewHaversine()
 
 	weightConf := way.WeightConfig{}
@@ -101,7 +102,7 @@ func (i importService) Import() error {
 	}
 	i.conf.Log.Info("Ways processed")
 
-	elevationWayGetterCloser.Close()
+	elevationFileStorage.Close()
 
 	repo := graph.NewGobRepo(i.conf.OutputDir)
 	err = repo.Store(g, i.conf.ProfileName)

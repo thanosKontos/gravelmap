@@ -85,13 +85,17 @@ type WayElevation struct {
 	ElevationInfo
 }
 
-type ElevationWayGetterCloser interface {
+type WayElevationGetter interface {
 	Get(points []Point, distance float64) (*WayElevation, error)
-	Close()
 }
 
 type ElevationPointGetter interface {
 	Get(pt Point) (int32, error)
+}
+
+type ElevationFileStorer interface {
+	Get(dms string) (ElevationPointGetter, error)
+	Close()
 }
 
 type ElevationPointGetterCloser interface {
