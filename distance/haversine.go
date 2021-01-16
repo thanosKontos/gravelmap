@@ -20,7 +20,7 @@ func degreesToRadians(d float64) float64 {
 	return d * math.Pi / 180
 }
 
-// Distance calculates the distance between two points on earth on a straight line (in meters)
+// Calculate calculates the approximate distance between two points on earth on a straight line (in meters)
 func (h *haversine) Calculate(x, y gravelmap.Point) int64 {
 	lat1 := degreesToRadians(x.Lat)
 	lng1 := degreesToRadians(x.Lng)

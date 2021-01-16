@@ -16,20 +16,16 @@ type hgtFileGetter interface {
 }
 
 // NewNasaHgt instanciates a new HGT object with a file fetcher from US government
-func NewNasaHgt(destinationDir, username, password string, logger gravelmap.Logger) *hgt {
-	fileGetter := &nasa30mFile{username, password, destinationDir}
-
+func NewNasaHgt(efs gravelmap.ElevationFileStorer, logger gravelmap.Logger) *hgt {
 	return &hgt{
-		dmsElevationGettersCache: make(map[string]gravelmap.ElevationPointGetterCloser),
-		logger:                   logger,
-		fileGetter:               fileGetter,
+		elevationFileStorage: efs,
+		logger:               logger,
 	}
 }
 
 type hgt struct {
-	dmsElevationGettersCache map[string]gravelmap.ElevationPointGetterCloser
-	logger                   gravelmap.Logger
-	fileGetter               hgtFileGetter
+	elevationFileStorage gravelmap.ElevationFileStorer
+	logger               gravelmap.Logger
 }
 
 func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayElevation, error) {
@@ -43,7 +39,7 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 
 	for i, pt := range points {
 		dms := getDMSFromPoint(pt)
-		elevationGetter, err := h.getElevationGetter(dms)
+		elevationGetter, err := h.elevationFileStorage.Get(dms)
 		if err != nil {
 			return nil, err
 		}
@@ -75,36 +71,6 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 	}, nil
 }
 
-func readNextBytes(file *os.File, number int) ([]byte, error) {
-	bytes := make([]byte, number)
-
-	_, err := file.Read(bytes)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return bytes, nil
-}
-
-func (h *hgt) getElevationGetter(dms string) (gravelmap.ElevationPointGetter, error) {
-	if g, ok := h.dmsElevationGettersCache[dms]; ok {
-		return g, nil
-	}
-
-	h.logger.Info(fmt.Sprintf("Getting file: %s", dms))
-	f, err := h.fileGetter.getFile(dms)
-	if err != nil {
-		h.logger.Error(err)
-		return nil, err
-	}
-	h.logger.Info("Done")
-
-	g := NewStrm1(f)
-	h.dmsElevationGettersCache[dms] = g
-
-	return g, nil
-}
-
 // getDMSFromPoint extract the DMS format (e.g. N09E011) from point
 func getDMSFromPoint(pt gravelmap.Point) string {
 	latPfx := "N"
@@ -118,10 +84,4 @@ func getDMSFromPoint(pt gravelmap.Point) string {
 	}
 
 	return fmt.Sprintf("%s%02d%s%03d", latPfx, int8(math.Floor(pt.Lat)), lngPfx, int8(math.Floor(pt.Lng)))
-}
-
-func (h *hgt) Close() {
-	for _, egc := range h.dmsElevationGettersCache {
-		egc.Close()
-	}
 }
