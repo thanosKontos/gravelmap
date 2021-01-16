@@ -85,7 +85,7 @@ type WayElevation struct {
 	ElevationInfo
 }
 
-type ElevationWayGetterCloser interface {
+type WayElevationGetter interface {
 	Get(points []Point, distance float64) (*WayElevation, error)
 }
 

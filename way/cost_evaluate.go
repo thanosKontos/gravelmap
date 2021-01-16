@@ -6,20 +6,20 @@ import (
 )
 
 type costEvaluate struct {
-	distanceCalc             gravelmap.DistanceCalculator
-	elevationWayGetterCloser gravelmap.ElevationWayGetterCloser
-	weighter                 gravelmap.Weighter
+	distanceCalc       gravelmap.DistanceCalculator
+	wayElevationGetter gravelmap.WayElevationGetter
+	weighter           gravelmap.Weighter
 }
 
 func NewCostEvaluate(
 	distanceCalc gravelmap.DistanceCalculator,
-	elevationWayGetterCloser gravelmap.ElevationWayGetterCloser,
+	wayElevationGetter gravelmap.WayElevationGetter,
 	weighter gravelmap.Weighter,
 ) *costEvaluate {
 	return &costEvaluate{
-		distanceCalc:             distanceCalc,
-		elevationWayGetterCloser: elevationWayGetterCloser,
-		weighter:                 weighter,
+		distanceCalc:       distanceCalc,
+		wayElevationGetter: wayElevationGetter,
+		weighter:           weighter,
 	}
 }
 
@@ -45,7 +45,7 @@ func (ce *costEvaluate) Evaluate(points []gravelmap.Point, tags map[string]strin
 		wayType = gravelmap.WayTypePath
 	}
 
-	elevation, err := ce.elevationWayGetterCloser.Get(points, distance)
+	elevation, err := ce.wayElevationGetter.Get(points, distance)
 	elevationInfo := gravelmap.ElevationInfo{}
 	if err == nil {
 		elevationInfo = elevation.ElevationInfo
