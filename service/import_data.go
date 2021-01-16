@@ -75,7 +75,7 @@ func (i importService) Import() error {
 		i.conf.ElevationCredentials.Password,
 		i.conf.Log,
 	)
-	elevationWayGetterCloser := hgt.NewNasaHgt(elevationFileStorage, i.conf.Log)
+	elevationWayGetterCloser := hgt.NewHgt(elevationFileStorage, i.conf.Log)
 	distanceCalculator := distance.NewHaversine()
 
 	weightConf := way.WeightConfig{}

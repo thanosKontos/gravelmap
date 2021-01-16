@@ -2,9 +2,14 @@ package hgt
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/thanosKontos/gravelmap"
 )
+
+type hgtFileGetter interface {
+	getFile(dms string) (*os.File, error)
+}
 
 type memcacheElevationStorage struct {
 	elevationGettersClosersCache map[string]gravelmap.ElevationPointGetterCloser

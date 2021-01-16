@@ -4,19 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"os"
 
 	"github.com/thanosKontos/gravelmap"
 )
 
 var errorCannotGradeWay = errors.New("could not grade way")
 
-type hgtFileGetter interface {
-	getFile(dms string) (*os.File, error)
-}
-
-// NewNasaHgt instanciates a new HGT object with a file fetcher from US government
-func NewNasaHgt(efs gravelmap.ElevationFileStorer, logger gravelmap.Logger) *hgt {
+// NewHgt instanciates a new HGT object with a file fetcher from US government
+func NewHgt(efs gravelmap.ElevationFileStorer, logger gravelmap.Logger) *hgt {
 	return &hgt{
 		elevationFileStorage: efs,
 		logger:               logger,
