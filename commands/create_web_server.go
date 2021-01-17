@@ -42,12 +42,12 @@ func createWebServerCmdRun() error {
 
 	mtbGraph, err := repo.Fetch("mtb")
 	if err != nil {
-		return err
+		mtbGraph = graph.NewWeightedBidirectionalGraph()
 	}
 
 	hikeGraph, err := repo.Fetch("hike")
 	if err != nil {
-		return err
+		hikeGraph = graph.NewWeightedBidirectionalGraph()
 	}
 
 	graphs := map[string]*graph.WeightedBidirectionalGraph{

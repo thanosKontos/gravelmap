@@ -33,7 +33,7 @@ func (r *gobRepo) Store(graph *WeightedBidirectionalGraph, name string) error {
 
 func (r *gobRepo) Fetch(name string) (*WeightedBidirectionalGraph, error) {
 	g := NewWeightedBidirectionalGraph()
-	dataFile, err := os.Open("_files/graph_mtb.gob")
+	dataFile, err := os.Open(fmt.Sprintf("%s/graph_%s.gob", r.storageDir, name))
 	if err != nil {
 		return nil, err
 	}
