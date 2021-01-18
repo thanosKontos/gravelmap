@@ -55,8 +55,7 @@ func rootCommand() *cobra.Command {
 // persistentPreRunECommand defines the root command actions before the run command.
 func persistentPreRunECommand(cmdName string, verboseLevel string) error {
 	stdoutLogger := log2.New(os.Stdout, "", 0)
-
-	logger = log.NewLevelized(verboseLevel, stdoutLogger)
+	logger = log.NewSimple(verboseLevel, stdoutLogger)
 
 	return nil
 }

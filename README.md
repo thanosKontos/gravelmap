@@ -40,6 +40,6 @@ Plus is a nice way for me to debug the result in a nice interface.
 env GOOS=linux GOARCH=amd64 go build -o /tmp/gravelmap cmd/main.go && /tmp/gravelmap create-web-server
 ```
 
-Open example_website_from_to.html to test routing
+Open `example/route_from_to.html` to test routing
 
 ![](resources/example_website.png)
