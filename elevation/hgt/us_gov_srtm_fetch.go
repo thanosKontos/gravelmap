@@ -58,6 +58,7 @@ func (n *nasa30mFile) download(dms string) error {
 	}
 
 	_, err = io.Copy(out, resp.Body)
+	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
