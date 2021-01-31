@@ -18,8 +18,7 @@ var logger gravelmap.Logger
 
 // Execute entry point for commands.
 func Execute() {
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error loading .env file")
 		os.Exit(1)
 	}

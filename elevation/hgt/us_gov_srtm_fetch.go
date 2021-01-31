@@ -25,12 +25,11 @@ func (n *nasa30mFile) getFile(dms string) (*os.File, error) {
 		return f, err
 	}
 
-	err = n.download(dms)
-	if err != nil {
+	if err = n.download(dms); err != nil {
 		return nil, err
 	}
-	err = n.unzip(dms)
-	if err != nil {
+
+	if err = n.unzip(dms); err != nil {
 		return nil, err
 	}
 
@@ -52,14 +51,12 @@ func (n *nasa30mFile) download(dms string) error {
 	req, err := http.NewRequest("GET", fmt.Sprintf(nasa30mSrtmURL, dms), nil)
 	req.SetBasicAuth(n.username, n.password)
 	resp, err := client.Do(req)
-
 	if err != nil {
 		return err
 	}
 
-	_, err = io.Copy(out, resp.Body)
 	defer resp.Body.Close()
-	if err != nil {
+	if _, err = io.Copy(out, resp.Body); err != nil {
 		return err
 	}
 
@@ -110,8 +107,7 @@ func (n *nasa30mFile) unzip(dms string) error {
 	}
 	defer outputFile.Close()
 
-	_, err = io.Copy(outputFile, zippedFile)
-	if err != nil {
+	if _, err = io.Copy(outputFile, zippedFile); err != nil {
 		return err
 	}
 

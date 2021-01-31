@@ -35,8 +35,7 @@ func (n *osm2GmEdge) Process() error {
 	d.SetBufferSize(osmpbf.MaxBlobSize)
 
 	// start decoding with several goroutines, it is faster
-	err = d.Start(runtime.GOMAXPROCS(-1))
-	if err != nil {
+	if err = d.Start(runtime.GOMAXPROCS(-1)); err != nil {
 		return err
 	}
 

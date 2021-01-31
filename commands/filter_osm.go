@@ -36,8 +36,7 @@ func createfilterOSMCmdRun(inputFilename, outputFilename string) error {
 	}
 
 	osmium := osm.NewOsmium(inputFilename, outputFilename)
-	err := osmium.Filter()
-	if err != nil {
+	if err := osmium.Filter(); err != nil {
 		log.Fatal(err)
 	}
 

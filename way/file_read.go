@@ -50,7 +50,6 @@ func (fr *fileRead) Read(edges []gravelmap.Edge) ([]gravelmap.PresentableWay, er
 		}
 
 		pl, err := fr.readPolylineFromFile(edgeToRec.polylinePosition)
-
 		if err != nil {
 			return []gravelmap.PresentableWay{}, err
 		}
@@ -146,8 +145,7 @@ func (fr *fileRead) readEdgeStartFile(edgeStartId int32) (*edgeStartRecord, erro
 	fr.edgeFromFile.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
 	data := readNextBytes(fr.edgeFromFile, edgeStartRecordSize)
 	buffer := bytes.NewBuffer(data)
-	err := binary.Read(buffer, binary.BigEndian, &edgeStart)
-	if err != nil {
+	if err := binary.Read(buffer, binary.BigEndian, &edgeStart); err != nil {
 		return nil, err
 	}
 
@@ -158,8 +156,7 @@ func (fr *fileRead) readPolylineFromFile(polylinePos polylinePosition) (string, 
 	fr.polylinesFile.Seek(polylinePos.offset, 0)
 
 	buffer := make([]byte, polylinePos.length)
-	_, err := fr.polylinesFile.Read(buffer)
-	if err != nil {
+	if _, err := fr.polylinesFile.Read(buffer); err != nil {
 		return "", err
 	}
 

@@ -52,8 +52,7 @@ func (i importService) Import() error {
 	}
 
 	osm2GmNode := osm.NewOsmWayProcessor(i.conf.OsmFilemame, osm2GmStore)
-	err := osm2GmNode.Process()
-	if err != nil {
+	if err := osm2GmNode.Process(); err != nil {
 		return err
 	}
 	i.conf.Log.Info("Done preparing node in-memory DB")
@@ -62,8 +61,7 @@ func (i importService) Import() error {
 	bboxFS := node2point.NewNodePointBboxFileStore(i.conf.OutputDir)
 	osm2LatLngStore := node.NewOsm2LatLngMemoryStore()
 	ndFileStore := osm.NewOsmNodeProcessor(i.conf.OsmFilemame, osm2GmStore, bboxFS, osm2LatLngStore)
-	err = ndFileStore.Process()
-	if err != nil {
+	if err := ndFileStore.Process(); err != nil {
 		return err
 	}
 	i.conf.Log.Info("Node file written")
@@ -83,8 +81,8 @@ func (i importService) Import() error {
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(yamlFile, &weightConf)
-	if err != nil {
+
+	if err = yaml.Unmarshal(yamlFile, &weightConf); err != nil {
 		return err
 	}
 
@@ -96,8 +94,7 @@ func (i importService) Import() error {
 
 	g := graph.NewWeightedBidirectionalGraph()
 	osmWayFileRead := osm.NewOsmWayFileRead(i.conf.OsmFilemame, wayStorer, g, wayAdderGetter)
-	err = osmWayFileRead.Process()
-	if err != nil {
+	if err = osmWayFileRead.Process(); err != nil {
 		return err
 	}
 	i.conf.Log.Info("Ways processed")
@@ -105,8 +102,7 @@ func (i importService) Import() error {
 	elevationFileStorage.Close()
 
 	repo := graph.NewGobRepo(i.conf.OutputDir)
-	err = repo.Store(g, i.conf.ProfileName)
-	if err != nil {
+	if err = repo.Store(g, i.conf.ProfileName); err != nil {
 		return err
 	}
 	i.conf.Log.Info("Graph created")

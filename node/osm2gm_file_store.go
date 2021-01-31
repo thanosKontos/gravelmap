@@ -33,16 +33,14 @@ func NewOsm2GmNodeFileStore(destinationDir string) *osm2GmNodeFile {
 }
 
 func (nf osm2GmNodeFile) Write(osmNdID int64, gm *gravelmap.ConnectionNode) error {
-	_, err := nf.file.Seek(int64(osmNdID*osm2gmRecordSize), 0)
-	if err != nil {
+	if _, err := nf.file.Seek(int64(osmNdID*osm2gmRecordSize), 0); err != nil {
 		fmt.Println(err)
 	}
 
 	connNodeFile := connNodeFile{int32(gm.ID), int16(gm.ConnectionCnt), gm.Point}
 
 	var buf bytes.Buffer
-	err = binary.Write(&buf, binary.BigEndian, connNodeFile)
-	if err != nil {
+	if err := binary.Write(&buf, binary.BigEndian, connNodeFile); err != nil {
 		fmt.Println(err)
 	}
 	writeNextBytes(nf.file, buf.Bytes())
@@ -56,8 +54,7 @@ func (nf osm2GmNodeFile) Read(osmNdID int64) *gravelmap.ConnectionNode {
 	nf.file.Seek(int64(osmNdID*osm2gmRecordSize), 0)
 	data := readNextBytes(nf.file, osm2gmRecordSize)
 	buffer := bytes.NewBuffer(data)
-	err := binary.Read(buffer, binary.BigEndian, &cnf)
-	if err != nil {
+	if err := binary.Read(buffer, binary.BigEndian, &cnf); err != nil {
 		log.Fatal("binary.Read failed", err)
 	}
 

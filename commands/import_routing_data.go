@@ -44,8 +44,7 @@ func importRoutingDataCmdRun(inputFilename string, profileName string, useFilesy
 		ElevationCredentials: service.ElevationCredentials{Username: os.Getenv("NASA_USERNAME"), Password: os.Getenv("NASA_PASSWORD")},
 	})
 
-	err := s.Import()
-	if err != nil {
+	if err := s.Import(); err != nil {
 		logger.Error(err)
 		os.Exit(1)
 	}

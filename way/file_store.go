@@ -92,19 +92,17 @@ func (fs *fileStore) Store(ways map[int]map[int]gravelmap.Way) error {
 
 func (fs *fileStore) writeEdgeToFile(plsLookup []edgeToRecord) error {
 	var buf bytes.Buffer
-	err := binary.Write(&buf, binary.BigEndian, plsLookup)
-	if err != nil {
+	if err := binary.Write(&buf, binary.BigEndian, plsLookup); err != nil {
 		return err
 	}
 
-	_, err = fs.edgeToFile.Write(buf.Bytes())
+	_, err := fs.edgeToFile.Write(buf.Bytes())
 	return err
 }
 
 func (fs *fileStore) writePolylinesFile(pls []string) error {
 	for _, pl := range pls {
-		_, err := fs.polylinesFile.WriteString(pl)
-		if err != nil {
+		if _, err := fs.polylinesFile.WriteString(pl); err != nil {
 			return err
 		}
 	}
@@ -116,13 +114,11 @@ func (fs *fileStore) writeEdgeFromFile(edgeStartId int, edgeStart edgeStartRecor
 	fs.edgeFromFile.Seek(int64(edgeStartId*edgeStartRecordSize), 0)
 
 	var buf bytes.Buffer
-	err := binary.Write(&buf, binary.BigEndian, edgeStart)
-	if err != nil {
+	if err := binary.Write(&buf, binary.BigEndian, edgeStart); err != nil {
 		return err
 	}
 
-	_, err = fs.edgeFromFile.Write(buf.Bytes())
-
+	_, err := fs.edgeFromFile.Write(buf.Bytes())
 	return err
 }
 

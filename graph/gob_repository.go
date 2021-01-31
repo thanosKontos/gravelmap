@@ -23,12 +23,9 @@ func (r *gobRepo) Store(graph *WeightedBidirectionalGraph, name string) error {
 		return err
 	}
 	dataEncoder := gob.NewEncoder(graphFile)
-	err = dataEncoder.Encode(graph)
-	if err != nil {
-		return err
-	}
 
-	return graphFile.Close()
+	defer graphFile.Close()
+	return dataEncoder.Encode(graph)
 }
 
 func (r *gobRepo) Fetch(name string) (*WeightedBidirectionalGraph, error) {
@@ -39,8 +36,7 @@ func (r *gobRepo) Fetch(name string) (*WeightedBidirectionalGraph, error) {
 	}
 
 	dataDecoder := gob.NewDecoder(dataFile)
-	err = dataDecoder.Decode(&g)
-	if err != nil {
+	if err = dataDecoder.Decode(&g); err != nil {
 		return nil, err
 	}
 	err = dataFile.Close()

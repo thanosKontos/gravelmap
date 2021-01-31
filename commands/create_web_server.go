@@ -143,8 +143,7 @@ func createKmlHandler(w http.ResponseWriter, r *http.Request, graphs map[string]
 	w.Header().Set("Content-Disposition", "attachment; filename=\"gravelmap.kml\"")
 
 	kml := kml.NewKml()
-	err = kml.Write(w, routingData)
-	if err != nil {
+	if err = kml.Write(w, routingData); err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, `{"message": "Error creating kml"}`)
 	}

@@ -27,23 +27,19 @@ func NewOsm2LatLngFileStore(destinationDir string) *fileStore {
 }
 
 func (fs *fileStore) Write(osmID int, point gravelmap.Point) {
-	_, err := fs.file.Seek(int64(osmID*recordSize), 0)
-	if err != nil {
+	if _, err := fs.file.Seek(int64(osmID*recordSize), 0); err != nil {
 		fmt.Println(err)
 	}
 
 	var buf bytes.Buffer
-	err = binary.Write(&buf, binary.BigEndian, point)
-	if err != nil {
+	if err := binary.Write(&buf, binary.BigEndian, point); err != nil {
 		fmt.Println(err)
 	}
 	writeNextBytes(fs.file, buf.Bytes())
 }
 
 func writeNextBytes(file *os.File, bytes []byte) {
-	_, err := file.Write(bytes)
-
-	if err != nil {
+	if _, err := file.Write(bytes); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -54,8 +50,7 @@ func (fs *fileStore) Read(ndID int) (gravelmap.Point, error) {
 	fs.file.Seek(int64(ndID*recordSize), 0)
 	data := readNextBytes(fs.file, recordSize)
 	buffer := bytes.NewBuffer(data)
-	err := binary.Read(buffer, binary.BigEndian, &pt)
-	if err != nil {
+	if err := binary.Read(buffer, binary.BigEndian, &pt); err != nil {
 		log.Fatal("binary.Read failed", err)
 	}
 

@@ -77,8 +77,7 @@ func (fs *nodePointStore) BatchStore(ndPts []gravelmap.NodePoint) error {
 	}
 
 	for bbox, batch := range ndBatchFileMap {
-		err := fs.writeBatch(bbox, batch)
-		if err != nil {
+		if err := fs.writeBatch(bbox, batch); err != nil {
 			return err
 		}
 	}
@@ -94,8 +93,7 @@ func (fs *nodePointStore) writeBatch(bbox string, ndPts []gravelmap.NodePoint) e
 	}
 
 	var buf bytes.Buffer
-	err = binary.Write(&buf, binary.BigEndian, ndPts)
-	if err != nil {
+	if err = binary.Write(&buf, binary.BigEndian, ndPts); err != nil {
 		return err
 	}
 

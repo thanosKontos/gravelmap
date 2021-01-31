@@ -38,8 +38,7 @@ func (s *srtm1) Get(pt gravelmap.Point) (int32, error) {
 	buffer := bytes.NewBuffer(data)
 	d := make([]byte, 2)
 
-	err = binary.Read(buffer, binary.BigEndian, d)
-	if err != nil {
+	if err = binary.Read(buffer, binary.BigEndian, d); err != nil {
 		return 0, err
 	}
 
@@ -53,9 +52,7 @@ func (s *srtm1) Get(pt gravelmap.Point) (int32, error) {
 
 func readNextBytes(file *os.File, number int) ([]byte, error) {
 	bytes := make([]byte, number)
-
-	_, err := file.Read(bytes)
-	if err != nil {
+	if _, err := file.Read(bytes); err != nil {
 		return []byte{}, err
 	}
 

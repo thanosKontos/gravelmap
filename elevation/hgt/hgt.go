@@ -38,8 +38,8 @@ func (h *hgt) Get(points []gravelmap.Point, distance float64) (*gravelmap.WayEle
 		if err != nil {
 			return nil, err
 		}
-		ele, err := elevationGetter.Get(pt)
 
+		ele, err := elevationGetter.Get(pt)
 		if err != nil {
 			if err == errorWrongElevation {
 				h.logger.Debug("Could not grade (wrong elevation). Probably water, will use 0 instead")
