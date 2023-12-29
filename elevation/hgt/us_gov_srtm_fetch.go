@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 )
 
-const nasa30mSrtmURL = "http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/%s.SRTMGL1.hgt.zip"
+const nasa30mSrtmURL = "https://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/%s.SRTMGL1.hgt.zip"
 
 type nasa30mFile struct {
 	username       string
